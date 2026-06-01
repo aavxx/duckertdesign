@@ -8,7 +8,6 @@ const navLinks = [
   { href: "#ydelser", label: "Ydelser" },
   { href: "#arbejde", label: "Arbejde" },
   { href: "#om", label: "Om" },
-  { href: "#kontakt", label: "Kontakt" },
 ];
 
 export default function Header() {
@@ -52,14 +51,32 @@ export default function Header() {
             maxWidth: "1400px",
             margin: "0 auto",
             padding: "0 40px",
-            height: "64px",
+            height: "96px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             borderBottom: "1px solid #ebebeb",
           }}
         >
-          {/* Hamburger */}
+          {/* Empty left side to keep logo centered */}
+          <div style={{ width: "36px" }} />
+
+          {/* Logo centered */}
+          <Link
+            href="/"
+            style={{
+              position: "absolute",
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
+              alignItems: "center",
+            }}
+            aria-label="Duckert Design"
+          >
+            <Logo style={{ height: "44px", width: "auto" }} />
+          </Link>
+
+          {/* Hamburger – right side */}
           <button
             aria-label={menuOpen ? "Luk menu" : "Åbn menu"}
             onClick={() => setMenuOpen((v) => !v)}
@@ -68,7 +85,7 @@ export default function Header() {
               border: "none",
               cursor: "pointer",
               padding: "8px",
-              marginLeft: "-8px",
+              marginRight: "-8px",
               display: "flex",
               flexDirection: "column",
               gap: "5px",
@@ -106,43 +123,6 @@ export default function Header() {
                 transform: menuOpen ? "translateY(-6px) rotate(-45deg)" : "none",
               }}
             />
-          </button>
-
-          {/* Logo centered */}
-          <Link
-            href="/"
-            style={{
-              position: "absolute",
-              left: "50%",
-              transform: "translateX(-50%)",
-              display: "flex",
-              alignItems: "center",
-            }}
-            aria-label="Duckert Design"
-          >
-            <Logo style={{ height: "28px", width: "auto" }} />
-          </Link>
-
-          {/* CTA */}
-          <button
-            onClick={() => handleNavClick("#kontakt")}
-            style={{
-              fontSize: "11px",
-              fontFamily: "Montserrat, sans-serif",
-              fontWeight: 600,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              background: "#1647FB",
-              color: "#fff",
-              border: "none",
-              padding: "10px 20px",
-              cursor: "pointer",
-              transition: "opacity 0.2s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          >
-            Kontakt
           </button>
         </div>
       </header>

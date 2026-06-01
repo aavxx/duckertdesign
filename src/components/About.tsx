@@ -1,8 +1,6 @@
 "use client";
 
 const stats = [
-  { value: "50+", label: "Projekter leveret" },
-  { value: "5+", label: "Års erfaring" },
   { value: "100%", label: "Tilfredse klienter" },
 ];
 
