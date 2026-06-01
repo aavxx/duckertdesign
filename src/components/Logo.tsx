@@ -1,11 +1,13 @@
 interface LogoProps {
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export default function Logo({ className }: LogoProps) {
+export default function Logo({ className, style }: LogoProps) {
   return (
     <svg
       className={className}
+      style={style}
       width="338"
       height="339"
       viewBox="0 0 338 339"

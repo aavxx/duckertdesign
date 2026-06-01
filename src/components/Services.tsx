@@ -1,60 +1,157 @@
+"use client";
+
 const services = [
   {
     number: "01",
     title: "Webdesign",
-    description:
-      "Skræddersyede hjemmesider designet fra bunden med fokus på brugeroplevelse, konvertering og æstetik.",
+    description: "Skræddersyede hjemmesider fra bunden — med fokus på brugeroplevelse, konvertering og æstetik.",
+    tags: ["Landing pages", "E-commerce", "Portfolios"],
   },
   {
     number: "02",
     title: "Branding",
-    description:
-      "Visuel identitet der fortæller din virksomheds historie — logo, farver, typografi og tone of voice.",
+    description: "Visuel identitet der fortæller din virksomheds historie — logo, farver, typografi og tone of voice.",
+    tags: ["Logo", "Brand guidelines", "Visuel identitet"],
   },
   {
     number: "03",
     title: "UI/UX Design",
-    description:
-      "Intuitive grænseflader og brugerflows der gør komplekse produkter enkle og behagelige at bruge.",
+    description: "Intuitive grænseflader og brugerflows der gør komplekse produkter enkle og behagelige at navigere.",
+    tags: ["Wireframes", "Prototyping", "User testing"],
   },
   {
     number: "04",
     title: "Webudvikling",
-    description:
-      "Hurtige, tilgængelige og skalerbare webapplikationer bygget med moderne teknologier.",
+    description: "Hurtige, tilgængelige og skalerbare webapplikationer bygget med moderne teknologier.",
+    tags: ["Next.js", "React", "Headless CMS"],
   },
 ];
 
 export default function Services() {
   return (
-    <section id="ydelser" className="py-32 px-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-20">
-          <p className="text-xs uppercase tracking-[0.25em] text-[#1647FB] font-medium mb-4">
-            Hvad vi gør
-          </p>
-          <h2 className="text-4xl md:text-5xl font-semibold tracking-tight">
-            Ydelser
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-gray-100">
-          {services.map((service) => (
-            <div
-              key={service.number}
-              className="bg-white p-10 group hover:bg-[#1647FB] transition-colors duration-300"
+    <section
+      id="ydelser"
+      style={{
+        padding: "120px 40px",
+        maxWidth: "1400px",
+        margin: "0 auto",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          marginBottom: "64px",
+          borderBottom: "1px solid #ebebeb",
+          paddingBottom: "24px",
+        }}
+      >
+        <h2
+          style={{
+            fontSize: "11px",
+            fontWeight: 600,
+            letterSpacing: "0.15em",
+            textTransform: "uppercase",
+            color: "#aaa",
+            margin: 0,
+          }}
+        >
+          Ydelser
+        </h2>
+        <span style={{ fontSize: "11px", color: "#aaa", letterSpacing: "0.1em" }}>
+          04 kategorier
+        </span>
+      </div>
+
+      {/* Service list */}
+      <div>
+        {services.map((s, i) => (
+          <div
+            key={s.number}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "80px 1fr auto",
+              gap: "40px",
+              alignItems: "start",
+              padding: "48px 0",
+              borderBottom: "1px solid #ebebeb",
+              transition: "opacity 0.2s",
+              cursor: "default",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLDivElement).style.opacity = "0.5";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLDivElement).style.opacity = "1";
+            }}
+          >
+            <span
+              style={{
+                fontSize: "11px",
+                color: "#bbb",
+                fontWeight: 500,
+                letterSpacing: "0.1em",
+                paddingTop: "4px",
+              }}
             >
-              <span className="text-xs text-gray-400 group-hover:text-blue-200 font-medium tracking-widest transition-colors duration-300">
-                {service.number}
-              </span>
-              <h3 className="text-2xl font-semibold mt-4 mb-4 group-hover:text-white transition-colors duration-300">
-                {service.title}
+              {s.number}
+            </span>
+            <div>
+              <h3
+                style={{
+                  fontSize: "clamp(28px, 3.5vw, 48px)",
+                  fontWeight: 600,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1.1,
+                  margin: "0 0 16px",
+                  color: "#080808",
+                }}
+              >
+                {s.title}
               </h3>
-              <p className="text-gray-500 group-hover:text-blue-100 leading-relaxed transition-colors duration-300">
-                {service.description}
+              <p
+                style={{
+                  fontSize: "15px",
+                  color: "#888",
+                  lineHeight: 1.7,
+                  maxWidth: "480px",
+                  margin: 0,
+                }}
+              >
+                {s.description}
               </p>
             </div>
-          ))}
-        </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "6px",
+                alignItems: "flex-end",
+                paddingTop: "4px",
+              }}
+            >
+              {s.tags.map((tag) => (
+                <span
+                  key={tag}
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 500,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    color: "#bbb",
+                    border: "1px solid #ebebeb",
+                    padding: "5px 10px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );

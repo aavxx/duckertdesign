@@ -1,20 +1,54 @@
+"use client";
+
 import Logo from "./Logo";
 
 export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-gray-100 py-12 px-6">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-        <Logo className="h-8 w-auto" />
-        <p className="text-sm text-gray-400 font-light">
-          © {year} Duckert Design. Alle rettigheder forbeholdt.
+    <footer
+      style={{
+        background: "#080808",
+        borderTop: "1px solid rgba(255,255,255,0.06)",
+        padding: "32px 40px",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: "1400px",
+          margin: "0 auto",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "24px",
+          flexWrap: "wrap",
+        }}
+      >
+        <Logo style={{ height: "24px", width: "auto", filter: "brightness(0) invert(1)", opacity: 0.5 }} />
+        <p
+          style={{
+            fontSize: "11px",
+            color: "rgba(255,255,255,0.25)",
+            letterSpacing: "0.08em",
+            margin: 0,
+          }}
+        >
+          © {year} Duckert Design
         </p>
-        <div className="flex gap-6 text-sm text-gray-400">
-          <a href="mailto:hej@duckertdesign.dk" className="hover:text-[#1647FB] transition-colors duration-200">
-            hej@duckertdesign.dk
-          </a>
-        </div>
+        <a
+          href="mailto:hej@duckertdesign.dk"
+          style={{
+            fontSize: "11px",
+            color: "rgba(255,255,255,0.3)",
+            textDecoration: "none",
+            letterSpacing: "0.08em",
+            transition: "color 0.2s",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "#ffffff")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
+        >
+          hej@duckertdesign.dk
+        </a>
       </div>
     </footer>
   );

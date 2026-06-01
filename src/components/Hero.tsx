@@ -1,41 +1,141 @@
 "use client";
 
 export default function Hero() {
-  const scrollTo = (id: string) => {
+  const scrollTo = (id: string) =>
     document.querySelector(id)?.scrollIntoView({ behavior: "smooth" });
-  };
 
   return (
-    <section className="min-h-screen flex flex-col justify-center items-center text-center px-6 pt-16">
-      <div className="max-w-3xl mx-auto">
-        <p className="text-xs uppercase tracking-[0.25em] text-[#1647FB] font-medium mb-6">
-          Webdesign · Branding · UI/UX
-        </p>
-        <h1 className="text-5xl md:text-7xl font-semibold tracking-tight leading-[1.1] mb-8">
+    <section
+      style={{
+        minHeight: "100vh",
+        paddingTop: "64px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-end",
+        padding: "64px 40px 60px",
+        maxWidth: "1400px",
+        margin: "0 auto",
+        boxSizing: "border-box",
+        width: "100%",
+      }}
+    >
+      {/* Top bar */}
+      <div
+        style={{
+          position: "absolute",
+          top: "64px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          padding: "20px 40px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          maxWidth: "1400px",
+          width: "100%",
+        }}
+      >
+        <span style={{ fontSize: "11px", letterSpacing: "0.15em", color: "#aaa", textTransform: "uppercase", fontWeight: 500 }}>
+          Duckert Design Studio
+        </span>
+        <span style={{ fontSize: "11px", letterSpacing: "0.15em", color: "#aaa", textTransform: "uppercase", fontWeight: 500 }}>
+          © 2026
+        </span>
+      </div>
+
+      {/* Main headline */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", paddingTop: "80px" }}>
+        <h1
+          style={{
+            fontSize: "clamp(52px, 9vw, 140px)",
+            fontWeight: 600,
+            letterSpacing: "-0.03em",
+            lineHeight: 0.95,
+            color: "#080808",
+            margin: 0,
+            maxWidth: "900px",
+          }}
+        >
           Design der
           <br />
-          <span className="text-[#1647FB]">skiller sig ud.</span>
+          <em
+            style={{
+              fontStyle: "italic",
+              fontWeight: 200,
+              color: "#1647FB",
+            }}
+          >
+            mærkes.
+          </em>
         </h1>
-        <p className="text-lg md:text-xl text-gray-500 font-light leading-relaxed max-w-xl mx-auto mb-12">
-          Vi bygger digitale oplevelser, der er smukke, funktionelle og skabt til at konvertere.
+      </div>
+
+      {/* Bottom row */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: "40px",
+          flexWrap: "wrap",
+          marginTop: "80px",
+          paddingTop: "32px",
+          borderTop: "1px solid #ebebeb",
+        }}
+      >
+        <p
+          style={{
+            fontSize: "15px",
+            color: "#888",
+            fontWeight: 400,
+            lineHeight: 1.7,
+            maxWidth: "380px",
+            margin: 0,
+          }}
+        >
+          Vi skaber digitale oplevelser der er præcise, smukke og bygget til at konvertere.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div style={{ display: "flex", gap: "12px" }}>
           <button
             onClick={() => scrollTo("#kontakt")}
-            className="px-8 py-4 bg-[#1647FB] text-white text-sm font-medium tracking-wide hover:bg-blue-700 transition-colors duration-200"
+            style={{
+              padding: "14px 32px",
+              background: "#1647FB",
+              color: "#fff",
+              border: "none",
+              fontSize: "11px",
+              fontFamily: "Montserrat, sans-serif",
+              fontWeight: 600,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              transition: "opacity 0.2s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
           >
             Start et projekt
           </button>
           <button
             onClick={() => scrollTo("#arbejde")}
-            className="px-8 py-4 border border-gray-200 text-sm font-medium tracking-wide hover:border-[#1647FB] hover:text-[#1647FB] transition-colors duration-200"
+            style={{
+              padding: "14px 32px",
+              background: "transparent",
+              color: "#080808",
+              border: "1px solid #ebebeb",
+              fontSize: "11px",
+              fontFamily: "Montserrat, sans-serif",
+              fontWeight: 600,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              cursor: "pointer",
+              transition: "border-color 0.2s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#080808")}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#ebebeb")}
           >
-            Se vores arbejde
+            Se arbejde
           </button>
         </div>
-      </div>
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 animate-bounce">
-        <div className="w-[1px] h-16 bg-gray-200 mx-auto" />
       </div>
     </section>
   );
