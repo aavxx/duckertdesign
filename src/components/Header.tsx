@@ -37,6 +37,10 @@ export default function Header() {
   const handleNavClick = (link: typeof navLinks[0]) => {
     setMenuOpen(false);
     if (link.scroll) {
+      if (window.location.pathname !== "/") {
+        window.location.href = "/" + link.href;
+        return;
+      }
       setTimeout(() => {
         document.querySelector(link.href)?.scrollIntoView({ behavior: "smooth" });
       }, 300);

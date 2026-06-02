@@ -1,6 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 export default function Hero() {
+  const router = useRouter();
   const scrollTo = (id: string) =>
     document.querySelector(id)?.scrollIntoView({ behavior: "smooth" });
 
@@ -88,15 +91,15 @@ export default function Hero() {
             color: "#888",
             fontWeight: 400,
             lineHeight: 1.7,
-            maxWidth: "380px",
+            maxWidth: "420px",
             margin: 0,
           }}
         >
-          Vi skaber digitale oplevelser der er præcise, smukke og bygget til at konvertere.
+          Vi designer og udvikler professionelle hjemmesider til virksomheder, der ønsker et stærkt, stilrent og moderne udtryk online.
         </p>
         <div style={{ display: "flex", gap: "12px" }}>
           <button
-            onClick={() => scrollTo("#kontakt")}
+            onClick={() => router.push("/kontakt")}
             style={{
               padding: "14px 32px",
               background: "#1647FB",
@@ -116,7 +119,7 @@ export default function Hero() {
             Start et projekt
           </button>
           <button
-            onClick={() => scrollTo("#arbejde")}
+            onClick={() => scrollTo("#ydelser")}
             style={{
               padding: "14px 32px",
               background: "transparent",
@@ -133,7 +136,7 @@ export default function Hero() {
             onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#080808")}
             onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#ebebeb")}
           >
-            Se arbejde
+            Se ydelser
           </button>
         </div>
       </div>

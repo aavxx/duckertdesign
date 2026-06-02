@@ -9,18 +9,12 @@ const services = [
   },
   {
     number: "02",
-    title: "Branding",
-    description: "Visuel identitet der fortæller din virksomheds historie — logo, farver, typografi og tone of voice.",
-    tags: ["Logo", "Brand guidelines", "Visuel identitet"],
-  },
-  {
-    number: "03",
     title: "UI/UX Design",
     description: "Intuitive grænseflader og brugerflows der gør komplekse produkter enkle og behagelige at navigere.",
     tags: ["Wireframes", "Prototyping", "User testing"],
   },
   {
-    number: "04",
+    number: "03",
     title: "Webudvikling",
     description: "Hurtige, tilgængelige og skalerbare webapplikationer bygget med moderne teknologier.",
     tags: ["Next.js", "React", "Headless CMS"],
@@ -61,7 +55,7 @@ export default function Services() {
           Ydelser
         </h2>
         <span style={{ fontSize: "11px", color: "#aaa", letterSpacing: "0.1em" }}>
-          04 kategorier
+          03 kategorier
         </span>
       </div>
 

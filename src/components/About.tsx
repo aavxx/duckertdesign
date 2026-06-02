@@ -1,9 +1,5 @@
 "use client";
 
-const stats = [
-  { value: "100%", label: "Tilfredse klienter" },
-];
-
 export default function About() {
   return (
     <section
@@ -44,75 +40,34 @@ export default function About() {
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           gap: "80px",
-          alignItems: "end",
+          alignItems: "start",
         }}
       >
         {/* Left: big statement */}
-        <div>
-          <p
-            style={{
-              fontSize: "clamp(28px, 3.5vw, 52px)",
-              fontWeight: 600,
-              letterSpacing: "-0.025em",
-              lineHeight: 1.15,
-              color: "#080808",
-              margin: "0 0 40px",
-            }}
-          >
-            Vi tror på at godt design løser problemer — ikke bare ser godt ud.
-          </p>
-          <p
-            style={{
-              fontSize: "15px",
-              color: "#888",
-              lineHeight: 1.8,
-              maxWidth: "440px",
-              margin: 0,
-            }}
-          >
-            Duckert Design er et boutique-bureau der specialiserer sig i digitale oplevelser med sjæl og formål. Vi arbejder tæt med vores klienter — fra startups til etablerede virksomheder.
-          </p>
-        </div>
+        <p
+          style={{
+            fontSize: "clamp(28px, 3.5vw, 52px)",
+            fontWeight: 600,
+            letterSpacing: "-0.025em",
+            lineHeight: 1.15,
+            color: "#080808",
+            margin: 0,
+          }}
+        >
+          Vi tror på at godt design løser problemer — ikke bare ser godt ud.
+        </p>
 
-        {/* Right: stats */}
-        <div>
-          {stats.map((stat, i) => (
-            <div
-              key={stat.label}
-              style={{
-                display: "flex",
-                alignItems: "baseline",
-                justifyContent: "space-between",
-                padding: "32px 0",
-                borderTop: "1px solid #ebebeb",
-                borderBottom: i === stats.length - 1 ? "1px solid #ebebeb" : "none",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: "clamp(40px, 5vw, 72px)",
-                  fontWeight: 600,
-                  letterSpacing: "-0.03em",
-                  color: "#080808",
-                  lineHeight: 1,
-                }}
-              >
-                {stat.value}
-              </span>
-              <span
-                style={{
-                  fontSize: "11px",
-                  fontWeight: 500,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: "#aaa",
-                }}
-              >
-                {stat.label}
-              </span>
-            </div>
-          ))}
-        </div>
+        {/* Right: description */}
+        <p
+          style={{
+            fontSize: "15px",
+            color: "#888",
+            lineHeight: 1.9,
+            margin: 0,
+          }}
+        >
+          Vi designer og udvikler professionelle hjemmesider til virksomheder, der ønsker et stærkt, stilrent og moderne udtryk online. Vores mål er at gøre det nemt og overskueligt for dig at få en ny hjemmeside, der virker perfekt på alle skærmstørrelser. Vi leverer skræddersyet design og solidt håndværk i øjenhøjde, så du kan skille dig ud fra konkurrenterne og fange dine kunders opmærksomhed. Skal vi hjælpe dig med dit næste digitale projekt?
+        </p>
       </div>
     </section>
   );
