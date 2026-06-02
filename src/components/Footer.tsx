@@ -10,15 +10,13 @@ export default function Footer() {
     <footer
       style={{
         background: "#1647FB",
+        borderRadius: "80px 80px 0 0",
         position: "relative",
         overflow: "hidden",
-        padding: "80px 80px 48px",
+        padding: "64px 80px 48px",
+        marginTop: "0",
       }}
     >
-      {/* Corner masks – create the illusion of rounded top corners */}
-      <div style={{ position: "absolute", top: 0, left: 0, width: "80px", height: "80px", background: "#ffffff", borderRadius: "0 0 80px 0", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", top: 0, right: 0, width: "80px", height: "80px", background: "#ffffff", borderRadius: "0 0 0 80px", pointerEvents: "none" }} />
-
       {/* Decorative circle */}
       <div
         style={{
