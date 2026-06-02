@@ -1,70 +1,115 @@
 "use client";
 
+import Link from "next/link";
+import Logo from "./Logo";
+
 export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer style={{ background: "#ffffff", borderTop: "1px solid #ebebeb" }}>
-
-      {/* Top bar */}
+    <footer
+      style={{
+        background: "#1647FB",
+        borderRadius: "80px 80px 0 0",
+        position: "relative",
+        overflow: "hidden",
+        padding: "64px 80px 48px",
+        marginTop: "0",
+      }}
+    >
+      {/* Decorative circle */}
       <div
         style={{
-          padding: "48px 48px 40px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: "16px",
+          position: "absolute",
+          width: "520px",
+          height: "520px",
+          borderRadius: "50%",
+          background: "rgba(255,255,255,0.04)",
+          right: "-80px",
+          bottom: "-120px",
+          pointerEvents: "none",
         }}
-      >
-        <a
-          href="mailto:hej@duckertdesign.dk"
+      />
+
+      {/* Logo */}
+      <div style={{ marginBottom: "40px" }}>
+        <Logo style={{ height: "72px", width: "auto", filter: "brightness(0) invert(1)" }} />
+      </div>
+
+      {/* Kundeservice */}
+      <div style={{ marginBottom: "80px" }}>
+        <p
           style={{
             fontSize: "13px",
-            color: "rgba(8,8,8,0.4)",
-            textDecoration: "none",
-            letterSpacing: "0.06em",
-            transition: "color 0.2s",
+            fontWeight: 700,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "rgba(255,255,255,0.5)",
+            margin: "0 0 16px",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#080808")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(8,8,8,0.4)")}
         >
-          hej@duckertdesign.dk
-        </a>
-        <p style={{ fontSize: "13px", color: "rgba(8,8,8,0.25)", letterSpacing: "0.06em", margin: 0 }}>
-          © {year} Duckert Design
+          Kundeservice
         </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <a
+            href="mailto:hej@duckert.design"
+            style={{
+              fontSize: "16px",
+              color: "#ffffff",
+              textDecoration: "none",
+              transition: "opacity 0.2s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.7")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+          >
+            hej@duckert.design
+          </a>
+          <Link
+            href="/kontakt"
+            style={{
+              fontSize: "16px",
+              color: "#ffffff",
+              textDecoration: "none",
+              transition: "opacity 0.2s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.7")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+          >
+            Kontakt Formular
+          </Link>
+        </div>
       </div>
 
-      {/* Giant stroke wordmark — full width, cropped at bottom like dao.as */}
-      <div style={{ overflow: "hidden", lineHeight: 0, height: "22vw" }}>
-        <svg
-          viewBox="0 0 205 93"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          preserveAspectRatio="xMidYMin meet"
-          style={{ display: "block", width: "100%", height: "auto" }}
-          aria-label="Duckert Design"
+      {/* Bottom bar */}
+      <div
+        style={{
+          borderTop: "1px solid rgba(255,255,255,0.12)",
+          paddingTop: "24px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "40px",
+          flexWrap: "wrap",
+        }}
+      >
+        <Link
+          href="/service-vilkar"
+          style={{ fontSize: "14px", color: "rgba(255,255,255,0.7)", textDecoration: "none", transition: "color 0.2s" }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "#ffffff")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
         >
-          {/* duckert */}
-          <path d="M112.734 0L104.797 36.0098H111.656L113.115 29.3174L117.162 25.8066L121.969 36.0098H130.281L122.776 21.7549L135.734 9.93164H126.99L114.896 21.1094L119.594 0H112.734Z" fill="none" stroke="#080808" strokeWidth="0.3"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M15.9375 0L8 36.0098H22.1455C39.0466 36.0098 45.4736 24.9421 45.4736 15.4941C45.4734 6.15598 37.8594 0.000197919 29.8701 0H15.9375ZM37.4795 15.9785C37.4793 10.7443 33.7547 6.75 28.4111 6.75H22.1455L17.1826 29.2598H23.5518C32.2445 29.2598 37.4795 23.1608 37.4795 15.9785Z" fill="none" stroke="#080808" strokeWidth="0.3"/>
-          <path d="M52.3242 9.93164L48.3818 27.8594C48.2777 28.3437 48.1163 29.5303 48.1162 29.9629C48.1162 34.0096 51.246 36.6561 56.2666 36.6562C60.0999 36.6562 62.9079 34.6042 64.96 32.6094L64.2041 36.0098H71.0586L76.835 9.93164H69.9805L66.0898 27.4785C64.5795 28.9368 62.3141 30.5566 59.8818 30.5566C57.4548 30.5566 55.5117 29.583 55.5117 27.208C55.5117 26.7757 55.6162 26.1299 55.7256 25.6455L59.2354 9.93164H52.3242Z" fill="none" stroke="#080808" strokeWidth="0.3"/>
-          <path d="M94.0566 9.28613C85.4733 9.28613 78.8848 16.1979 78.8848 24.7812C78.8849 31.9061 83.9057 36.6562 91.6816 36.6562C96.2699 36.6561 99.6189 34.6034 101.562 32.5566L97.8379 27.9629C96.5411 29.4784 94.5981 30.5565 92.3848 30.5566C88.765 30.5566 85.8477 28.3955 85.8477 24.458C85.8477 19.5414 89.0879 15.3848 94.0566 15.3848C96.4314 15.3849 98.4317 16.5204 99.5098 18.3535L104.64 14.416C102.858 11.4423 99.4 9.28626 94.0566 9.28613Z" fill="none" stroke="#080808" strokeWidth="0.3"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M149.769 9.28613C141.076 9.28613 134.706 16.4633 134.706 24.9424C134.706 32.2288 139.998 36.6562 148.206 36.6562C151.445 36.6562 154.898 35.687 157.435 33.958L155.278 29.2598C153.659 30.5045 150.956 31.2031 148.69 31.2031C143.888 31.2031 141.565 28.0202 141.565 25.8066V25.1562H160.945C161.216 24.2969 161.487 22.4577 161.487 20.9473C161.487 13.656 156.409 9.28627 149.769 9.28613ZM155.331 19.9736C155.331 17.3851 153.497 14.7393 149.336 14.7393C145.669 14.7393 142.862 17.6563 142.269 20.5156H155.331V19.9736Z" fill="none" stroke="#080808" strokeWidth="0.3"/>
-          <path d="M184.591 9.33789C180.487 9.33799 177.679 10.9063 175.356 13.3906L176.169 9.93164H169.31L163.534 36.0098H170.394L174.117 18.9473C175.685 17.2234 178.112 15.8174 180.597 15.8174C181.732 15.8174 182.701 16.0365 183.133 16.1406L184.591 9.33789Z" fill="none" stroke="#080808" strokeWidth="0.3"/>
-          <path d="M193.466 2.80664L191.897 9.93164H187.58L186.231 15.8691H190.549L187.632 29.208C187.47 29.8538 187.419 30.609 187.419 30.9893C187.419 34.8746 190.549 36.6562 195.189 36.6562C196.867 36.6562 198.487 36.2233 199.513 35.5254L199.241 30.0156C198.918 30.2864 198.053 30.5566 197.351 30.5566C195.622 30.5565 194.814 29.6919 194.814 28.291C194.814 27.9629 194.867 27.536 194.924 27.208L197.403 15.8691H202.694L204.101 9.93164H198.81L200.372 2.80664H193.466Z" fill="none" stroke="#080808" strokeWidth="0.3"/>
-          {/* design */}
-          <path d="M160.019 55.1924C156.185 55.1924 153.378 57.2445 151.326 59.2393L152.081 55.8379H145.222L139.445 81.916H146.305L150.19 64.3174C151.701 62.8591 153.972 61.291 156.779 61.291C158.831 61.2911 160.773 62.2084 160.773 64.6406C160.773 65.1599 160.622 65.8353 160.513 66.322L160.503 66.3691L157.05 81.916H163.904L167.898 63.9893C168.008 63.4528 168.17 62.3171 168.17 61.8848C168.17 57.8381 165.039 55.1924 160.019 55.1924Z" fill="none" stroke="#080808" strokeWidth="0.3"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M122.333 55.1924C113.859 55.1924 108.838 63.1818 108.838 71.1191C108.838 78.6764 113.426 81.7031 118.666 81.7031C121.848 81.7031 124.655 80.1869 126.655 77.7598L126.114 80.1348C124.927 85.4264 121.9 86.8848 118.718 86.8848C115.317 86.8847 111.916 85.6976 110.239 83.375L106.192 87.9629C109.323 91.3118 113.697 92.4999 118.827 92.5C124.442 92.5 130.864 90.015 133.025 80.1348L138.427 55.8379H131.515L130.76 59.2969C128.869 56.7553 125.468 55.1925 122.333 55.1924ZM129.624 64.5312C128.379 62.4792 126.005 61.2911 123.255 61.291C118.989 61.291 115.963 65.0725 115.963 69.8223C115.963 73.3327 118.338 75.5986 121.9 75.5986C124.171 75.5986 126.385 74.3018 127.786 72.6299L129.624 64.5312Z" fill="none" stroke="#080808" strokeWidth="0.3"/>
-          <path d="M99.9814 55.8379L94.2051 81.916H101.064L106.841 55.8379H99.9814Z" fill="none" stroke="#080808" strokeWidth="0.3"/>
-          <path d="M105.544 43.7969C103.44 43.7969 100.955 45.5257 100.955 48.4941C100.955 50.4419 102.466 52.0047 104.627 52.0049C106.731 52.0049 109.216 50.3327 109.216 47.3066C109.216 45.4162 107.705 43.7969 105.544 43.7969Z" fill="none" stroke="#080808" strokeWidth="0.3"/>
-          <path d="M81.7354 55.1924C74.7719 55.1924 70.9961 59.4581 70.9961 63.9893C70.9961 68.4163 75.6888 70.0934 79.418 71.333C82.0062 72.1975 84.2193 73.0101 84.2197 74.5723C84.2197 76.0827 82.7611 77.3281 80.4434 77.3281C76.6623 77.328 72.8294 75.1663 71.2617 73.333L67.4854 77.8691C70.3968 80.9421 75.043 82.5625 79.793 82.5625C86.923 82.5624 91.0791 78.4059 91.0791 73.4424C91.079 68.7445 86.1624 67.0674 82.3291 65.8799C79.7927 65.0153 77.8496 64.2077 77.8496 62.9629C77.8499 61.5621 79.1991 60.4269 81.6309 60.4268C84.8129 60.4268 88.0525 62.1557 89.3496 63.7754L92.751 59.458C90.3239 56.8643 86.1624 55.1924 81.7354 55.1924Z" fill="none" stroke="#080808" strokeWidth="0.3"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M54.6885 55.1924C45.9958 55.1924 39.626 62.3695 39.626 70.8486C39.626 78.1351 44.9177 82.5625 53.126 82.5625C56.3656 82.5625 59.819 81.5934 62.3555 79.8643L60.1992 75.166C58.5794 76.4108 55.876 77.1094 53.6104 77.1094C48.8083 77.1094 46.4854 73.9264 46.4854 71.7129V71.0625H65.8652C66.1361 70.2031 66.4072 68.3639 66.4072 66.8535C66.407 59.5621 61.329 55.1924 54.6885 55.1924ZM60.251 65.8799C60.2509 63.2914 58.4173 60.6455 54.2559 60.6455C50.5894 60.6457 47.7822 63.5626 47.1885 66.4219H60.251V65.8799Z" fill="none" stroke="#080808" strokeWidth="0.3"/>
-          <path fillRule="evenodd" clipRule="evenodd" d="M7.9375 45.9062L0 81.916H14.1455C31.0464 81.9159 37.4736 70.8483 37.4736 61.4004C37.4734 52.0621 29.8586 45.9062 21.8691 45.9062H7.9375ZM29.4785 61.8848C29.4783 56.6506 25.7547 52.6563 20.4111 52.6562H14.1455L9.18164 75.166H15.5518C24.2444 75.1659 29.4785 69.067 29.4785 61.8848Z" fill="none" stroke="#080808" strokeWidth="0.3"/>
-        </svg>
+          Service Vilkår
+        </Link>
+        <Link
+          href="/privatlivspolitik"
+          style={{ fontSize: "14px", color: "rgba(255,255,255,0.7)", textDecoration: "none", transition: "color 0.2s" }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "#ffffff")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.7)")}
+        >
+          Privatlivs Politik
+        </Link>
+        <span style={{ fontSize: "14px", color: "rgba(255,255,255,0.5)" }}>© {year}</span>
       </div>
-
     </footer>
   );
 }

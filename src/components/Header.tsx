@@ -2,27 +2,29 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Logo from "./Logo";
 
 const navLinks = [
-  { href: "#ydelser", label: "Ydelser" },
-  { href: "#arbejde", label: "Arbejde" },
-  { href: "#om", label: "Om" },
+  { href: "#ydelser", label: "Ydelser", scroll: true },
+  { href: "#om", label: "Om", scroll: true },
+  { href: "/kontakt", label: "Kontakt", scroll: false },
 ];
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
+      if (menuOpen) return;
       const currentY = window.scrollY;
       if (currentY < 60) {
         setVisible(true);
       } else if (currentY > lastScrollY.current + 4) {
         setVisible(false);
-        setMenuOpen(false);
       } else if (currentY < lastScrollY.current - 4) {
         setVisible(true);
       }
@@ -30,11 +32,17 @@ export default function Header() {
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [menuOpen]);
 
-  const handleNavClick = (href: string) => {
+  const handleNavClick = (link: typeof navLinks[0]) => {
     setMenuOpen(false);
-    document.querySelector(href)?.scrollIntoView({ behavior: "smooth" });
+    if (link.scroll) {
+      setTimeout(() => {
+        document.querySelector(link.href)?.scrollIntoView({ behavior: "smooth" });
+      }, 300);
+    } else {
+      router.push(link.href);
+    }
   };
 
   return (
@@ -42,7 +50,7 @@ export default function Header() {
       <header
         className="fixed top-0 left-0 right-0 z-50 bg-white"
         style={{
-          transform: visible ? "translateY(0)" : "translateY(-100%)",
+          transform: (visible && !menuOpen) ? "translateY(0)" : "translateY(-100%)",
           transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
@@ -58,7 +66,7 @@ export default function Header() {
             borderBottom: "1px solid #ebebeb",
           }}
         >
-          {/* Empty left side to keep logo centered */}
+          {/* Empty left placeholder */}
           <div style={{ width: "36px" }} />
 
           {/* Logo centered */}
@@ -78,8 +86,8 @@ export default function Header() {
 
           {/* Hamburger – right side */}
           <button
-            aria-label={menuOpen ? "Luk menu" : "Åbn menu"}
-            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="Åbn menu"
+            onClick={() => setMenuOpen(true)}
             style={{
               background: "none",
               border: "none",
@@ -89,50 +97,21 @@ export default function Header() {
               display: "flex",
               flexDirection: "column",
               gap: "5px",
-              width: "36px",
             }}
           >
-            <span
-              style={{
-                display: "block",
-                width: "22px",
-                height: "1px",
-                background: "#080808",
-                transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-                transform: menuOpen ? "translateY(6px) rotate(45deg)" : "none",
-              }}
-            />
-            <span
-              style={{
-                display: "block",
-                width: "22px",
-                height: "1px",
-                background: "#080808",
-                transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-                opacity: menuOpen ? 0 : 1,
-                transform: menuOpen ? "scaleX(0)" : "none",
-              }}
-            />
-            <span
-              style={{
-                display: "block",
-                width: "22px",
-                height: "1px",
-                background: "#080808",
-                transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-                transform: menuOpen ? "translateY(-6px) rotate(-45deg)" : "none",
-              }}
-            />
+            <span style={{ display: "block", width: "22px", height: "1px", background: "#080808" }} />
+            <span style={{ display: "block", width: "22px", height: "1px", background: "#080808" }} />
+            <span style={{ display: "block", width: "22px", height: "1px", background: "#080808" }} />
           </button>
         </div>
       </header>
 
-      {/* Full-screen menu */}
+      {/* Full-screen menu overlay */}
       <div
         style={{
           position: "fixed",
           inset: 0,
-          zIndex: 40,
+          zIndex: 60,
           background: "#1647FB",
           display: "flex",
           flexDirection: "column",
@@ -143,11 +122,34 @@ export default function Header() {
           transition: "opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
+        {/* X close button */}
+        <button
+          aria-label="Luk menu"
+          onClick={() => setMenuOpen(false)}
+          style={{
+            position: "absolute",
+            top: "32px",
+            right: "40px",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "8px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <line x1="4" y1="4" x2="20" y2="20" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="20" y1="4" x2="4" y2="20" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </button>
+
         <nav>
           {navLinks.map((link, i) => (
             <div key={link.href} style={{ borderBottom: "1px solid rgba(255,255,255,0.15)" }}>
               <button
-                onClick={() => handleNavClick(link.href)}
+                onClick={() => handleNavClick(link)}
                 style={{
                   display: "flex",
                   alignItems: "center",
