@@ -66,19 +66,16 @@ export default function Contact() {
     <section
       id="kontakt"
       style={{
-        background: "#080808",
+        background: "#ffffff",
         padding: "120px 40px",
       }}
     >
-      <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+      <div style={{ maxWidth: "760px", margin: "0 auto" }}>
         {/* Header */}
         <div
           style={{
-            display: "flex",
-            alignItems: "baseline",
-            justifyContent: "space-between",
-            marginBottom: "80px",
-            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            marginBottom: "64px",
+            borderBottom: "1px solid #ebebeb",
             paddingBottom: "24px",
           }}
         >
@@ -88,7 +85,7 @@ export default function Contact() {
               fontWeight: 600,
               letterSpacing: "0.15em",
               textTransform: "uppercase",
-              color: "rgba(255,255,255,0.3)",
+              color: "#aaa",
               margin: 0,
             }}
           >
@@ -96,167 +93,123 @@ export default function Contact() {
           </h2>
         </div>
 
-        <div
+        <h3
           style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "80px",
-            alignItems: "start",
+            fontSize: "clamp(32px, 4vw, 56px)",
+            fontWeight: 600,
+            letterSpacing: "-0.025em",
+            lineHeight: 1.1,
+            color: "#080808",
+            margin: "0 0 24px",
           }}
         >
-          {/* Left */}
-          <div>
-            <h3
-              style={{
-                fontSize: "clamp(32px, 4vw, 60px)",
-                fontWeight: 600,
-                letterSpacing: "-0.025em",
-                lineHeight: 1.1,
-                color: "#ffffff",
-                margin: "0 0 32px",
-              }}
-            >
-              Lad os bygge noget fedt.
-            </h3>
-            <p
-              style={{
-                fontSize: "15px",
-                color: "rgba(255,255,255,0.4)",
-                lineHeight: 1.8,
-                maxWidth: "360px",
-                margin: "0 0 48px",
-              }}
-            >
-              Har du et projekt i tankerne? Skriv til os og vi vender tilbage inden for 24 timer.
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div>
-                <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", margin: "0 0 6px" }}>
-                  Email
-                </p>
-                <a
-                  href="mailto:hej@duckertdesign.dk"
-                  style={{ fontSize: "15px", color: "rgba(255,255,255,0.6)", textDecoration: "none" }}
-                >
-                  hej@duckertdesign.dk
-                </a>
-              </div>
-              <div>
-                <p style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", margin: "0 0 6px" }}>
-                  Placering
-                </p>
-                <span style={{ fontSize: "15px", color: "rgba(255,255,255,0.6)" }}>Danmark</span>
-              </div>
-            </div>
-          </div>
+          Lad os bygge noget fedt.
+        </h3>
+        <p
+          style={{
+            fontSize: "15px",
+            color: "#888",
+            lineHeight: 1.8,
+            margin: "0 0 56px",
+          }}
+        >
+          Har du et projekt i tankerne? Skriv til os og vi vender tilbage inden for 24 timer.
+        </p>
 
-          {/* Right: form */}
+        {/* Form */}
+        {status === "success" ? (
           <div>
-            {status === "success" ? (
-              <div style={{ paddingTop: "40px" }}>
-                <div
-                  style={{
-                    width: "48px",
-                    height: "48px",
-                    background: "#1647FB",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: "24px",
-                  }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                </div>
-                <h4 style={{ fontSize: "24px", fontWeight: 600, color: "#fff", margin: "0 0 8px", letterSpacing: "-0.02em" }}>Besked sendt!</h4>
-                <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.4)", margin: 0 }}>Vi vender tilbage hurtigst muligt.</p>
-                <button
-                  onClick={() => setStatus("idle")}
-                  style={{ marginTop: "32px", background: "none", border: "none", color: "#1647FB", fontSize: "13px", fontFamily: "Montserrat, sans-serif", fontWeight: 600, letterSpacing: "0.08em", cursor: "pointer", padding: 0, textTransform: "uppercase" }}
-                >
-                  Send ny besked →
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit}>
-                <label style={{ ...labelStyle, marginTop: 0 }}>Navn</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  required
-                  placeholder="Dit navn"
-                  style={{
-                    ...inputStyle,
-                    borderBottomColor: "#333",
-                  }}
-                  onFocus={(e) => (e.target.style.borderBottomColor = "#1647FB")}
-                  onBlur={(e) => (e.target.style.borderBottomColor = "#333")}
-                />
-                <label style={labelStyle}>Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  required
-                  placeholder="din@email.dk"
-                  style={{
-                    ...inputStyle,
-                    borderBottomColor: "#333",
-                  }}
-                  onFocus={(e) => (e.target.style.borderBottomColor = "#1647FB")}
-                  onBlur={(e) => (e.target.style.borderBottomColor = "#333")}
-                />
-                <label style={labelStyle}>Besked</label>
-                <textarea
-                  name="message"
-                  value={form.message}
-                  onChange={handleChange}
-                  required
-                  rows={5}
-                  placeholder="Fortæl om dit projekt..."
-                  style={{
-                    ...inputStyle,
-                    resize: "none",
-                    borderBottomColor: "#333",
-                  }}
-                  onFocus={(e) => (e.target.style.borderBottomColor = "#1647FB")}
-                  onBlur={(e) => (e.target.style.borderBottomColor = "#333")}
-                />
-                {status === "error" && (
-                  <p style={{ color: "#ff4444", fontSize: "13px", marginTop: "16px" }}>{errorMsg}</p>
-                )}
-                <button
-                  type="submit"
-                  disabled={status === "loading"}
-                  style={{
-                    marginTop: "40px",
-                    width: "100%",
-                    padding: "18px",
-                    background: "#1647FB",
-                    color: "#fff",
-                    border: "none",
-                    fontSize: "11px",
-                    fontFamily: "Montserrat, sans-serif",
-                    fontWeight: 600,
-                    letterSpacing: "0.12em",
-                    textTransform: "uppercase",
-                    cursor: status === "loading" ? "not-allowed" : "pointer",
-                    opacity: status === "loading" ? 0.6 : 1,
-                    transition: "opacity 0.2s",
-                  }}
-                  onMouseEnter={(e) => status !== "loading" && (e.currentTarget.style.opacity = "0.8")}
-                  onMouseLeave={(e) => (e.currentTarget.style.opacity = status === "loading" ? "0.6" : "1")}
-                >
-                  {status === "loading" ? "Sender..." : "Send besked"}
-                </button>
-              </form>
-            )}
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                background: "#1647FB",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: "24px",
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <h4 style={{ fontSize: "24px", fontWeight: 600, color: "#080808", margin: "0 0 8px", letterSpacing: "-0.02em" }}>Besked sendt!</h4>
+            <p style={{ fontSize: "15px", color: "#888", margin: 0 }}>Vi vender tilbage hurtigst muligt.</p>
+            <button
+              onClick={() => setStatus("idle")}
+              style={{ marginTop: "32px", background: "none", border: "none", color: "#1647FB", fontSize: "13px", fontFamily: "Montserrat, sans-serif", fontWeight: 600, letterSpacing: "0.08em", cursor: "pointer", padding: 0, textTransform: "uppercase" }}
+            >
+              Send ny besked →
+            </button>
           </div>
-        </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <label style={{ ...labelStyle, marginTop: 0 }}>Navn</label>
+            <input
+              type="text"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              required
+              placeholder="Dit navn"
+              style={inputStyle}
+              onFocus={(e) => (e.target.style.borderBottomColor = "#1647FB")}
+              onBlur={(e) => (e.target.style.borderBottomColor = "#ebebeb")}
+            />
+            <label style={labelStyle}>Email</label>
+            <input
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              required
+              placeholder="din@email.dk"
+              style={inputStyle}
+              onFocus={(e) => (e.target.style.borderBottomColor = "#1647FB")}
+              onBlur={(e) => (e.target.style.borderBottomColor = "#ebebeb")}
+            />
+            <label style={labelStyle}>Besked</label>
+            <textarea
+              name="message"
+              value={form.message}
+              onChange={handleChange}
+              required
+              rows={5}
+              placeholder="Fortæl om dit projekt..."
+              style={{ ...inputStyle, resize: "none" }}
+              onFocus={(e) => (e.target.style.borderBottomColor = "#1647FB")}
+              onBlur={(e) => (e.target.style.borderBottomColor = "#ebebeb")}
+            />
+            {status === "error" && (
+              <p style={{ color: "#ff4444", fontSize: "13px", marginTop: "16px" }}>{errorMsg}</p>
+            )}
+            <button
+              type="submit"
+              disabled={status === "loading"}
+              style={{
+                marginTop: "40px",
+                width: "100%",
+                padding: "18px",
+                background: "#1647FB",
+                color: "#fff",
+                border: "none",
+                fontSize: "11px",
+                fontFamily: "Montserrat, sans-serif",
+                fontWeight: 600,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                cursor: status === "loading" ? "not-allowed" : "pointer",
+                opacity: status === "loading" ? 0.6 : 1,
+                transition: "opacity 0.2s",
+              }}
+              onMouseEnter={(e) => status !== "loading" && (e.currentTarget.style.opacity = "0.8")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = status === "loading" ? "0.6" : "1")}
+            >
+              {status === "loading" ? "Sender..." : "Send besked"}
+            </button>
+          </form>
+        )}
       </div>
     </section>
   );

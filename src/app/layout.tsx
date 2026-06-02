@@ -19,7 +19,9 @@ export default function RootLayout({
       <body>
         <Header />
         {children}
-        <Footer />
+        <div style={{ background: "#1647FB" }}>
+          <Footer />
+        </div>
       </body>
     </html>
   );
