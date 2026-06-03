@@ -17,17 +17,16 @@ export default function Footer() {
         marginTop: "0",
       }}
     >
-      {/* Decorative half-circle rising from bottom */}
+      {/* Decorative wide ellipse arc */}
       <div
         style={{
           position: "absolute",
-          width: "700px",
-          height: "700px",
+          width: "130%",
+          height: "600px",
           borderRadius: "50%",
           background: "#054FFF",
-          bottom: "-350px",
-          left: "50%",
-          transform: "translateX(-50%)",
+          top: "90px",
+          left: "-15%",
           pointerEvents: "none",
         }}
       />
