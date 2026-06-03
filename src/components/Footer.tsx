@@ -10,7 +10,7 @@ export default function Footer() {
     <footer
       style={{
         background: "#1647FB",
-        borderRadius: "80px 80px 0 0",
+        borderRadius: "100px 100px 0 0",
         position: "relative",
         overflow: "hidden",
         padding: "64px 80px 48px",
@@ -21,12 +21,12 @@ export default function Footer() {
       <div
         style={{
           position: "absolute",
-          width: "520px",
-          height: "520px",
+          width: "100%",
+          height: "100%",
           borderRadius: "50%",
-          background: "rgba(255,255,255,0.04)",
-          right: "-80px",
-          bottom: "-120px",
+          background: "#054FFF",
+          top: "163px",
+          left: "107px",
           pointerEvents: "none",
         }}
       />
