@@ -17,27 +17,28 @@ export default function Footer() {
         marginTop: "0",
       }}
     >
-      {/* Decorative circle */}
+      {/* Decorative half-circle rising from bottom */}
       <div
         style={{
           position: "absolute",
-          width: "100%",
-          height: "100%",
+          width: "700px",
+          height: "700px",
           borderRadius: "50%",
           background: "#054FFF",
-          top: "163px",
-          left: "107px",
+          bottom: "-350px",
+          left: "50%",
+          transform: "translateX(-50%)",
           pointerEvents: "none",
         }}
       />
 
       {/* Logo */}
-      <div style={{ marginBottom: "40px" }}>
+      <div style={{ marginBottom: "40px", position: "relative", zIndex: 1 }}>
         <Logo style={{ height: "72px", width: "auto", filter: "brightness(0) invert(1)" }} />
       </div>
 
       {/* Kundeservice */}
-      <div style={{ marginBottom: "80px" }}>
+      <div style={{ marginBottom: "80px", position: "relative", zIndex: 1 }}>
         <p
           style={{
             fontSize: "13px",
@@ -85,6 +86,8 @@ export default function Footer() {
         style={{
           borderTop: "1px solid rgba(255,255,255,0.12)",
           paddingTop: "24px",
+          position: "relative",
+          zIndex: 1,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
