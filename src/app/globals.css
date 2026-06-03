@@ -35,3 +35,8 @@ input, textarea {
   -webkit-appearance: none;
   border-radius: 0;
 }
+
+@keyframes chatDotBounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-5px); }
+}

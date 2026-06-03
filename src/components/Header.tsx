@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import Logo from "./Logo";
 
 const navLinks = [
-  { href: "#ydelser", label: "Ydelser", scroll: true },
-  { href: "#om", label: "Om", scroll: true },
-  { href: "/kontakt", label: "Kontakt", scroll: false },
+  { href: "#ydelser", label: "Ydelser", scroll: true, external: false },
+  { href: "#om", label: "Om", scroll: true, external: false },
+  { href: "https://kundeservice.duckert.design", label: "Kontakt", scroll: false, external: true },
 ];
 
 export default function Header() {
@@ -36,7 +36,9 @@ export default function Header() {
 
   const handleNavClick = (link: typeof navLinks[0]) => {
     setMenuOpen(false);
-    if (link.scroll) {
+    if (link.external) {
+      window.open(link.href, "_blank", "noopener,noreferrer");
+    } else if (link.scroll) {
       if (window.location.pathname !== "/") {
         window.location.href = "/" + link.href;
         return;

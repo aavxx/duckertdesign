@@ -64,8 +64,10 @@ export default function Footer() {
           >
             hej@duckert.design
           </a>
-          <Link
-            href="/kontakt"
+          <a
+            href="https://kundeservice.duckert.design"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               fontSize: "16px",
               color: "#ffffff",
@@ -76,7 +78,7 @@ export default function Footer() {
             onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
           >
             Kontakt Formular
-          </Link>
+          </a>
         </div>
       </div>
 
