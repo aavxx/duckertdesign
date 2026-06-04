@@ -314,10 +314,11 @@ export default function KundeservicePage() {
         {/* Mangler du svar? */}
         <section
           style={{
-            background: "#1647FB",
+            background: "#ffffff",
             marginTop: "80px",
             padding: "80px 40px",
             textAlign: "center",
+            borderTop: "1px solid rgba(22,71,251,0.12)",
           }}
         >
           <p
@@ -326,7 +327,7 @@ export default function KundeservicePage() {
               fontWeight: 600,
               letterSpacing: "0.15em",
               textTransform: "uppercase",
-              color: "rgba(255,255,255,0.5)",
+              color: "rgba(22,71,251,0.5)",
               margin: "0 0 16px",
             }}
           >
@@ -338,7 +339,7 @@ export default function KundeservicePage() {
               fontWeight: 600,
               letterSpacing: "-0.025em",
               lineHeight: 1.1,
-              color: "#ffffff",
+              color: "#080808",
               margin: "0 0 16px",
             }}
           >
@@ -347,7 +348,7 @@ export default function KundeservicePage() {
           <p
             style={{
               fontSize: "15px",
-              color: "rgba(255,255,255,0.7)",
+              color: "rgba(8,8,8,0.5)",
               lineHeight: 1.8,
               margin: "0 0 40px",
               maxWidth: "480px",
@@ -360,8 +361,8 @@ export default function KundeservicePage() {
           <button
             onClick={() => setShowModal(true)}
             style={{
-              background: "#ffffff",
-              color: "#1647FB",
+              background: "#1647FB",
+              color: "#ffffff",
               border: "none",
               padding: "16px 40px",
               fontSize: "11px",
