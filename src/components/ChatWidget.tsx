@@ -39,8 +39,12 @@ function parseContent(text: string): React.ReactNode[] {
   return nodes;
 }
 
-export default function ChatWidget() {
+export default function ChatWidget({ externalOpen }: { externalOpen?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (externalOpen) setIsOpen(true);
+  }, [externalOpen]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
