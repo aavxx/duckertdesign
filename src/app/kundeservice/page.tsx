@@ -940,7 +940,7 @@ export default function KundeservicePage() {
         </div>
       )}
 
-      <ChatWidget externalOpen={chatOpen} />
+      <ChatWidget externalOpen={chatOpen} onClose={() => setChatOpen(false)} />
     </>
   );
 }
