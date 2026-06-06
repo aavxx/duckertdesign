@@ -209,7 +209,7 @@ export default function KundeservicePage() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
-  const triggerSearch = (query: string) => {
+  const triggerSearch = async (query: string) => {
     if (!query.trim()) return;
     if (timerRef.current) clearTimeout(timerRef.current);
     setSearchState("loading");
@@ -217,31 +217,43 @@ export default function KundeservicePage() {
     setShowFullAnswer(false);
     setFeedback(null);
 
-    timerRef.current = setTimeout(() => {
-      const q = query.toLowerCase();
-      const match = FAQS.find(
-        (f) => f.q.toLowerCase().includes(q) || f.a.toLowerCase().includes(q)
-      );
-      const result = match ?? {
-        q: query.charAt(0).toUpperCase() + query.slice(1),
-        a: "Vi har ikke specifik information om dette emne endnu. Kontakt os direkte, så hjælper vi dig med en personlig snak om dit projekt og dine behov.",
-      };
-      setSearchResult(result);
-      setSearchState("result");
-      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 80);
-    }, 2000);
+    const minDelay = new Promise<void>((r) => setTimeout(r, 1600));
+
+    try {
+      const [, data] = await Promise.all([
+        minDelay,
+        fetch("/api/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query }),
+        }).then((r) => r.json()),
+      ]);
+
+      setSearchResult({
+        q: data.title ?? query,
+        a: data.answer ?? "Beklager, prøv igen.",
+      });
+    } catch {
+      setSearchResult({
+        q: query,
+        a: "Noget gik galt. Prøv igen eller kontakt os på hej@duckert.design.",
+      });
+    }
+
+    setSearchState("result");
+    setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 80);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    triggerSearch(searchQuery);
+    void triggerSearch(searchQuery);
   };
 
   const handleChip = (label: string) => {
     const idx = POPULAR_MAP[label];
     const faq = FAQS[idx];
     setSearchQuery(faq.q);
-    triggerSearch(faq.q);
+    void triggerSearch(faq.q);
   };
 
   const filtered = useMemo(() => {
