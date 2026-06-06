@@ -3,6 +3,27 @@
 import { useEffect, useRef, useState } from "react";
 
 const LS_KEY = "duckert-chat-v1";
+const EXPIRY_KEY = "duckert-chat-expiry";
+const EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
+
+function isExpired(): boolean {
+  if (typeof window === "undefined") return false;
+  const expiry = parseInt(localStorage.getItem(EXPIRY_KEY) ?? "0", 10);
+  return expiry > 0 && Date.now() > expiry;
+}
+
+function touchExpiry(): void {
+  if (typeof window === "undefined") return;
+  try { localStorage.setItem(EXPIRY_KEY, String(Date.now() + EXPIRY_MS)); } catch {}
+}
+
+function clearChat(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(LS_KEY);
+    localStorage.removeItem(EXPIRY_KEY);
+  } catch {}
+}
 
 type Message = {
   id: string;
@@ -24,6 +45,7 @@ const GREETING =
 
 function loadMessages(): Message[] {
   if (typeof window === "undefined") return [];
+  if (isExpired()) { clearChat(); return []; }
   try {
     const raw = localStorage.getItem(LS_KEY);
     return raw ? (JSON.parse(raw) as Message[]) : [];
@@ -36,6 +58,7 @@ function saveMessages(msgs: Message[]): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(LS_KEY, JSON.stringify(msgs));
+    touchExpiry();
   } catch {}
 }
 
@@ -192,6 +215,7 @@ export default function ChatWidget({
   useEffect(() => {
     if (!isOpen || hasInitialized.current) return;
     hasInitialized.current = true;
+    touchExpiry();
 
     if (messages.length > 0) {
       setTimeout(() => inputRef.current?.focus(), 120);
@@ -199,6 +223,7 @@ export default function ChatWidget({
     }
 
     setTimeout(() => {
+      touchExpiry();
       setMessages([{ id: "privacy", role: "assistant", content: "", isPrivacyCard: true }]);
 
       setTimeout(() => {
