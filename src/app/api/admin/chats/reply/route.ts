@@ -1,6 +1,11 @@
 import { requireAdminKey } from "@/lib/auth";
+import { corsHeaders } from "@/lib/cors";
 import { redis } from "@/lib/redis";
 import type { ChatSession, ChatMessage, AdminEvent } from "@/lib/types";
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: corsHeaders() });
+}
 
 export async function POST(req: Request) {
   const authErr = requireAdminKey(req);
@@ -10,15 +15,15 @@ export async function POST(req: Request) {
   try {
     ({ sessionId, content } = await req.json());
   } catch {
-    return new Response("Bad request", { status: 400 });
+    return new Response("Bad request", { status: 400, headers: corsHeaders() });
   }
 
   if (!sessionId || !content?.trim()) {
-    return new Response("Missing sessionId or content", { status: 400 });
+    return new Response("Missing sessionId or content", { status: 400, headers: corsHeaders() });
   }
 
   const raw = await redis.get<string>(`chat:session:${sessionId}`);
-  if (!raw) return new Response("Session not found", { status: 404 });
+  if (!raw) return new Response("Session not found", { status: 404, headers: corsHeaders() });
 
   const session: ChatSession = typeof raw === "string" ? JSON.parse(raw) : raw as ChatSession;
 
@@ -49,5 +54,5 @@ export async function POST(req: Request) {
   };
   await redis.publish("admin:events", JSON.stringify(event));
 
-  return Response.json({ ok: true, messageId: msg.id });
+  return Response.json({ ok: true, messageId: msg.id }, { headers: corsHeaders() });
 }

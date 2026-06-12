@@ -1,9 +1,14 @@
 import { requireAdminKey } from "@/lib/auth";
+import { corsHeaders } from "@/lib/cors";
 import { Redis } from "@upstash/redis";
 
 export const dynamic = "force-dynamic";
 
 const enc = new TextEncoder();
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: corsHeaders() });
+}
 
 export async function GET(req: Request) {
   const authErr = requireAdminKey(req);
@@ -58,6 +63,7 @@ export async function GET(req: Request) {
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
       "X-Accel-Buffering": "no",
+      ...corsHeaders(),
     },
   });
 }

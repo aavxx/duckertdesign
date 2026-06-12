@@ -1,5 +1,10 @@
 import { requireAdminKey } from "@/lib/auth";
+import { corsHeaders } from "@/lib/cors";
 import nodemailer from "nodemailer";
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: corsHeaders() });
+}
 
 export async function POST(req: Request) {
   const authErr = requireAdminKey(req);
@@ -9,11 +14,11 @@ export async function POST(req: Request) {
   try {
     ({ to, subject, body, inReplyTo } = await req.json());
   } catch {
-    return new Response("Bad request", { status: 400 });
+    return new Response("Bad request", { status: 400, headers: corsHeaders() });
   }
 
   if (!to || !subject || !body) {
-    return new Response("Missing to, subject, or body", { status: 400 });
+    return new Response("Missing to, subject, or body", { status: 400, headers: corsHeaders() });
   }
 
   const transporter = nodemailer.createTransport({
@@ -34,9 +39,9 @@ export async function POST(req: Request) {
       text: body,
       ...(inReplyTo && { inReplyTo, references: inReplyTo }),
     });
-    return Response.json({ ok: true });
+    return Response.json({ ok: true }, { headers: corsHeaders() });
   } catch (err) {
     console.error("SMTP send error:", err);
-    return new Response("SMTP error", { status: 502 });
+    return new Response("SMTP error", { status: 502, headers: corsHeaders() });
   }
 }

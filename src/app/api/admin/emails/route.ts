@@ -1,5 +1,10 @@
 import { requireAdminKey } from "@/lib/auth";
+import { corsHeaders } from "@/lib/cors";
 import { ImapFlow } from "imapflow";
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: corsHeaders() });
+}
 
 export async function GET(req: Request) {
   const authErr = requireAdminKey(req);
@@ -50,9 +55,9 @@ export async function GET(req: Request) {
     }
 
     await client.logout();
-    return Response.json(emails.reverse());
+    return Response.json(emails.reverse(), { headers: corsHeaders() });
   } catch (err) {
     console.error("IMAP fetch error:", err);
-    return new Response("IMAP error", { status: 502 });
+    return new Response("IMAP error", { status: 502, headers: corsHeaders() });
   }
 }
