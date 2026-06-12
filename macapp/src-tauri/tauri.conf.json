@@ -11,6 +11,9 @@
   },
   "app": {
     "withGlobalTauri": false,
+    "security": {
+      "csp": "default-src 'self' tauri: asset:; connect-src 'self' https://duckert.design; img-src 'self' data: tauri: asset: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+    },
     "windows": [
       {
         "title": "Duckert Admin",
