@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 const LS_KEY = "duckert-chat-v1";
 const EXPIRY_KEY = "duckert-chat-expiry";
+const SESSION_KEY = "duckert-chat-session-id";
 const EXPIRY_MS = 10 * 60 * 1000;
 
 function isExpired(): boolean {
@@ -19,12 +20,16 @@ function touchExpiry(): void {
 
 function clearChat(): void {
   if (typeof window === "undefined") return;
-  try { localStorage.removeItem(LS_KEY); localStorage.removeItem(EXPIRY_KEY); } catch {}
+  try {
+    localStorage.removeItem(LS_KEY);
+    localStorage.removeItem(EXPIRY_KEY);
+    localStorage.removeItem(SESSION_KEY);
+  } catch {}
 }
 
 type Message = {
   id: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "admin";
   content: string;
   isPrivacyCard?: boolean;
   quickReplies?: string[];
@@ -34,7 +39,7 @@ const INITIAL_QUICK_REPLIES = [
   "Hvad koster en hjemmeside?",
   "Hvor lang tid tager det?",
   "Laver I webshops?",
-  "Hvad er processen?",
+  "Tal med en person",
 ];
 
 const GREETING =
@@ -154,10 +159,20 @@ export default function ChatWidget({
   });
   const [isLoading, setIsLoading] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [waitingForHuman, setWaitingForHuman] = useState(false);
 
   const hasInitialized = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const sessionIdRef = useRef<string | null>(null);
+  const adminSseRef = useRef<EventSource | null>(null);
+
+  // Load persisted sessionId
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionIdRef.current = localStorage.getItem(SESSION_KEY);
+    }
+  }, []);
 
   useEffect(() => { if (messages.length > 0) saveMessages(messages); }, [messages]);
   useEffect(() => { if (externalOpen) setIsOpen(true); }, [externalOpen]);
@@ -174,6 +189,8 @@ export default function ChatWidget({
 
     if (messages.length > 0) {
       setTimeout(() => inputRef.current?.focus(), 120);
+      // Re-open admin reply SSE if we have a session
+      if (sessionIdRef.current) subscribeAdminReplies(sessionIdRef.current);
       return;
     }
 
@@ -192,11 +209,75 @@ export default function ChatWidget({
     }, 500);
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Clean up SSE on unmount
+  useEffect(() => {
+    return () => {
+      adminSseRef.current?.close();
+    };
+  }, []);
+
+  function subscribeAdminReplies(sid: string) {
+    adminSseRef.current?.close();
+    const es = new EventSource(`/api/chat/events?sessionId=${sid}`);
+    es.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        const adminMsg: Message = {
+          id: msg.id ?? Date.now().toString(),
+          role: "admin",
+          content: msg.content,
+        };
+        setMessages((prev) => [...prev, adminMsg]);
+        setWaitingForHuman(false);
+      } catch {}
+    };
+    adminSseRef.current = es;
+  }
+
   const handleClose = () => { setIsOpen(false); onClose?.(); };
 
   const sendMessage = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
+
+    // Human handoff
+    if (trimmed === "Tal med en person") {
+      setShowQuickReplies(false);
+      const userMsg: Message = { id: Date.now().toString(), role: "user", content: trimmed };
+      setMessages((prev) => [...prev, userMsg]);
+      setInputValue("");
+      setWaitingForHuman(true);
+
+      const sid = sessionIdRef.current ?? undefined;
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [],
+            userMessage: trimmed,
+            sessionId: sid,
+            humanHandoff: true,
+          }),
+        });
+        const data = await res.json();
+        const newSid = data.sessionId ?? res.headers.get("X-Session-Id") ?? sid;
+        if (newSid && newSid !== sessionIdRef.current) {
+          sessionIdRef.current = newSid;
+          try { localStorage.setItem(SESSION_KEY, newSid); } catch {}
+          subscribeAdminReplies(newSid);
+        } else if (newSid) {
+          subscribeAdminReplies(newSid);
+        }
+      } catch {}
+
+      setMessages((prev) => [...prev, {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: "Tak! Vi forbinder dig med et menneske nu. Du vil modtage svar her i chatten snarest. ✉️",
+      }]);
+      return;
+    }
 
     setShowQuickReplies(false);
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: trimmed };
@@ -209,11 +290,20 @@ export default function ChatWidget({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: messages.filter((m) => !m.isPrivacyCard).map((m) => ({ role: m.role, content: m.content })),
+          messages: messages.filter((m) => !m.isPrivacyCard && m.role !== "admin").map((m) => ({ role: m.role === "admin" ? "assistant" : m.role, content: m.content })),
           userMessage: trimmed,
+          sessionId: sessionIdRef.current ?? undefined,
         }),
       });
       if (!res.ok || !res.body) throw new Error("bad");
+
+      // Capture session ID from response header
+      const newSid = res.headers.get("X-Session-Id");
+      if (newSid && newSid !== sessionIdRef.current) {
+        sessionIdRef.current = newSid;
+        try { localStorage.setItem(SESSION_KEY, newSid); } catch {}
+        subscribeAdminReplies(newSid);
+      }
 
       const reader = res.body.getReader();
       const dec = new TextDecoder();
@@ -312,7 +402,7 @@ export default function ChatWidget({
                 fontFamily: "Montserrat, sans-serif",
                 whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
               }}>
-                Duckert Design AI Assistent
+                {waitingForHuman ? "Forbinder med menneske…" : "Duckert Design AI Assistent"}
               </span>
             </div>
 
@@ -360,6 +450,23 @@ export default function ChatWidget({
                       padding: "11px 16px", borderRadius: "18px 18px 4px 18px",
                       fontSize: "14px", fontFamily: "Montserrat, sans-serif", lineHeight: 1.55,
                     }}>
+                      {parseContent(msg.content)}
+                    </div>
+                  </div>
+                );
+              }
+
+              // Admin message — distinct styling
+              if (msg.role === "admin") {
+                return (
+                  <div key={msg.id} style={{ alignSelf: "flex-start", maxWidth: "88%", animation: "cwMsgIn 0.25s ease both" }}>
+                    <div style={{
+                      background: "#EBF0FF", color: "#111",
+                      border: "1.5px solid rgba(22,71,251,0.25)",
+                      padding: "12px 16px", borderRadius: "18px 18px 18px 4px",
+                      fontSize: "14px", fontFamily: "Montserrat, sans-serif", lineHeight: 1.6,
+                    }}>
+                      <span style={{ fontSize: "11px", fontWeight: 700, color: "#1647FB", display: "block", marginBottom: "4px" }}>DUCKERT DESIGN</span>
                       {parseContent(msg.content)}
                     </div>
                   </div>
@@ -440,7 +547,7 @@ export default function ChatWidget({
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage(inputValue)}
                 disabled={isLoading}
-                placeholder={isLoading ? "Venter på svar…" : "Skriv en besked…"}
+                placeholder={isLoading ? "Venter på svar…" : waitingForHuman ? "Venter på svar fra teamet…" : "Skriv en besked…"}
                 style={{
                   flex: 1, background: "transparent", border: "none", outline: "none",
                   fontSize: "14px", fontFamily: "Montserrat, sans-serif",
@@ -448,7 +555,6 @@ export default function ChatWidget({
                 }}
               />
 
-              {/* Paperclip when empty, send arrow when typing */}
               {inputValue.trim() ? (
                 <button
                   className="cw-send-btn"
