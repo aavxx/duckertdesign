@@ -11,59 +11,65 @@ export default function Hero() {
     <section
       style={{
         minHeight: "100vh",
-        paddingTop: "64px",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "flex-end",
-        padding: "64px 40px 60px",
-        maxWidth: "1400px",
+        padding: "0 40px",
+        maxWidth: "1200px",
         margin: "0 auto",
         boxSizing: "border-box",
         width: "100%",
       }}
     >
-      {/* Top bar */}
+      {/* Top labels */}
       <div
         style={{
-          position: "absolute",
-          top: "64px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          padding: "20px 40px",
+          paddingTop: "120px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          maxWidth: "1400px",
-          width: "100%",
         }}
       >
-        <span style={{ fontSize: "11px", letterSpacing: "0.15em", color: "#aaa", textTransform: "uppercase", fontWeight: 500 }}>
+        <span
+          style={{
+            fontSize: "10px",
+            letterSpacing: "0.16em",
+            color: "#bbb",
+            textTransform: "uppercase",
+            fontWeight: 600,
+          }}
+        >
           Duckert Design Studio
         </span>
-        <span style={{ fontSize: "11px", letterSpacing: "0.15em", color: "#aaa", textTransform: "uppercase", fontWeight: 500 }}>
-          © 2026
+        <span
+          style={{
+            fontSize: "10px",
+            letterSpacing: "0.16em",
+            color: "#bbb",
+            textTransform: "uppercase",
+            fontWeight: 600,
+          }}
+        >
+          Est. 2024
         </span>
       </div>
 
-      {/* Main headline */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", paddingTop: "80px" }}>
+      {/* Headline — centered vertically */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
         <h1
           style={{
-            fontSize: "clamp(52px, 9vw, 140px)",
-            fontWeight: 600,
+            fontSize: "clamp(48px, 8vw, 96px)",
+            fontWeight: 700,
             letterSpacing: "-0.03em",
-            lineHeight: 0.95,
+            lineHeight: 1,
             color: "#080808",
             margin: 0,
-            maxWidth: "900px",
           }}
         >
-          Design der
-          <br />
+          Design der{" "}
           <em
             style={{
               fontStyle: "italic",
-              fontWeight: 200,
+              fontWeight: 300,
               color: "#1647FB",
             }}
           >
@@ -80,7 +86,7 @@ export default function Hero() {
           justifyContent: "space-between",
           gap: "40px",
           flexWrap: "wrap",
-          marginTop: "80px",
+          paddingBottom: "60px",
           paddingTop: "32px",
           borderTop: "1px solid #ebebeb",
         }}
@@ -89,26 +95,25 @@ export default function Hero() {
           style={{
             fontSize: "15px",
             color: "#888",
-            fontWeight: 400,
-            lineHeight: 1.7,
-            maxWidth: "420px",
+            lineHeight: 1.75,
+            maxWidth: "360px",
             margin: 0,
           }}
         >
-          Vi designer og udvikler professionelle hjemmesider til virksomheder, der ønsker et stærkt, stilrent og moderne udtryk online.
+          Vi designer og udvikler professionelle hjemmesider til virksomheder der vil mere online.
         </p>
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div style={{ display: "flex", gap: "12px", flexShrink: 0 }}>
           <button
             onClick={() => router.push("/kontakt")}
             style={{
-              padding: "14px 32px",
+              padding: "14px 28px",
               background: "#1647FB",
               color: "#fff",
               border: "none",
-              fontSize: "11px",
+              fontSize: "10px",
               fontFamily: "Montserrat, sans-serif",
-              fontWeight: 600,
-              letterSpacing: "0.12em",
+              fontWeight: 700,
+              letterSpacing: "0.14em",
               textTransform: "uppercase",
               cursor: "pointer",
               transition: "opacity 0.2s",
@@ -121,20 +126,20 @@ export default function Hero() {
           <button
             onClick={() => scrollTo("#ydelser")}
             style={{
-              padding: "14px 32px",
+              padding: "14px 28px",
               background: "transparent",
               color: "#080808",
-              border: "1px solid #ebebeb",
-              fontSize: "11px",
+              border: "1px solid #e0e0e0",
+              fontSize: "10px",
               fontFamily: "Montserrat, sans-serif",
-              fontWeight: 600,
-              letterSpacing: "0.12em",
+              fontWeight: 700,
+              letterSpacing: "0.14em",
               textTransform: "uppercase",
               cursor: "pointer",
               transition: "border-color 0.2s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#080808")}
-            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#ebebeb")}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#aaa")}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e0e0e0")}
           >
             Se ydelser
           </button>

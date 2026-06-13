@@ -202,20 +202,18 @@ export default function KundeservicePage() {
         .ks-feedback-btn:hover { border-color: #1647FB !important; color: #1647FB !important; }
         .ks-soeg-btn:hover { opacity: 0.85 !important; }
         .ks-vis-btn:hover { background: #1647FB !important; color: #fff !important; }
-        .ks-topic-card:hover { border-color: #1647FB !important; box-shadow: 0 4px 24px rgba(22,71,251,0.1) !important; transform: translateY(-2px); }
-        .ks-topic-card { transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s; }
-        .ks-chat-bubble:hover { transform: scale(1.08) !important; box-shadow: 0 6px 32px rgba(22,71,251,0.5) !important; }
+.ks-chat-bubble:hover { transform: scale(1.08) !important; box-shadow: 0 6px 32px rgba(22,71,251,0.5) !important; }
       `}</style>
 
       <main style={{ paddingTop: "96px", minHeight: "100vh", background: "#ffffff" }}>
 
         {/* ── Hero & Search ── */}
         <section style={{ padding: "80px 40px 0", maxWidth: "760px", margin: "0 auto" }}>
-          <p style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(22,71,251,0.5)", margin: "0 0 16px" }}>
+          <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(22,71,251,0.5)", display: "block", margin: "0 0 20px" }}>
             Kundeservice
-          </p>
-          <h1 style={{ fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 600, letterSpacing: "-0.025em", lineHeight: 1.1, color: "#080808", margin: "0 0 40px" }}>
-            Hvordan kan vi hjælpe dig?
+          </span>
+          <h1 style={{ fontSize: "clamp(32px, 5vw, 64px)", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1, color: "#080808", margin: "0 0 40px" }}>
+            Hvordan kan vi hjælpe?
           </h1>
 
           {/* Search bar */}
@@ -299,37 +297,13 @@ export default function KundeservicePage() {
           )}
         </section>
 
-        {/* ── Populære emner ── */}
-        <section style={{ maxWidth: "760px", margin: "0 auto", padding: "0 40px 72px" }}>
-          <div style={{ borderBottom: "1px solid rgba(22,71,251,0.12)", paddingBottom: "16px", marginBottom: "28px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <h2 style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(22,71,251,0.5)", margin: 0 }}>
-              Populære emner
-            </h2>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: "12px" }}>
-            {TOPICS.map((topic) => (
-              <button key={topic.title} className="ks-topic-card"
-                onClick={() => { setSearchQuery(topic.query); void triggerSearch(topic.query); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                style={{ background: "#fff", border: "1px solid rgba(22,71,251,0.12)", borderRadius: "14px", padding: "20px", cursor: "pointer", textAlign: "left", display: "flex", flexDirection: "column", gap: "10px", fontFamily: "Montserrat, sans-serif" }}>
-                <div style={{ width: "40px", height: "40px", background: "rgba(22,71,251,0.07)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  {topic.icon}
-                </div>
-                <div>
-                  <div style={{ fontSize: "14px", fontWeight: 700, color: "#080808", marginBottom: "4px" }}>{topic.title}</div>
-                  <div style={{ fontSize: "12px", color: "rgba(8,8,8,0.45)" }}>{topic.desc}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-
         {/* ── Fik du ikke svar? ── */}
         <section style={{ borderTop: "1px solid rgba(22,71,251,0.1)", background: "#fafafa", padding: "64px 40px" }}>
           <div style={{ maxWidth: "760px", margin: "0 auto" }}>
             <p style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(22,71,251,0.5)", margin: "0 0 12px" }}>
               Hjælp
             </p>
-            <h2 style={{ fontSize: "clamp(24px, 3.5vw, 40px)", fontWeight: 600, letterSpacing: "-0.025em", color: "#080808", margin: "0 0 12px" }}>
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 48px)", fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 0.95, color: "#080808", margin: "0 0 16px" }}>
               Fik du ikke svar?
             </h2>
             <p style={{ fontSize: "15px", color: "rgba(8,8,8,0.5)", lineHeight: 1.7, margin: "0 0 36px", maxWidth: "460px" }}>

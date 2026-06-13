@@ -1,73 +1,94 @@
 "use client";
 
+import Link from "next/link";
+
 export default function About() {
   return (
     <section
       id="om"
       style={{
+        background: "#ffffff",
         padding: "120px 40px",
-        maxWidth: "1400px",
-        margin: "0 auto",
       }}
     >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "baseline",
-          justifyContent: "space-between",
-          marginBottom: "64px",
-          borderBottom: "1px solid #ebebeb",
-          paddingBottom: "24px",
-        }}
-      >
-        <h2
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+        <div
           style={{
-            fontSize: "11px",
-            fontWeight: 600,
-            letterSpacing: "0.15em",
-            textTransform: "uppercase",
-            color: "#aaa",
-            margin: 0,
+            paddingBottom: "24px",
+            borderBottom: "1px solid #ebebeb",
+            marginBottom: "80px",
           }}
         >
-          Om os
-        </h2>
-      </div>
+          <span
+            style={{
+              fontSize: "10px",
+              fontWeight: 700,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: "#bbb",
+            }}
+          >
+            Om os
+          </span>
+        </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "80px",
-          alignItems: "start",
-        }}
-      >
-        {/* Left: big statement */}
-        <p
+        <div
           style={{
-            fontSize: "clamp(28px, 3.5vw, 52px)",
-            fontWeight: 600,
-            letterSpacing: "-0.025em",
-            lineHeight: 1.15,
-            color: "#080808",
-            margin: 0,
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "80px",
+            alignItems: "start",
           }}
         >
-          Vi tror på at godt design løser problemer — ikke bare ser godt ud.
-        </p>
+          <h2
+            style={{
+              fontSize: "clamp(28px, 3.5vw, 52px)",
+              fontWeight: 700,
+              letterSpacing: "-0.03em",
+              lineHeight: 1.1,
+              color: "#080808",
+              margin: 0,
+            }}
+          >
+            Vi tror på at godt design løser problemer —{" "}
+            <em style={{ fontStyle: "italic", fontWeight: 300, color: "#1647FB" }}>
+              ikke bare ser godt ud.
+            </em>
+          </h2>
 
-        {/* Right: description */}
-        <p
-          style={{
-            fontSize: "15px",
-            color: "#888",
-            lineHeight: 1.9,
-            margin: 0,
-          }}
-        >
-          Vi designer og udvikler professionelle hjemmesider til virksomheder, der ønsker et stærkt, stilrent og moderne udtryk online. Vores mål er at gøre det nemt og overskueligt for dig at få en ny hjemmeside, der virker perfekt på alle skærmstørrelser. Vi leverer skræddersyet design og solidt håndværk i øjenhøjde, så du kan skille dig ud fra konkurrenterne og fange dine kunders opmærksomhed. Skal vi hjælpe dig med dit næste digitale projekt?
-        </p>
+          <div>
+            <p
+              style={{
+                fontSize: "15px",
+                color: "#888",
+                lineHeight: 1.9,
+                margin: "0 0 40px",
+              }}
+            >
+              Vi designer og udvikler professionelle hjemmesider til virksomheder, der ønsker et stærkt, stilrent og moderne udtryk online. Vores mål er at gøre det nemt og overskueligt for dig at få en ny hjemmeside, der virker perfekt på alle skærmstørrelser.
+            </p>
+            <Link
+              href="/kontakt"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "12px",
+                fontSize: "10px",
+                fontWeight: 700,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                color: "#1647FB",
+                textDecoration: "none",
+                transition: "opacity 0.2s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.6")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            >
+              Start et projekt
+              <span style={{ fontSize: "18px", fontWeight: 300 }}>→</span>
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
   );
