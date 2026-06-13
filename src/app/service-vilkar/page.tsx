@@ -44,26 +44,27 @@ export default function ServiceVilkarPage() {
   return (
     <main style={{ paddingTop: "96px", minHeight: "100vh", background: "#ffffff" }}>
       <div style={{ maxWidth: "760px", margin: "0 auto", padding: "80px 40px 120px" }}>
-        <p
+        <span
           style={{
-            fontSize: "11px",
-            fontWeight: 600,
-            letterSpacing: "0.15em",
+            fontSize: "10px",
+            fontWeight: 700,
+            letterSpacing: "0.18em",
             textTransform: "uppercase",
-            color: "#aaa",
+            color: "#bbb",
+            display: "block",
             marginBottom: "24px",
           }}
         >
           Juridisk
-        </p>
+        </span>
         <h1
           style={{
-            fontSize: "clamp(32px, 5vw, 56px)",
-            fontWeight: 600,
-            letterSpacing: "-0.025em",
-            lineHeight: 1.1,
+            fontSize: "clamp(36px, 5vw, 64px)",
+            fontWeight: 800,
+            letterSpacing: "-0.04em",
+            lineHeight: 0.95,
             color: "#080808",
-            margin: "0 0 64px",
+            margin: "0 0 72px",
           }}
         >
           Service Vilkår
@@ -74,8 +75,8 @@ export default function ServiceVilkarPage() {
             <div key={s.title} style={{ borderTop: "1px solid #ebebeb", paddingTop: "32px" }}>
               <h2
                 style={{
-                  fontSize: "17px",
-                  fontWeight: 600,
+                  fontSize: "16px",
+                  fontWeight: 700,
                   color: "#080808",
                   margin: "0 0 12px",
                   letterSpacing: "-0.01em",
@@ -83,12 +84,12 @@ export default function ServiceVilkarPage() {
               >
                 {s.title}
               </h2>
-              <p style={{ fontSize: "15px", color: "#666", lineHeight: 1.8, margin: 0 }}>{s.body}</p>
+              <p style={{ fontSize: "15px", color: "#777", lineHeight: 1.85, margin: 0 }}>{s.body}</p>
             </div>
           ))}
         </div>
 
-        <p style={{ fontSize: "12px", color: "#bbb", marginTop: "64px" }}>
+        <p style={{ fontSize: "11px", color: "#ccc", marginTop: "64px", letterSpacing: "0.04em" }}>
           Sidst opdateret: januar 2026
         </p>
       </div>

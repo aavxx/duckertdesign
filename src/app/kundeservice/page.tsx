@@ -211,11 +211,11 @@ export default function KundeservicePage() {
 
         {/* ── Hero & Search ── */}
         <section style={{ padding: "80px 40px 0", maxWidth: "760px", margin: "0 auto" }}>
-          <p style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(22,71,251,0.5)", margin: "0 0 16px" }}>
+          <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(22,71,251,0.5)", display: "block", margin: "0 0 20px" }}>
             Kundeservice
-          </p>
-          <h1 style={{ fontSize: "clamp(32px, 5vw, 56px)", fontWeight: 600, letterSpacing: "-0.025em", lineHeight: 1.1, color: "#080808", margin: "0 0 40px" }}>
-            Hvordan kan vi hjælpe dig?
+          </span>
+          <h1 style={{ fontSize: "clamp(40px, 6vw, 80px)", fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 0.95, color: "#080808", margin: "0 0 40px" }}>
+            Hvordan kan vi hjælpe?
           </h1>
 
           {/* Search bar */}
@@ -329,7 +329,7 @@ export default function KundeservicePage() {
             <p style={{ fontSize: "11px", fontWeight: 600, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(22,71,251,0.5)", margin: "0 0 12px" }}>
               Hjælp
             </p>
-            <h2 style={{ fontSize: "clamp(24px, 3.5vw, 40px)", fontWeight: 600, letterSpacing: "-0.025em", color: "#080808", margin: "0 0 12px" }}>
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 48px)", fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 0.95, color: "#080808", margin: "0 0 16px" }}>
               Fik du ikke svar?
             </h2>
             <p style={{ fontSize: "15px", color: "rgba(8,8,8,0.5)", lineHeight: 1.7, margin: "0 0 36px", maxWidth: "460px" }}>
