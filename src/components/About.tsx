@@ -2,21 +2,6 @@
 
 import Link from "next/link";
 
-const values = [
-  {
-    title: "Resultater frem for æstetik",
-    body: "Godt design skal virke. Vi bygger hjemmesider der konverterer og skaber resultater for din virksomhed.",
-  },
-  {
-    title: "Gennemsigtigt samarbejde",
-    body: "Du ved altid præcist, hvor vi er i processen — ingen overraskelser, ingen forvirring.",
-  },
-  {
-    title: "Solid teknologi",
-    body: "Next.js, React og Headless CMS der skalerer med din virksomhed og vokser med dine behov.",
-  },
-];
-
 export default function About() {
   return (
     <section
@@ -26,8 +11,7 @@ export default function About() {
         padding: "120px 40px",
       }}
     >
-      <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-        {/* Section label */}
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <div
           style={{
             paddingBottom: "24px",
@@ -48,22 +32,19 @@ export default function About() {
           </span>
         </div>
 
-        {/* Two-column layout */}
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
             gap: "80px",
             alignItems: "start",
-            marginBottom: "80px",
           }}
         >
-          {/* Left: big statement */}
           <h2
             style={{
               fontSize: "clamp(28px, 3.5vw, 52px)",
-              fontWeight: 800,
-              letterSpacing: "-0.035em",
+              fontWeight: 700,
+              letterSpacing: "-0.03em",
               lineHeight: 1.1,
               color: "#080808",
               margin: 0,
@@ -75,7 +56,6 @@ export default function About() {
             </em>
           </h2>
 
-          {/* Right: description + CTA */}
           <div>
             <p
               style={{
@@ -108,60 +88,6 @@ export default function About() {
               <span style={{ fontSize: "18px", fontWeight: 300 }}>→</span>
             </Link>
           </div>
-        </div>
-
-        {/* Values grid — white cards separated by thin lines */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "1px",
-            background: "#ebebeb",
-          }}
-        >
-          {values.map((v, i) => (
-            <div
-              key={v.title}
-              style={{
-                background: "#ffffff",
-                padding: "40px",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 700,
-                  letterSpacing: "0.14em",
-                  color: "#1647FB",
-                  textTransform: "uppercase",
-                  marginBottom: "16px",
-                }}
-              >
-                0{i + 1}
-              </div>
-              <h3
-                style={{
-                  fontSize: "17px",
-                  fontWeight: 700,
-                  letterSpacing: "-0.015em",
-                  color: "#080808",
-                  margin: "0 0 12px",
-                }}
-              >
-                {v.title}
-              </h3>
-              <p
-                style={{
-                  fontSize: "14px",
-                  color: "#999",
-                  lineHeight: 1.75,
-                  margin: 0,
-                }}
-              >
-                {v.body}
-              </p>
-            </div>
-          ))}
         </div>
       </div>
     </section>

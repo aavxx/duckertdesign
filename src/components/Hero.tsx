@@ -2,12 +2,6 @@
 
 import { useRouter } from "next/navigation";
 
-const stats = [
-  { value: "30+", label: "Projekter leveret" },
-  { value: "100%", label: "Tilfredse kunder" },
-  { value: "3–6 uger", label: "Gennemsnitlig leveringstid" },
-];
-
 export default function Hero() {
   const router = useRouter();
   const scrollTo = (id: string) =>
@@ -20,16 +14,16 @@ export default function Hero() {
         display: "flex",
         flexDirection: "column",
         padding: "0 40px",
-        maxWidth: "1400px",
+        maxWidth: "1200px",
         margin: "0 auto",
         boxSizing: "border-box",
         width: "100%",
       }}
     >
-      {/* Top label row */}
+      {/* Top labels */}
       <div
         style={{
-          paddingTop: "128px",
+          paddingTop: "120px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -38,7 +32,7 @@ export default function Hero() {
         <span
           style={{
             fontSize: "10px",
-            letterSpacing: "0.18em",
+            letterSpacing: "0.16em",
             color: "#bbb",
             textTransform: "uppercase",
             fontWeight: 600,
@@ -49,7 +43,7 @@ export default function Hero() {
         <span
           style={{
             fontSize: "10px",
-            letterSpacing: "0.18em",
+            letterSpacing: "0.16em",
             color: "#bbb",
             textTransform: "uppercase",
             fontWeight: 600,
@@ -59,37 +53,24 @@ export default function Hero() {
         </span>
       </div>
 
-      {/* Main headline */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          paddingTop: "40px",
-          paddingBottom: "40px",
-        }}
-      >
+      {/* Headline — centered vertically */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
         <h1
           style={{
-            fontSize: "clamp(72px, 13vw, 180px)",
-            fontWeight: 800,
-            letterSpacing: "-0.04em",
-            lineHeight: 0.88,
+            fontSize: "clamp(48px, 8vw, 96px)",
+            fontWeight: 700,
+            letterSpacing: "-0.03em",
+            lineHeight: 1,
             color: "#080808",
             margin: 0,
           }}
         >
-          Design
-          <br />
-          <span style={{ paddingLeft: "0.18em" }}>der</span>
-          <br />
+          Design der{" "}
           <em
             style={{
               fontStyle: "italic",
               fontWeight: 300,
               color: "#1647FB",
-              paddingLeft: "0.18em",
             }}
           >
             mærkes.
@@ -97,56 +78,35 @@ export default function Hero() {
         </h1>
       </div>
 
-      {/* Stats + CTA row */}
+      {/* Bottom row */}
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "1fr auto",
-          gap: "48px",
-          alignItems: "end",
-          paddingBottom: "64px",
-          paddingTop: "40px",
-          borderTop: "1px solid #ebebeb",
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: "40px",
           flexWrap: "wrap",
+          paddingBottom: "60px",
+          paddingTop: "32px",
+          borderTop: "1px solid #ebebeb",
         }}
       >
-        {/* Stats */}
-        <div style={{ display: "flex", gap: "48px", flexWrap: "wrap" }}>
-          {stats.map((s) => (
-            <div key={s.value}>
-              <div
-                style={{
-                  fontSize: "clamp(20px, 2.5vw, 32px)",
-                  fontWeight: 700,
-                  letterSpacing: "-0.03em",
-                  color: "#080808",
-                  lineHeight: 1,
-                  marginBottom: "4px",
-                }}
-              >
-                {s.value}
-              </div>
-              <div
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: "#bbb",
-                }}
-              >
-                {s.label}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Buttons */}
+        <p
+          style={{
+            fontSize: "15px",
+            color: "#888",
+            lineHeight: 1.75,
+            maxWidth: "360px",
+            margin: 0,
+          }}
+        >
+          Vi designer og udvikler professionelle hjemmesider til virksomheder der vil mere online.
+        </p>
         <div style={{ display: "flex", gap: "12px", flexShrink: 0 }}>
           <button
             onClick={() => router.push("/kontakt")}
             style={{
-              padding: "16px 36px",
+              padding: "14px 28px",
               background: "#1647FB",
               color: "#fff",
               border: "none",
@@ -166,10 +126,10 @@ export default function Hero() {
           <button
             onClick={() => scrollTo("#ydelser")}
             style={{
-              padding: "16px 36px",
+              padding: "14px 28px",
               background: "transparent",
               color: "#080808",
-              border: "1px solid #d0d0d0",
+              border: "1px solid #e0e0e0",
               fontSize: "10px",
               fontFamily: "Montserrat, sans-serif",
               fontWeight: 700,
@@ -178,8 +138,8 @@ export default function Hero() {
               cursor: "pointer",
               transition: "border-color 0.2s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#080808")}
-            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#d0d0d0")}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#aaa")}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e0e0e0")}
           >
             Se ydelser
           </button>
