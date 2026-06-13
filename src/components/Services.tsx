@@ -82,13 +82,13 @@ function ServiceRow({
   service: (typeof services)[0];
 }) {
   const handleEnter = (el: HTMLDivElement) => {
-    el.style.background = "#080808";
-    el.querySelectorAll<HTMLElement>("[data-num]").forEach((n) => (n.style.color = "rgba(255,255,255,0.25)"));
+    el.style.background = "#1647FB";
+    el.querySelectorAll<HTMLElement>("[data-num]").forEach((n) => (n.style.color = "rgba(255,255,255,0.3)"));
     el.querySelectorAll<HTMLElement>("[data-title]").forEach((n) => (n.style.color = "#ffffff"));
-    el.querySelectorAll<HTMLElement>("[data-desc]").forEach((n) => (n.style.color = "rgba(255,255,255,0.5)"));
+    el.querySelectorAll<HTMLElement>("[data-desc]").forEach((n) => (n.style.color = "rgba(255,255,255,0.65)"));
     el.querySelectorAll<HTMLElement>("[data-tag]").forEach((n) => {
-      n.style.borderColor = "rgba(255,255,255,0.15)";
-      n.style.color = "rgba(255,255,255,0.4)";
+      n.style.borderColor = "rgba(255,255,255,0.2)";
+      n.style.color = "rgba(255,255,255,0.5)";
     });
     el.querySelectorAll<HTMLElement>("[data-arrow]").forEach((n) => {
       n.style.color = "#ffffff";

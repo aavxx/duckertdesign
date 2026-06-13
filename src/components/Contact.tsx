@@ -174,43 +174,30 @@ export default function Contact() {
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            {/* Two-column: name + email */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "40px",
-              }}
-            >
-              <div>
-                <label style={{ ...label, marginTop: 0 }}>Navn</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  required
-                  placeholder="Dit navn"
-                  style={field}
-                  onFocus={(e) => (e.target.style.borderBottomColor = "#080808")}
-                  onBlur={(e) => (e.target.style.borderBottomColor = "#e0e0e0")}
-                />
-              </div>
-              <div>
-                <label style={{ ...label, marginTop: 0 }}>Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  required
-                  placeholder="din@email.dk"
-                  style={field}
-                  onFocus={(e) => (e.target.style.borderBottomColor = "#080808")}
-                  onBlur={(e) => (e.target.style.borderBottomColor = "#e0e0e0")}
-                />
-              </div>
-            </div>
+            <label style={{ ...label, marginTop: 0 }}>Navn</label>
+            <input
+              type="text"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              required
+              placeholder="Dit navn"
+              style={field}
+              onFocus={(e) => (e.target.style.borderBottomColor = "#080808")}
+              onBlur={(e) => (e.target.style.borderBottomColor = "#e0e0e0")}
+            />
+            <label style={label}>Email</label>
+            <input
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              required
+              placeholder="din@email.dk"
+              style={field}
+              onFocus={(e) => (e.target.style.borderBottomColor = "#080808")}
+              onBlur={(e) => (e.target.style.borderBottomColor = "#e0e0e0")}
+            />
 
             <label style={label}>Besked</label>
             <textarea
