@@ -133,6 +133,22 @@ export async function POST(req: Request) {
   session.messages.push(userMsg);
   session.updatedAt = now;
 
+  // Human session: store message, notify admin, no AI response
+  if (session.status === "human") {
+    await persistSession(session);
+    await publishAdminEvent({
+      type: "new_chat_message",
+      sessionId: sid,
+      messageId: userMsg.id,
+      content: userMessage,
+      role: "user",
+      ts: now,
+    });
+    return new Response(JSON.stringify({ ok: true, waiting: true }), {
+      headers: new Headers({ "Content-Type": "application/json", "X-Session-Id": sid }),
+    });
+  }
+
   // Publish events
   if (isNewSession) {
     await persistSession(session);
