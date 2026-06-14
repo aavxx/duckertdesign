@@ -4,36 +4,29 @@ import type { NextRequest } from "next/server";
 export function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const xfHost = request.headers.get("x-forwarded-host") ?? "";
-  // nextUrl.hostname is parsed from the actual incoming URL — most reliable on Node.js runtime
-  const urlHost = request.nextUrl.hostname ?? "";
-  const effectiveHost = xfHost || host || urlHost;
+  const pathname = request.nextUrl.pathname;
 
-  const isKundeservice =
-    effectiveHost.startsWith("kundeservice.") ||
-    host.startsWith("kundeservice.") ||
-    urlHost.startsWith("kundeservice.");
+  // Use x-forwarded-host first (Vercel sets this to the original domain), fall back to host
+  const effectiveHost = xfHost || host;
 
-  const isMit =
-    effectiveHost.startsWith("mit.") ||
-    host.startsWith("mit.") ||
-    urlHost.startsWith("mit.");
+  const isKundeservice = effectiveHost.startsWith("kundeservice.") || host.startsWith("kundeservice.");
+  const isMit = effectiveHost.startsWith("mit.") || host.startsWith("mit.");
 
-  if (isKundeservice) {
-    if (request.nextUrl.pathname.startsWith("/kundeservice")) return NextResponse.next();
-    const url = request.nextUrl.clone();
-    url.pathname = request.nextUrl.pathname === "/" ? "/kundeservice" : `/kundeservice${request.nextUrl.pathname}`;
-    return NextResponse.rewrite(url);
+  if (isKundeservice && !pathname.startsWith("/kundeservice")) {
+    const target = new URL(`/kundeservice${pathname === "/" ? "" : pathname}`, request.url);
+    return NextResponse.rewrite(target);
   }
 
-  if (isMit) {
-    if (request.nextUrl.pathname.startsWith("/mit")) return NextResponse.next();
-    const url = request.nextUrl.clone();
-    url.pathname = request.nextUrl.pathname === "/" ? "/mit" : `/mit${request.nextUrl.pathname}`;
-    return NextResponse.rewrite(url);
+  if (isMit && !pathname.startsWith("/mit")) {
+    const target = new URL(`/mit${pathname === "/" ? "" : pathname}`, request.url);
+    const res = NextResponse.rewrite(target);
+    res.headers.set("x-proxy-rewrite", `${effectiveHost} -> /mit${pathname === "/" ? "" : pathname}`);
+    return res;
   }
 
+  // Debug: log what the proxy sees for every non-matched request
   const res = NextResponse.next();
-  res.headers.set("x-proxy-debug", `eff=${effectiveHost} host=${host} url=${urlHost}`);
+  res.headers.set("x-proxy-miss", `host=${host} xfh=${xfHost} path=${pathname} isMit=${isMit}`);
   return res;
 }
 
