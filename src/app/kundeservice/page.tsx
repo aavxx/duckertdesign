@@ -54,7 +54,7 @@ export default function KundeservicePage() {
   const [state, setState]         = useState<SearchState>("idle");
   const [result, setResult]       = useState<{ q: string; a: string } | null>(null);
   const [expanded, setExpanded]   = useState(false);
-  const [feedback, setFeedback]   = useState<"up" | "down" | null>(null);
+  const [feedback, setFeedback]   = useState<"up" | "down" | null>(null); // kept for potential reuse
   const [chatOpen, setChatOpen]   = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -275,144 +275,29 @@ export default function KundeservicePage() {
                 </button>
               )}
 
-              {/* Feedback row */}
-              <div style={{
-                borderTop: "1px solid rgba(22,71,251,0.08)",
-                padding: "18px 0",
-                display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap",
-              }}>
-                <span style={{ fontSize: "12px", color: "rgba(8,8,8,0.4)", fontFamily: "Montserrat, sans-serif", fontWeight: 500 }}>
-                  Var dette nyttigt?
-                </span>
-                {[
-                  { val: "up" as const,   label: "Ja",  icon: "M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z" },
-                  { val: "down" as const, label: "Nej", icon: "M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3H10z" },
-                ].map(({ val, label, icon }) => (
-                  <button key={val} className="ks-fb" onClick={() => setFeedback(val)}
+              {/* ── Contact button — appears after expanding ── */}
+              {expanded && (
+                <div className="ks-contact-in" style={{ borderTop: "1px solid rgba(22,71,251,0.08)", padding: "20px 0 24px" }}>
+                  <button
+                    onClick={() => setContactOpen(true)}
                     style={{
-                      display: "inline-flex", alignItems: "center", gap: "6px",
-                      background: feedback === val ? "rgba(22,71,251,0.06)" : "transparent",
-                      border: `1px solid ${feedback === val ? "#1647FB" : "rgba(8,8,8,0.14)"}`,
-                      borderRadius: "999px", padding: "6px 14px",
-                      fontSize: "12px", fontFamily: "Montserrat, sans-serif",
-                      fontWeight: 500, color: feedback === val ? "#1647FB" : "rgba(8,8,8,0.55)",
-                      cursor: "pointer", transition: "border-color 0.18s, color 0.18s, background 0.18s",
-                    }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d={icon} />
+                      display: "inline-flex", alignItems: "center", gap: "8px",
+                      background: "rgba(22,71,251,0.06)", border: "1.5px solid rgba(22,71,251,0.15)",
+                      borderRadius: "12px", padding: "12px 20px",
+                      fontSize: "13px", fontWeight: 700, color: "#1647FB",
+                      fontFamily: "Montserrat, sans-serif", cursor: "pointer",
+                      transition: "background 0.2s, border-color 0.2s",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(22,71,251,0.1)"; e.currentTarget.style.borderColor = "#1647FB"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(22,71,251,0.06)"; e.currentTarget.style.borderColor = "rgba(22,71,251,0.15)"; }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
                     </svg>
-                    {label}
+                    Brug for at kontakte kundeservice?
                   </button>
-                ))}
-              </div>
-
-              {/* ── Contact button ── */}
-              <div style={{ borderTop: "1px solid rgba(22,71,251,0.08)", paddingTop: "24px" }}>
-                <button
-                  onClick={() => setContactOpen(true)}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: "8px",
-                    background: "rgba(22,71,251,0.06)", border: "1.5px solid rgba(22,71,251,0.15)",
-                    borderRadius: "12px", padding: "12px 20px",
-                    fontSize: "13px", fontWeight: 700, color: "#1647FB",
-                    fontFamily: "Montserrat, sans-serif", cursor: "pointer",
-                    transition: "background 0.2s, border-color 0.2s",
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(22,71,251,0.1)"; e.currentTarget.style.borderColor = "#1647FB"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(22,71,251,0.06)"; e.currentTarget.style.borderColor = "rgba(22,71,251,0.15)"; }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
-                  </svg>
-                  Brug for at kontakte kundeservice?
-                </button>
-              </div>
-
-              {/* ── Contact modal ── */}
-              {contactOpen && (
-                <>
-                  <div
-                    style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 200, backdropFilter: "blur(2px)" }}
-                    onClick={() => setContactOpen(false)}
-                  />
-                  <div style={{
-                    position: "fixed", top: "50%", left: "50%",
-                    transform: "translate(-50%,-50%)",
-                    background: "#fff", borderRadius: "24px",
-                    padding: "36px 32px", width: "min(440px, calc(100vw - 40px))",
-                    zIndex: 201, boxShadow: "0 24px 80px rgba(0,0,0,0.18)",
-                    animation: "ks-up 0.3s cubic-bezier(0.16,1,0.3,1) both",
-                  }}>
-                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "24px" }}>
-                      <div>
-                        <h2 style={{ fontSize: "18px", fontWeight: 800, color: "#080808", margin: "0 0 6px", fontFamily: "Montserrat, sans-serif", letterSpacing: "-0.03em" }}>
-                          Kontakt os
-                        </h2>
-                        <p style={{ fontSize: "13px", color: "rgba(8,8,8,0.45)", margin: 0, fontFamily: "Montserrat, sans-serif" }}>
-                          Vælg hvordan du vil have fat i os
-                        </p>
-                      </div>
-                      <button onClick={() => setContactOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(8,8,8,0.4)", padding: "4px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                          <line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                          <line x1="20" y1="4" x2="4" y2="20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                        </svg>
-                      </button>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                      <a href="/kontakt" className="ks-mail"
-                        style={{
-                          display: "flex", alignItems: "center", gap: "14px",
-                          background: "#fff", border: "1.5px solid rgba(22,71,251,0.18)",
-                          borderRadius: "16px", padding: "16px 20px",
-                          textDecoration: "none", transition: "background 0.2s",
-                        }}>
-                        <div className="ks-mail-icon" style={{
-                          width: "40px", height: "40px", borderRadius: "12px",
-                          background: "rgba(22,71,251,0.08)",
-                          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                          transition: "background 0.2s",
-                        }}>
-                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="#1647FB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                            <polyline points="22,6 12,13 2,6" stroke="#1647FB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: "14px", fontWeight: 700, color: "#080808", fontFamily: "Montserrat, sans-serif", marginBottom: "3px" }}>Send en mail</div>
-                          <div style={{ fontSize: "12px", color: "rgba(8,8,8,0.45)", fontFamily: "Montserrat, sans-serif" }}>Svar inden for 24 timer</div>
-                        </div>
-                      </a>
-                      <button
-                        onClick={() => { setContactOpen(false); setChatOpen(true); }}
-                        className="ks-cta"
-                        style={{
-                          display: "flex", alignItems: "center", gap: "14px",
-                          background: "#fff", border: "1.5px solid rgba(22,71,251,0.18)",
-                          borderRadius: "16px", padding: "16px 20px",
-                          cursor: "pointer", textAlign: "left",
-                          fontFamily: "Montserrat, sans-serif",
-                          transition: "background 0.2s", width: "100%",
-                        }}>
-                        <div style={{
-                          width: "40px", height: "40px", borderRadius: "12px",
-                          background: "#1647FB",
-                          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                        }}>
-                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="white" />
-                          </svg>
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: "14px", fontWeight: 700, color: "#080808", marginBottom: "3px" }}>Chat med os</div>
-                          <div style={{ fontSize: "12px", color: "rgba(8,8,8,0.45)" }}>Øjeblikkelig AI-assistance</div>
-                        </div>
-                        <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
-                      </button>
-                    </div>
-                  </div>
-                </>
+                </div>
               )}
             </div>
           )}
@@ -421,6 +306,91 @@ export default function KundeservicePage() {
       </main>
 
       <ChatWidget open={chatOpen} onClose={() => setChatOpen(false)} />
+
+      {/* ── Contact modal — rendered at page root so position:fixed escapes the animated card ── */}
+      {contactOpen && (
+        <>
+          <div
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 9000, backdropFilter: "blur(3px)" }}
+            onClick={() => setContactOpen(false)}
+          />
+          <div style={{
+            position: "fixed", top: "50%", left: "50%",
+            transform: "translate(-50%,-50%)",
+            background: "#fff", borderRadius: "24px",
+            padding: "36px 32px", width: "min(440px, calc(100vw - 40px))",
+            zIndex: 9001, boxShadow: "0 24px 80px rgba(0,0,0,0.2)",
+            fontFamily: "Montserrat, sans-serif",
+          }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "24px" }}>
+              <div>
+                <h2 style={{ fontSize: "18px", fontWeight: 800, color: "#080808", margin: "0 0 6px", letterSpacing: "-0.03em" }}>
+                  Kontakt os
+                </h2>
+                <p style={{ fontSize: "13px", color: "rgba(8,8,8,0.45)", margin: 0 }}>
+                  Vælg hvordan du vil have fat i os
+                </p>
+              </div>
+              <button onClick={() => setContactOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(8,8,8,0.4)", padding: "4px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="20" y1="4" x2="4" y2="20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <a href="/kontakt" className="ks-mail"
+                style={{
+                  display: "flex", alignItems: "center", gap: "14px",
+                  background: "#fff", border: "1.5px solid rgba(22,71,251,0.18)",
+                  borderRadius: "16px", padding: "16px 20px",
+                  textDecoration: "none", transition: "background 0.2s",
+                }}>
+                <div className="ks-mail-icon" style={{
+                  width: "40px", height: "40px", borderRadius: "12px",
+                  background: "rgba(22,71,251,0.08)",
+                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  transition: "background 0.2s",
+                }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="#1647FB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <polyline points="22,6 12,13 2,6" stroke="#1647FB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: "14px", fontWeight: 700, color: "#080808", marginBottom: "3px" }}>Send en mail</div>
+                  <div style={{ fontSize: "12px", color: "rgba(8,8,8,0.45)" }}>Svar inden for 24 timer</div>
+                </div>
+              </a>
+              <button
+                onClick={() => { setContactOpen(false); setChatOpen(true); }}
+                className="ks-cta"
+                style={{
+                  display: "flex", alignItems: "center", gap: "14px",
+                  background: "#fff", border: "1.5px solid rgba(22,71,251,0.18)",
+                  borderRadius: "16px", padding: "16px 20px",
+                  cursor: "pointer", textAlign: "left",
+                  transition: "background 0.2s", width: "100%",
+                }}>
+                <div style={{
+                  width: "40px", height: "40px", borderRadius: "12px",
+                  background: "#1647FB",
+                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="white" />
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "14px", fontWeight: 700, color: "#080808", marginBottom: "3px" }}>Chat med os</div>
+                  <div style={{ fontSize: "12px", color: "rgba(8,8,8,0.45)" }}>Øjeblikkelig AI-assistance</div>
+                </div>
+                <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }
