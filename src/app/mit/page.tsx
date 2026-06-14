@@ -31,22 +31,11 @@ type LoginStage =
 
 /* ─── Slash commands ──────────────────────────────────────────────────────── */
 const SLASH_COMMANDS = [
-  { cmd: "/hej",         label: "Hej",             desc: "Overtag og byd velkommen" },
-  { cmd: "/farvel",      label: "Farvel",           desc: "Send farvel og luk chat" },
-  { cmd: "/bye",         label: "Bye",              desc: "Arkivér chat (30-dages auto-slet)" },
-  { cmd: "/luk",         label: "Luk",              desc: "Luk chat uden besked" },
-  { cmd: "/inaktiv",     label: "Inaktiv",          desc: "Inaktivitetsadvarsel (2 min timer)" },
-  { cmd: "/tilbud",      label: "Tilbud",           desc: "Spørg ind til projekt og tilbud" },
-  { cmd: "/møde",        label: "Møde",             desc: "Foreslå møde/opkald" },
-  { cmd: "/pris",        label: "Pris",             desc: "Send prisoversigt" },
-  { cmd: "/webshop",     label: "Webshop",          desc: "Info om webshop-løsninger" },
-  { cmd: "/tid",         label: "Tid",              desc: "Info om leveringstid" },
-  { cmd: "/reference",   label: "Reference",        desc: "Send link til portfolio" },
-  { cmd: "/mail",        label: "Mail",             desc: "Bed om kontaktmail" },
-  { cmd: "/kontakt",     label: "Kontakt",          desc: "Send kontaktoplysninger" },
-  { cmd: "/venlist",     label: "Vent venligst",    desc: "Send ventebesked" },
-  { cmd: "/overlevering",label: "Overlevering",     desc: "Info om hvad kunden skal levere" },
-  { cmd: "/hjælp",       label: "Hjælp",            desc: "Vis tilgængelige kommandoer" },
+  { cmd: "/hej",     label: "Hej",     desc: "Overtag chatten og byd velkommen" },
+  { cmd: "/bye",     label: "Bye",     desc: "Send farvel + arkivér (auto-slet 30 dage)" },
+  { cmd: "/luk",     label: "Luk",     desc: "Luk chat øjeblikkeligt uden besked" },
+  { cmd: "/inaktiv", label: "Inaktiv", desc: "Send inaktivitetsadvarsel + auto-luk om 2 min" },
+  { cmd: "/noter",   label: "Noter",   desc: "Åbn intern notat-felt (synlig kun for dig)" },
 ];
 
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
@@ -584,6 +573,9 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
     switch (cmd) {
       case "/hej": {
         await fetch("/api/admin/chats/claim", { method: "POST", headers, body: JSON.stringify({ sessionId: sid }) }).catch(() => {});
+        // Immediately update sidebar + header without waiting for loadChats
+        setChats((prev) => prev.map((c) => c.id === sid ? { ...c, status: "claimed" } : c));
+        setSelectedChat((prev) => prev?.id === sid ? { ...prev, status: "claimed" } : prev);
         const msg = "Hej! Tak fordi du kontaktede Duckert Design. Jeg har overtaget din henvendelse og hjælper dig nu. ✨";
         await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
         void loadChats();
@@ -624,68 +616,8 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
         showNotif("Inaktivitetstimer startet (2 min)");
         break;
       }
-      case "/tilbud": {
-        const msg = "Super! For at vi kan sende dig et skræddersyet tilbud, vil jeg gerne høre lidt mere. Hvad har du brug for — landing page, webshop eller noget helt tredje? Og hvad er din omtrentlige tidsramme? 😊";
-        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
-        void loadChats();
-        break;
-      }
-      case "/møde": {
-        const msg = "Vi holder meget gerne et kort indledende opkald for at høre mere om dit projekt! 📅 Skriv til hej@duckert.design med et par tidspunkter der passer dig, så finder vi en tid.";
-        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
-        void loadChats();
-        break;
-      }
-      case "/pris": {
-        const msg = "Her er en hurtig prisoversigt 👇\n\n• Landing page: fra 5.000 kr.\n• Business-site (flere sider): fra 10.000 kr.\n• Webshop: fra 15.000 kr.\n\nPriserne afhænger altid af dit konkrete projekt. Vi giver altid et gratis, uforpligtende tilbud — ønsker du det?";
-        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
-        void loadChats();
-        break;
-      }
-      case "/webshop": {
-        const msg = "Ja, vi laver skræddersyede webshops! 🛒 Vi bygger typisk med Next.js kombineret med Shopify Headless eller Stripe til betalingshåndtering. Hvad slags produkter sælger du, og har du et omtrentligt antal?";
-        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
-        void loadChats();
-        break;
-      }
-      case "/tid": {
-        const msg = "Leveringstiden afhænger af projektets omfang ⏱️\n\n• Landing page: 1–2 uger\n• Business-site: 3–5 uger\n• Webshop: 4–8 uger\n\nHar du en bestemt deadline vi skal ramme?";
-        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
-        void loadChats();
-        break;
-      }
-      case "/reference": {
-        const msg = "Du kan se eksempler på vores tidligere arbejde på duckert.design 🎨 Er der et bestemt udtryk eller en branche du søger inspiration fra?";
-        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
-        void loadChats();
-        break;
-      }
-      case "/mail": {
-        const msg = "For at vi kan følge op med mere information, hvad er din e-mailadresse? Vi sender dig gerne en oversigt direkte i indbakken 📧";
-        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
-        void loadChats();
-        break;
-      }
-      case "/kontakt": {
-        const msg = "Du er altid velkommen til at kontakte os direkte 📬\n\n✉️ hej@duckert.design\n🌐 duckert.design\n\nVi svarer inden for 1–2 hverdage.";
-        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
-        void loadChats();
-        break;
-      }
-      case "/venlist": {
-        const msg = "Tak for din tålmodighed! Jeg kigger på det nu og vender tilbage til dig hurtigst muligt 🙏";
-        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
-        void loadChats();
-        break;
-      }
-      case "/overlevering": {
-        const msg = "For at komme godt i gang har vi brug for følgende fra dig 📋\n\n• Logo (helst i SVG eller PNG)\n• Tekst/indhold til siderne\n• Billeder du ønsker brugt\n• Ønsket farver/udtryk\n\nHar du dette klar, eller hjælper vi med noget af det?";
-        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
-        void loadChats();
-        break;
-      }
-      case "/hjælp":
-        showNotif("/hej /farvel /luk /inaktiv /tilbud /møde /pris /webshop /tid /reference /mail /kontakt /venlist /overlevering");
+      case "/noter":
+        showNotif("Notat-felt: brug svarboksen til interne noter — kunden ser dem ikke");
         break;
     }
   };
@@ -915,42 +847,41 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
             {tab === "feedback" && (
               feedback.length === 0
                 ? <p style={{ padding: "24px 16px", fontSize: "13px", color: "rgba(8,8,8,0.4)", textAlign: "center" }}>Ingen feedback endnu</p>
-                : feedback.map((f) => (
-                    <div key={f.id} style={{
-                      padding: "12px 16px",
-                      borderBottom: "1px solid rgba(22,71,251,0.06)",
-                      display: "flex", alignItems: "center", gap: "12px",
-                    }}>
-                      <span style={{ fontSize: "22px", lineHeight: 1 }}>{FEEDBACK_EMOJIS[(f.rating - 1)] ?? "😐"}</span>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: "12px", fontWeight: 600, color: "#080808" }}>
-                          {FEEDBACK_LABELS[(f.rating - 1)] ?? "Okay"}
-                        </div>
-                        <div style={{ fontSize: "10px", color: "rgba(8,8,8,0.4)" }}>
-                          {f.sessionId.slice(0, 8)}… · {fmtTime(f.createdAt)}
+                : feedback.map((f) => {
+                    const chat = chats.find((c) => c.id === f.sessionId);
+                    return (
+                      <div key={f.id}
+                        onClick={() => {
+                          if (chat) { setSelectedChat(chat); setSelectedEmail(null); setTab("chats"); }
+                          else showNotif("Chat ikke fundet (muligvis slettet)");
+                        }}
+                        style={{
+                          padding: "12px 16px",
+                          borderBottom: "1px solid rgba(22,71,251,0.06)",
+                          display: "flex", alignItems: "center", gap: "12px",
+                          cursor: chat ? "pointer" : "default",
+                          transition: "background 0.12s",
+                        }}
+                        onMouseEnter={(e) => { if (chat) (e.currentTarget as HTMLDivElement).style.background = "rgba(22,71,251,0.03)"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+                      >
+                        <span style={{ fontSize: "22px", lineHeight: 1 }}>{FEEDBACK_EMOJIS[(f.rating - 1)] ?? "😐"}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "12px", fontWeight: 600, color: "#080808" }}>
+                            {FEEDBACK_LABELS[(f.rating - 1)] ?? "Okay"}
+                          </div>
+                          <div style={{ fontSize: "10px", color: "rgba(8,8,8,0.4)" }}>
+                            {f.sessionId.slice(0, 8)}… · {fmtTime(f.createdAt)}
+                            {chat && <span style={{ color: "#1647FB", marginLeft: "4px" }}>↗ Se chat</span>}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
             )}
           </div>
 
           <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(22,71,251,0.08)", display: "flex", flexDirection: "column", gap: "8px" }}>
-            <button onClick={() => { void loadChats(); void loadEmails(); void loadFeedback(); }}
-              style={{
-                width: "100%", padding: "8px", background: "rgba(22,71,251,0.06)",
-                border: "none", borderRadius: "8px", fontSize: "12px",
-                fontFamily: "Montserrat, sans-serif", fontWeight: 600, color: "#1647FB",
-                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
-                transition: "background 0.15s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(22,71,251,0.12)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(22,71,251,0.06)")}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="#1647FB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Opdater
-            </button>
             {clearConfirm ? (
               <div style={{ display: "flex", gap: "6px" }}>
                 <button

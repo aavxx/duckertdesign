@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Logo from "./Logo";
 
 const NAV = [
@@ -18,6 +18,8 @@ export default function Header() {
   const [menuOpen,  setMenuOpen]  = useState(false);
   const lastScrollY = useRef(0);
   const router = useRouter();
+  const pathname = usePathname();
+  const isKundeservice = pathname?.startsWith("/kundeservice");
 
   useEffect(() => {
     const onScroll = () => {
@@ -75,8 +77,24 @@ export default function Header() {
             position: "relative",
           }}
         >
-          {/* Left spacer — mirrors hamburger width for optical centering */}
-          <div style={{ width: "38px" }} />
+          {/* Left side */}
+          {isKundeservice ? (
+            <Link href="/" style={{
+              display: "flex", alignItems: "center", gap: "6px",
+              fontSize: "13px", fontWeight: 600, color: "#080808",
+              textDecoration: "none", opacity: 0.55,
+              transition: "opacity 0.2s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.55")}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5M12 19l-7-7 7-7" stroke="#080808" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Forside
+            </Link>
+          ) : (
+            <div style={{ width: "38px" }} />
+          )}
 
           {/* Logo — absolute center */}
           <Link
@@ -96,29 +114,33 @@ export default function Header() {
             <Logo style={{ height: "44px", width: "auto" }} />
           </Link>
 
-          {/* Hamburger — right */}
-          <button
-            aria-label="Åbn menu"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen(true)}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "8px",
-              marginRight: "-8px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "5px",
-              transition: "opacity 0.2s ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.5")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          >
-            <span style={{ display: "block", width: "22px", height: "1px", background: "#080808" }} />
-            <span style={{ display: "block", width: "22px", height: "1px", background: "#080808" }} />
-            <span style={{ display: "block", width: "22px", height: "1px", background: "#080808" }} />
-          </button>
+          {/* Right side */}
+          {isKundeservice ? (
+            <div style={{ width: "38px" }} />
+          ) : (
+            <button
+              aria-label="Åbn menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen(true)}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "8px",
+                marginRight: "-8px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "5px",
+                transition: "opacity 0.2s ease",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.5")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            >
+              <span style={{ display: "block", width: "22px", height: "1px", background: "#080808" }} />
+              <span style={{ display: "block", width: "22px", height: "1px", background: "#080808" }} />
+              <span style={{ display: "block", width: "22px", height: "1px", background: "#080808" }} />
+            </button>
+          )}
         </div>
       </header>
 

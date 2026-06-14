@@ -488,6 +488,15 @@ export default function ChatWidget({
         subscribeAdminReplies(newSid);
       }
 
+      // If the backend returns JSON it means the session was transferred to a human — not a stream
+      if (!res.headers.get("content-type")?.includes("text/event-stream")) {
+        const data = await res.json().catch(() => ({})) as { waiting?: boolean };
+        setMessages((prev) => prev.filter((m) => m.id !== streamId));
+        if (data.waiting) setWaitingHuman(true);
+        setIsLoading(false);
+        return;
+      }
+
       const reader = res.body.getReader();
       const dec = new TextDecoder();
       let full = "", buf = "";

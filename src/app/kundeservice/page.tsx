@@ -112,25 +112,28 @@ export default function KundeservicePage() {
         {/* ── Hero ── */}
         <section style={{ padding: "72px 24px 80px", maxWidth: "680px", margin: "0 auto" }}>
 
-          <span style={{
-            display: "inline-flex", alignItems: "center", gap: "6px",
-            background: "rgba(22,71,251,0.08)", color: "#1647FB",
-            fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em",
-            textTransform: "uppercase", padding: "5px 14px", borderRadius: "999px",
-            marginBottom: "28px",
-          }}>
-            <svg width="8" height="8" viewBox="0 0 8 8" fill="#1647FB"><circle cx="4" cy="4" r="4" /></svg>
-            Kundeservice
-          </span>
-
           <h1 style={{
             fontSize: "clamp(38px, 6.5vw, 76px)", fontWeight: 800,
             letterSpacing: "-0.045em", lineHeight: 0.95,
-            color: "#080808", margin: "0 0 44px",
+            color: "#080808", margin: "0 0 32px",
             fontFamily: "Montserrat, sans-serif",
           }}>
             Hvad kan vi<br />hjælpe med?
           </h1>
+
+          <a href="/" style={{
+            display: "inline-flex", alignItems: "center", gap: "7px",
+            fontSize: "13px", fontWeight: 600, color: "rgba(8,8,8,0.45)",
+            textDecoration: "none", marginBottom: "32px",
+            transition: "color 0.18s",
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "#080808")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(8,8,8,0.45)")}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Tilbage til forsiden
+          </a>
 
           {/* Search bar */}
           <form onSubmit={(e) => { e.preventDefault(); void runSearch(query); }}>
@@ -374,11 +377,11 @@ export default function KundeservicePage() {
                 }}>
                 <div style={{
                   width: "40px", height: "40px", borderRadius: "12px",
-                  background: "#1647FB",
+                  background: "rgba(22,71,251,0.08)",
                   display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                 }}>
                   <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="white" />
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="#1647FB" />
                   </svg>
                 </div>
                 <div style={{ flex: 1 }}>
