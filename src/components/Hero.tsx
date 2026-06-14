@@ -9,49 +9,31 @@ const MARQUEE_BASE = [
 ];
 const MARQUEE_ITEMS = [...MARQUEE_BASE, ...MARQUEE_BASE];
 
-const STATS = [
-  { num: "03",   label: "Ydelser" },
-  { num: "Est.", label: "2024" },
-  { num: "DK",   label: "Danmark" },
-];
-
 export default function Hero() {
   const router = useRouter();
   const scrollTo = (id: string) =>
     document.querySelector(id)?.scrollIntoView({ behavior: "smooth" });
 
   return (
-    <section style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
-
-      {/* Ambient gradient blobs */}
+    <section
+      style={{
+        minHeight: "100dvh",
+        display: "flex",
+        flexDirection: "column",
+        background: "#ffffff",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* Very subtle blue gradient — top-right corner only */}
       <div
-        data-blob
         aria-hidden="true"
         style={{
           position: "absolute",
-          width: "clamp(400px, 50vw, 700px)",
-          height: "clamp(400px, 50vw, 700px)",
-          background: "radial-gradient(circle, rgba(22,71,251,0.18) 0%, transparent 70%)",
-          borderRadius: "50%",
-          top: "0%",
-          right: "-5%",
+          inset: 0,
+          background:
+            "radial-gradient(ellipse 60% 50% at 90% -5%, rgba(22,71,251,0.06) 0%, transparent 70%)",
           pointerEvents: "none",
-          animation: "blob-float 14s ease-in-out infinite",
-        }}
-      />
-      <div
-        data-blob
-        aria-hidden="true"
-        style={{
-          position: "absolute",
-          width: "clamp(250px, 30vw, 420px)",
-          height: "clamp(250px, 30vw, 420px)",
-          background: "radial-gradient(circle, rgba(22,71,251,0.09) 0%, transparent 70%)",
-          borderRadius: "50%",
-          bottom: "15%",
-          left: "-5%",
-          pointerEvents: "none",
-          animation: "blob-float 18s ease-in-out infinite reverse",
         }}
       />
 
@@ -69,167 +51,157 @@ export default function Hero() {
           zIndex: 1,
         }}
       >
-        {/* Badge row */}
+        {/* Top labels */}
         <div
+          className="hero-badge"
           style={{
-            paddingTop: "clamp(100px, 13vh, 140px)",
+            paddingTop: "clamp(110px, 14vh, 148px)",
             display: "flex",
-            alignItems: "center",
             justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
-          <div
+          <span
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              border: "1px solid rgba(22,71,251,0.3)",
-              background: "rgba(22,71,251,0.08)",
-              padding: "6px 14px",
-              borderRadius: "999px",
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "10px",
+              letterSpacing: "0.18em",
+              color: "#bbb",
+              textTransform: "uppercase",
+              fontWeight: 600,
             }}
           >
-            <span
-              style={{
-                width: "6px",
-                height: "6px",
-                borderRadius: "50%",
-                background: "#1647FB",
-                display: "block",
-                flexShrink: 0,
-              }}
-            />
-            <span
-              style={{
-                fontSize: "11px",
-                fontWeight: 500,
-                color: "rgba(255,255,255,0.65)",
-                letterSpacing: "0.06em",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Est. 2024 · Duckert Design Studio
-            </span>
-          </div>
+            Duckert Design Studio
+          </span>
+          <span
+            style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "10px",
+              letterSpacing: "0.18em",
+              color: "#bbb",
+              textTransform: "uppercase",
+              fontWeight: 600,
+            }}
+          >
+            Est. 2024
+          </span>
         </div>
 
-        {/* Headline + CTA */}
-        <div style={{ flex: 1, display: "flex", alignItems: "center", paddingBlock: "clamp(32px, 5vw, 56px)" }}>
-          <div style={{ width: "100%" }}>
-            <h1
+        {/* Headline */}
+        <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
+          <h1
+            className="hero-headline"
+            style={{
+              fontFamily: "'Archivo', sans-serif",
+              fontSize: "clamp(52px, 10vw, 130px)",
+              fontWeight: 900,
+              letterSpacing: "-0.04em",
+              lineHeight: 0.94,
+              color: "#080808",
+              margin: 0,
+            }}
+          >
+            Design der{" "}
+            <em
               style={{
-                fontFamily: "'Archivo', sans-serif",
-                fontSize: "clamp(46px, 9.5vw, 124px)",
-                fontWeight: 900,
-                letterSpacing: "-0.035em",
-                lineHeight: 0.94,
-                color: "#ffffff",
-                margin: "0 0 clamp(24px, 3.5vw, 44px)",
+                fontStyle: "italic",
+                fontWeight: 300,
+                color: "#1647FB",
               }}
             >
-              Vi bygger<br />
-              <span style={{ color: "#1647FB" }}>hjemmesider</span><br />
-              der sætter spor.
-            </h1>
-
-            <p
-              style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontSize: "clamp(14px, 1.4vw, 17px)",
-                color: "#555",
-                lineHeight: 1.75,
-                maxWidth: "460px",
-                margin: "0 0 clamp(28px, 4vw, 48px)",
-                fontWeight: 400,
-              }}
-            >
-              Professionelt webdesign, UI/UX og webudvikling til virksomheder der vil stå stærkt online.
-            </p>
-
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-              <button
-                onClick={() => router.push("/kontakt")}
-                style={{
-                  padding: "15px 34px",
-                  background: "#1647FB",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "4px",
-                  fontSize: "13px",
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontWeight: 600,
-                  letterSpacing: "0.03em",
-                  cursor: "pointer",
-                  transition: "background 0.18s, transform 0.15s",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "#2355FF"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "#1647FB"; e.currentTarget.style.transform = "translateY(0)"; }}
-              >
-                Start et projekt →
-              </button>
-
-              <button
-                onClick={() => scrollTo("#arbejde")}
-                style={{
-                  padding: "15px 34px",
-                  background: "transparent",
-                  color: "#fff",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  borderRadius: "4px",
-                  fontSize: "13px",
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  transition: "border-color 0.18s, background 0.18s",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.28)"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; e.currentTarget.style.background = "transparent"; }}
-              >
-                Se vores arbejde
-              </button>
-            </div>
-          </div>
+              mærkes.
+            </em>
+          </h1>
         </div>
 
-        {/* Stats row */}
+        {/* Bottom row */}
         <div
           style={{
-            borderTop: "1px solid rgba(255,255,255,0.07)",
-            paddingTop: "28px",
-            paddingBottom: "44px",
+            borderTop: "1px solid #ebebeb",
+            paddingTop: "clamp(24px, 3vw, 36px)",
+            paddingBottom: "clamp(48px, 6vw, 72px)",
             display: "flex",
-            gap: "clamp(32px, 6vw, 80px)",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            gap: "32px",
             flexWrap: "wrap",
           }}
         >
-          {STATS.map((s) => (
-            <div key={s.num}>
-              <div
-                style={{
-                  fontFamily: "'Archivo', sans-serif",
-                  fontSize: "clamp(18px, 2.2vw, 26px)",
-                  fontWeight: 700,
-                  color: "#fff",
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1,
-                }}
-              >
-                {s.num}
-              </div>
-              <div
-                style={{
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: "11px",
-                  color: "#333",
-                  fontWeight: 500,
-                  marginTop: "4px",
-                  letterSpacing: "0.04em",
-                }}
-              >
-                {s.label}
-              </div>
-            </div>
-          ))}
+          <p
+            className="hero-sub"
+            style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "15px",
+              color: "#888",
+              lineHeight: 1.78,
+              maxWidth: "360px",
+              margin: 0,
+              fontWeight: 400,
+            }}
+          >
+            Vi designer og udvikler professionelle hjemmesider til virksomheder der vil mere online.
+          </p>
+
+          <div
+            className="hero-ctas"
+            style={{ display: "flex", gap: "10px", flexShrink: 0, flexWrap: "wrap" }}
+          >
+            <button
+              onClick={() => router.push("/kontakt")}
+              style={{
+                padding: "14px 30px",
+                background: "#1647FB",
+                color: "#fff",
+                border: "none",
+                borderRadius: "3px",
+                fontSize: "11px",
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontWeight: 700,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                transition: "background 0.22s ease, transform 0.18s cubic-bezier(0.16,1,0.3,1)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#2355FF";
+                e.currentTarget.style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#1647FB";
+                e.currentTarget.style.transform = "translateY(0)";
+              }}
+            >
+              Start et projekt
+            </button>
+
+            <button
+              onClick={() => scrollTo("#ydelser")}
+              style={{
+                padding: "14px 30px",
+                background: "transparent",
+                color: "#080808",
+                border: "1px solid #ddd",
+                borderRadius: "3px",
+                fontSize: "11px",
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontWeight: 700,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                transition: "border-color 0.22s ease, transform 0.18s cubic-bezier(0.16,1,0.3,1)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "#080808";
+                e.currentTarget.style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "#ddd";
+                e.currentTarget.style.transform = "translateY(0)";
+              }}
+            >
+              Se ydelser
+            </button>
+          </div>
         </div>
       </div>
 
@@ -237,9 +209,10 @@ export default function Hero() {
       <div
         aria-hidden="true"
         style={{
-          borderTop: "1px solid rgba(255,255,255,0.07)",
+          borderTop: "1px solid #ebebeb",
           overflow: "hidden",
           whiteSpace: "nowrap",
+          background: "#ffffff",
         }}
       >
         <div
@@ -247,7 +220,7 @@ export default function Hero() {
           style={{
             display: "inline-flex",
             alignItems: "center",
-            animation: "marquee 26s linear infinite",
+            animation: "marquee 28s linear infinite",
             paddingBlock: "13px",
           }}
         >
@@ -260,7 +233,7 @@ export default function Hero() {
                   fontWeight: 600,
                   letterSpacing: "0.22em",
                   textTransform: "uppercase",
-                  color: "#2a2a2a",
+                  color: "#ccc",
                   paddingInline: "28px",
                 }}
               >

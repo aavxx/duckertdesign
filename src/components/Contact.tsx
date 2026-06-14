@@ -39,13 +39,13 @@ export default function Contact() {
 
   const inputStyle: React.CSSProperties = {
     width: "100%",
-    background: "#0f0f0f",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "4px",
+    background: "#ffffff",
+    border: "1px solid #ddd",
+    borderRadius: "3px",
     padding: "14px 16px",
     fontSize: "15px",
     fontFamily: "'Space Grotesk', sans-serif",
-    color: "#f0f0f0",
+    color: "#080808",
     outline: "none",
     transition: "border-color 0.18s",
     display: "block",
@@ -53,11 +53,11 @@ export default function Contact() {
 
   const labelStyle: React.CSSProperties = {
     fontFamily: "'Space Grotesk', sans-serif",
-    fontSize: "11px",
-    fontWeight: 600,
-    letterSpacing: "0.14em",
+    fontSize: "10px",
+    fontWeight: 700,
+    letterSpacing: "0.16em",
     textTransform: "uppercase",
-    color: "#333",
+    color: "#bbb",
     display: "block",
     marginBottom: "8px",
     marginTop: "24px",
@@ -66,25 +66,29 @@ export default function Contact() {
   return (
     <section
       id="kontakt"
-      style={{ padding: "clamp(80px, 12vw, 140px) clamp(20px, 5vw, 80px)" }}
+      style={{
+        background: "#ffffff",
+        padding: "clamp(80px, 12vw, 140px) clamp(20px, 5vw, 80px)",
+        borderTop: "1px solid #ebebeb",
+      }}
     >
       <div style={{ maxWidth: "660px", margin: "0 auto" }}>
         {/* Section label */}
         <div
           style={{
             paddingBottom: "20px",
-            borderBottom: "1px solid rgba(255,255,255,0.07)",
+            borderBottom: "1px solid #ebebeb",
             marginBottom: "clamp(40px, 6vw, 60px)",
           }}
         >
           <span
             style={{
               fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: "11px",
-              fontWeight: 600,
-              letterSpacing: "0.18em",
+              fontSize: "10px",
+              fontWeight: 700,
+              letterSpacing: "0.2em",
               textTransform: "uppercase",
-              color: "#333",
+              color: "#bbb",
             }}
           >
             Kontakt
@@ -98,21 +102,22 @@ export default function Contact() {
             fontWeight: 900,
             letterSpacing: "-0.04em",
             lineHeight: 0.95,
-            color: "#fff",
+            color: "#080808",
             margin: "0 0 20px",
           }}
         >
-          Lad os bygge<br />
-          <span style={{ color: "#1647FB" }}>noget fedt.</span>
+          Lad os bygge{" "}
+          <em style={{ fontStyle: "italic", fontWeight: 300, color: "#1647FB" }}>noget fedt.</em>
         </h1>
 
         <p
           style={{
             fontFamily: "'Space Grotesk', sans-serif",
             fontSize: "15px",
-            color: "#555",
+            color: "#888",
             lineHeight: 1.8,
             margin: "0 0 clamp(40px, 6vw, 60px)",
+            fontWeight: 400,
           }}
         >
           Har du et projekt i tankerne? Skriv til os — vi vender tilbage inden for 24 timer.
@@ -125,7 +130,7 @@ export default function Contact() {
                 width: "48px",
                 height: "48px",
                 background: "#1647FB",
-                borderRadius: "4px",
+                borderRadius: "3px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -150,7 +155,7 @@ export default function Contact() {
                 fontFamily: "'Archivo', sans-serif",
                 fontSize: "24px",
                 fontWeight: 700,
-                color: "#fff",
+                color: "#080808",
                 margin: "0 0 8px",
                 letterSpacing: "-0.02em",
               }}
@@ -161,7 +166,7 @@ export default function Contact() {
               style={{
                 fontFamily: "'Space Grotesk', sans-serif",
                 fontSize: "15px",
-                color: "#555",
+                color: "#888",
                 margin: 0,
               }}
             >
@@ -201,7 +206,7 @@ export default function Contact() {
               placeholder="Dit navn"
               style={inputStyle}
               onFocus={(e) => (e.target.style.borderColor = "#1647FB")}
-              onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.08)")}
+              onBlur={(e) => (e.target.style.borderColor = "#ddd")}
             />
 
             <label style={labelStyle} htmlFor="email">
@@ -218,7 +223,7 @@ export default function Contact() {
               placeholder="din@email.dk"
               style={inputStyle}
               onFocus={(e) => (e.target.style.borderColor = "#1647FB")}
-              onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.08)")}
+              onBlur={(e) => (e.target.style.borderColor = "#ddd")}
             />
 
             <label style={labelStyle} htmlFor="message">
@@ -234,7 +239,7 @@ export default function Contact() {
               placeholder="Fortæl om dit projekt..."
               style={{ ...inputStyle, resize: "none" }}
               onFocus={(e) => (e.target.style.borderColor = "#1647FB")}
-              onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.08)")}
+              onBlur={(e) => (e.target.style.borderColor = "#ddd")}
             />
 
             {status === "error" && (

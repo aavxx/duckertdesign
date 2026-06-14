@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Logo from "./Logo";
 
 const NAV = [
   { label: "Ydelser",  id: "#ydelser" },
   { label: "Arbejde",  id: "#arbejde" },
   { label: "Om",       id: "#om" },
+  { label: "Kontakt",  href: "/kontakt" },
 ];
 
 export default function Header() {
@@ -15,13 +17,14 @@ export default function Header() {
   const [visible,   setVisible]   = useState(true);
   const [menuOpen,  setMenuOpen]  = useState(false);
   const lastScrollY = useRef(0);
+  const router = useRouter();
 
   useEffect(() => {
     const onScroll = () => {
       if (menuOpen) return;
       const y = window.scrollY;
       setScrolled(y > 24);
-      if (y < 60)                          setVisible(true);
+      if (y < 60)                           setVisible(true);
       else if (y > lastScrollY.current + 4) setVisible(false);
       else if (y < lastScrollY.current - 4) setVisible(true);
       lastScrollY.current = y;
@@ -41,16 +44,23 @@ export default function Header() {
 
   return (
     <>
+      {/* ── Fixed header bar ── */}
       <header
         style={{
           position: "fixed",
           top: 0, left: 0, right: 0,
           zIndex: 50,
-          background:    scrolled ? "rgba(8,8,8,0.82)" : "transparent",
-          backdropFilter: scrolled ? "blur(20px)" : "none",
-          borderBottom:  scrolled ? "1px solid rgba(255,255,255,0.07)" : "1px solid transparent",
-          transform:     visible || menuOpen ? "translateY(0)" : "translateY(-100%)",
-          transition:    "transform 0.4s cubic-bezier(0.16,1,0.3,1), background 0.3s, backdrop-filter 0.3s, border-color 0.3s",
+          background:     scrolled ? "rgba(255,255,255,0.88)" : "transparent",
+          backdropFilter: scrolled ? "blur(24px) saturate(1.6)" : "none",
+          WebkitBackdropFilter: scrolled ? "blur(24px) saturate(1.6)" : "none",
+          borderBottom:   scrolled ? "1px solid #ebebeb" : "1px solid transparent",
+          transform:      visible || menuOpen ? "translateY(0)" : "translateY(-100%)",
+          transition:     [
+            "transform 0.45s cubic-bezier(0.16,1,0.3,1)",
+            "background 0.3s ease",
+            "border-color 0.3s ease",
+            "backdrop-filter 0.3s ease",
+          ].join(", "),
         }}
       >
         <div
@@ -58,116 +68,95 @@ export default function Header() {
             maxWidth: "1400px",
             margin: "0 auto",
             padding: "0 clamp(20px, 5vw, 80px)",
-            height: "72px",
+            height: "80px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            position: "relative",
           }}
         >
-          {/* Logo */}
-          <Link href="/" aria-label="Duckert Design" style={{ display: "flex", alignItems: "center" }}>
-            <Logo style={{ height: "36px", width: "auto", filter: "brightness(0) invert(1)" }} />
+          {/* Left spacer — mirrors hamburger width for optical centering */}
+          <div style={{ width: "38px" }} />
+
+          {/* Logo — absolute center */}
+          <Link
+            href="/"
+            aria-label="Duckert Design"
+            style={{
+              position: "absolute",
+              left: "50%",
+              transform: "translateX(-50%)",
+              display: "flex",
+              alignItems: "center",
+              transition: "opacity 0.2s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.75")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+          >
+            <Logo style={{ height: "44px", width: "auto" }} />
           </Link>
 
-          {/* Desktop nav */}
-          <nav className="hidden md:flex" style={{ alignItems: "center", gap: "36px" }}>
-            {NAV.map((link) => (
-              <button
-                key={link.label}
-                onClick={() => scrollTo(link.id)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "rgba(255,255,255,0.5)",
-                  fontSize: "14px",
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  padding: "4px 0",
-                  transition: "color 0.18s",
-                  letterSpacing: "0.01em",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}
-              >
-                {link.label}
-              </button>
-            ))}
-          </nav>
-
-          {/* CTA + mobile hamburger */}
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <Link
-              href="/kontakt"
-              className="hidden md:inline-block"
-              style={{
-                padding: "10px 22px",
-                background: "#1647FB",
-                color: "#fff",
-                borderRadius: "4px",
-                fontSize: "13px",
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontWeight: 600,
-                letterSpacing: "0.02em",
-                textDecoration: "none",
-                transition: "background 0.18s, transform 0.15s",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "#2355FF"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "#1647FB"; e.currentTarget.style.transform = "translateY(0)"; }}
-            >
-              Kontakt
-            </Link>
-
-            <button
-              aria-label="Åbn menu"
-              className="md:hidden"
-              onClick={() => setMenuOpen(true)}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: "8px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "5px",
-              }}
-            >
-              <span style={{ display: "block", width: "22px", height: "1px", background: "#fff" }} />
-              <span style={{ display: "block", width: "22px", height: "1px", background: "#fff" }} />
-              <span style={{ display: "block", width: "22px", height: "1px", background: "#fff" }} />
-            </button>
-          </div>
+          {/* Hamburger — right */}
+          <button
+            aria-label="Åbn menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(true)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "8px",
+              marginRight: "-8px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "5px",
+              transition: "opacity 0.2s ease",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.5")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+          >
+            <span style={{ display: "block", width: "22px", height: "1px", background: "#080808" }} />
+            <span style={{ display: "block", width: "22px", height: "1px", background: "#080808" }} />
+            <span style={{ display: "block", width: "22px", height: "1px", background: "#080808" }} />
+          </button>
         </div>
       </header>
 
-      {/* Mobile overlay */}
+      {/* ── Full-screen blue overlay menu ── */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigationsmenu"
         style={{
           position: "fixed",
           inset: 0,
           zIndex: 60,
-          background: "#0a0a0a",
+          background: "#1647FB",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          padding: "0 clamp(20px, 6vw, 48px)",
+          padding: "0 clamp(24px, 6vw, 80px)",
           opacity: menuOpen ? 1 : 0,
           pointerEvents: menuOpen ? "auto" : "none",
-          transition: "opacity 0.35s cubic-bezier(0.16,1,0.3,1)",
+          transition: "opacity 0.4s cubic-bezier(0.16,1,0.3,1)",
         }}
       >
+        {/* Close */}
         <button
           aria-label="Luk menu"
           onClick={() => setMenuOpen(false)}
           style={{
             position: "absolute",
-            top: "20px",
-            right: "clamp(20px, 6vw, 48px)",
+            top: "clamp(20px, 4vh, 32px)",
+            right: "clamp(24px, 6vw, 80px)",
             background: "none",
             border: "none",
             cursor: "pointer",
             padding: "8px",
+            transition: "opacity 0.2s ease",
           }}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.5")}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <line x1="4" y1="4" x2="20" y2="20" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
@@ -175,15 +164,19 @@ export default function Header() {
           </svg>
         </button>
 
+        {/* Nav items */}
         <nav>
-          {[...NAV, { label: "Kontakt", id: "/kontakt" }].map((link, i) => (
-            <div key={link.label} style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          {NAV.map((link, i) => (
+            <div
+              key={link.label}
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.12)" }}
+            >
               <button
                 onClick={() => {
-                  if (link.id.startsWith("/")) {
+                  if (link.href) {
                     setMenuOpen(false);
-                    window.location.href = link.id;
-                  } else {
+                    router.push(link.href);
+                  } else if (link.id) {
                     scrollTo(link.id);
                   }
                 }}
@@ -194,21 +187,34 @@ export default function Header() {
                   width: "100%",
                   background: "none",
                   border: "none",
-                  padding: "22px 0",
+                  padding: "clamp(20px, 3.5vh, 28px) 0",
                   cursor: "pointer",
                   fontFamily: "'Archivo', sans-serif",
+                  transition: "opacity 0.2s ease",
                 }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.55")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
               >
-                <span style={{
-                  fontSize: "clamp(32px, 8vw, 56px)",
-                  fontWeight: 800,
-                  color: "#fff",
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1,
-                }}>
+                <span
+                  style={{
+                    fontSize: "clamp(36px, 7vw, 72px)",
+                    fontWeight: 700,
+                    color: "#ffffff",
+                    letterSpacing: "-0.025em",
+                    lineHeight: 1,
+                  }}
+                >
                   {link.label}
                 </span>
-                <span style={{ fontSize: "11px", color: "#2a2a2a", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 500 }}>
+                <span
+                  style={{
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    fontSize: "12px",
+                    color: "rgba(255,255,255,0.4)",
+                    fontWeight: 500,
+                    letterSpacing: "0.08em",
+                  }}
+                >
                   0{i + 1}
                 </span>
               </button>
