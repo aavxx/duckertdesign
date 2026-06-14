@@ -13,7 +13,7 @@ type ChatSession = {
   id: string;
   createdAt: number;
   updatedAt: number;
-  status: "ai" | "human" | "claimed" | "closed";
+  status: "ai" | "human" | "claimed" | "inactive" | "closed" | "archived";
   messages: ChatMsg[];
   visitorInfo?: { page: string; userAgent: string };
 };
@@ -33,6 +33,7 @@ type LoginStage =
 const SLASH_COMMANDS = [
   { cmd: "/hej",         label: "Hej",             desc: "Overtag og byd velkommen" },
   { cmd: "/farvel",      label: "Farvel",           desc: "Send farvel og luk chat" },
+  { cmd: "/bye",         label: "Bye",              desc: "Arkivér chat (30-dages auto-slet)" },
   { cmd: "/luk",         label: "Luk",              desc: "Luk chat uden besked" },
   { cmd: "/inaktiv",     label: "Inaktiv",          desc: "Inaktivitetsadvarsel (2 min timer)" },
   { cmd: "/tilbud",      label: "Tilbud",           desc: "Spørg ind til projekt og tilbud" },
@@ -69,13 +70,13 @@ function initials(from: string) {
 const FEEDBACK_EMOJIS = ["😠", "😞", "😐", "😊", "😄"];
 const FEEDBACK_LABELS = ["Meget dårlig", "Dårlig", "Okay", "God", "Fantastisk"];
 
-/* ─── Sparkle icon ────────────────────────────────────────────────────────── */
+/* ─── Star icon (3 stars) ─────────────────────────────────────────────────── */
 function Sparkle({ size = 14, color = "#1647FB" }: { size?: number; color?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
-      <path d="M13 1 L15.2 7.8 L22 10 L15.2 12.2 L13 19 L10.8 12.2 L4 10 L10.8 7.8 Z" fill={color} />
-      <path d="M24 5 L25 8.5 L28.5 9.5 L25 10.5 L24 14 L23 10.5 L19.5 9.5 L23 8.5 Z" fill={color} opacity="0.55" />
-      <circle cx="26" cy="20" r="1.8" fill={color} opacity="0.35" />
+    <svg width={size} height={size} viewBox="0 0 489 489" fill="none">
+      <path d="M198.5 83C201 83 202.5 83.3176 205.667 85C209.533 87 210.867 89.6665 219.133 113.133C233.267 153.666 244.2 174.066 265.133 198.866C289.933 228.466 314.733 243.666 366.2 260.866C378.333 265 389.4 269 390.867 269.934C396.867 273.667 397.666 283 392.466 288.2C391.132 289.534 380.466 293.801 368.867 297.667C336.067 308.467 317.667 316.733 301.667 327.533C289.133 336.067 271.667 351.534 261.267 363.4C239.134 388.867 230.334 405.933 215.001 453.133C209.001 471.399 205.5 475 198 475C190.267 475 186.915 471.27 180.915 453.004C165.581 405.804 156.781 388.738 134.648 363.271C124.248 351.405 106.782 335.938 94.2486 327.404C78.2487 316.604 59.8482 308.338 27.0484 297.538C15.4484 293.671 4.78116 289.405 3.44783 288.071C-1.75214 282.871 -0.951574 273.538 5.04841 269.805C6.51516 268.871 17.5812 264.871 29.7144 260.737C81.1811 243.537 105.982 228.337 130.782 198.737C151.715 173.937 162.649 153.537 176.782 113.004C185.048 89.5377 186.382 86.8711 190.249 84.8711C193.415 83.1889 196 83 198.5 83Z" fill={color} />
+      <path d="M389.223 0C390.448 0 391.183 0.155578 392.735 0.979592C394.63 1.95918 395.283 3.26524 399.334 14.7589C406.259 34.6119 411.617 44.6039 421.874 56.7508C434.026 71.2487 446.178 78.6937 471.397 87.1181C477.343 89.1426 482.765 91.1022 483.484 91.5593C486.424 93.3879 486.816 97.9593 484.268 100.506C483.614 101.159 478.388 103.249 472.704 105.143C456.632 110.433 447.616 114.482 439.776 119.771C433.634 123.951 425.076 131.527 419.98 137.339C409.134 149.812 404.822 158.171 397.309 181.29C394.369 190.236 392.653 192 388.978 192C385.189 192 383.547 190.173 380.607 181.226C373.093 158.108 368.781 149.749 357.936 137.276C352.84 131.464 344.281 123.888 338.14 119.708C330.3 114.418 321.283 110.37 305.211 105.08C299.527 103.186 294.3 101.096 293.647 100.443C291.099 97.8961 291.491 93.3247 294.431 91.4962C295.15 91.039 300.572 89.0795 306.518 87.055C331.737 78.6305 343.889 71.1856 356.041 56.6877C366.299 44.5408 371.656 34.5488 378.581 14.6958C382.632 3.20213 383.286 1.89604 385.18 0.916454C386.732 0.0925239 387.998 9.39676e-06 389.223 0Z" fill={color} />
+      <path d="M419.192 351C420.076 351 420.606 351.112 421.726 351.704C423.093 352.408 423.565 353.347 426.488 361.608C431.486 375.877 435.352 383.059 442.754 391.79C451.524 402.21 460.293 407.561 478.492 413.616C482.783 415.071 486.696 416.48 487.215 416.808C489.337 418.123 489.619 421.408 487.781 423.239C487.309 423.708 483.537 425.21 479.436 426.572C467.837 430.374 461.331 433.284 455.673 437.086C451.241 440.09 445.065 445.535 441.387 449.712C433.561 458.678 430.449 464.686 425.027 481.302C422.905 487.732 421.667 489 419.015 489C416.28 489 415.095 487.687 412.974 481.256C407.552 464.64 404.44 458.632 396.613 449.667C392.936 445.489 386.759 440.044 382.327 437.04C376.67 433.238 370.163 430.328 358.565 426.526C354.463 425.165 350.691 423.663 350.219 423.193C348.38 421.363 348.664 418.077 350.785 416.763C351.304 416.434 355.217 415.026 359.507 413.571C377.707 407.516 386.476 402.165 395.246 391.744C402.648 383.014 406.514 375.832 411.512 361.563C414.435 353.302 414.907 352.363 416.274 351.659C417.394 351.067 418.308 351 419.192 351Z" fill={color} />
     </svg>
   );
 }
@@ -246,7 +247,7 @@ function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
           <Sparkle size={28} color="white" />
         </div>
         <h1 style={{ fontSize: "22px", fontWeight: 800, color: "#080808", margin: "0 0 6px", letterSpacing: "-0.03em", fontFamily: "Montserrat, sans-serif" }}>
-          Duckert Admin
+          Mit Duckert Design
         </h1>
         {children}
       </div>
@@ -322,10 +323,12 @@ function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
 /* ─── Status badge ────────────────────────────────────────────────────────── */
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; bg: string; color: string }> = {
-    ai:      { label: "AI",               bg: "rgba(34,197,94,0.1)",   color: "#16a34a" },
-    human:   { label: "Menneskelig",      bg: "rgba(22,71,251,0.08)",  color: "#1647FB" },
-    claimed: { label: "Under behandling", bg: "rgba(249,115,22,0.1)",  color: "#ea580c" },
-    closed:  { label: "Lukket",           bg: "rgba(8,8,8,0.06)",      color: "rgba(8,8,8,0.45)" },
+    ai:       { label: "Ledig",            bg: "rgba(8,8,8,0.06)",      color: "rgba(8,8,8,0.5)" },
+    human:    { label: "Ledig",            bg: "rgba(8,8,8,0.06)",      color: "rgba(8,8,8,0.5)" },
+    claimed:  { label: "Under behandling", bg: "rgba(34,197,94,0.1)",   color: "#16a34a" },
+    inactive: { label: "Inaktiv",          bg: "rgba(234,179,8,0.1)",   color: "#b45309" },
+    closed:   { label: "Lukket",           bg: "rgba(8,8,8,0.04)",      color: "rgba(8,8,8,0.35)" },
+    archived: { label: "Arkiveret",        bg: "rgba(139,92,246,0.08)", color: "#7c3aed" },
   };
   const s = map[status] ?? map.ai;
   return (
@@ -357,6 +360,7 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
   const [slashOpen, setSlashOpen]             = useState(false);
   const [slashMatches, setSlashMatches]       = useState(SLASH_COMMANDS);
   const [slashIdx, setSlashIdx]               = useState(0);
+  const [clearConfirm, setClearConfirm]       = useState(false);
 
   const messagesEndRef      = useRef<HTMLDivElement>(null);
   const sseAbortRef         = useRef<AbortController | null>(null);
@@ -506,11 +510,11 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
                 if (evt.sessionId) {
                   setCustomerTyping((prev) => ({ ...prev, [evt.sessionId!]: !!evt.typing }));
                 }
-              } else if (evt.type === "chat_claimed" || evt.type === "chat_closed") {
+              } else if (evt.type === "chat_claimed" || evt.type === "chat_closed" || evt.type === "chat_archived") {
                 if (evt.sessionId && selectedChatRef.current?.id === evt.sessionId) {
                   setSelectedChat((prev) => prev ? {
                     ...prev,
-                    status: evt.type === "chat_claimed" ? "claimed" : "closed",
+                    status: evt.type === "chat_claimed" ? "claimed" : evt.type === "chat_archived" ? "archived" : "closed",
                   } : null);
                 }
                 void loadChats();
@@ -592,6 +596,14 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
         void loadChats();
         break;
       }
+      case "/bye": {
+        const msg = "Tak fordi du kontaktede Duckert Design! Vi håber vi var til hjælp. Hav en god dag! 👋";
+        await fetch("/api/admin/chats/archive", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, sendMessage: msg }) }).catch(() => {});
+        if (inactiveTimerRef.current) { clearTimeout(inactiveTimerRef.current); inactiveTimerRef.current = null; }
+        void loadChats();
+        showNotif("Chat arkiveret — slettes automatisk om 30 dage");
+        break;
+      }
       case "/luk": {
         await fetch("/api/admin/chats/close", { method: "POST", headers, body: JSON.stringify({ sessionId: sid }) }).catch(() => {});
         if (inactiveTimerRef.current) { clearTimeout(inactiveTimerRef.current); inactiveTimerRef.current = null; }
@@ -599,6 +611,7 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
         break;
       }
       case "/inaktiv": {
+        await fetch("/api/admin/chats/status", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, status: "inactive" }) }).catch(() => {});
         const msg = "Hej! Vi har ikke hørt fra dig i et stykke tid. Skriv venligst inden for 2 minutter, ellers lukker vi chatten automatisk.";
         await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
         if (inactiveTimerRef.current) clearTimeout(inactiveTimerRef.current);
@@ -776,7 +789,7 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
       }}>
         <Sparkle size={20} color="white" />
         <span style={{ fontSize: "15px", fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", flex: 1 }}>
-          Duckert Admin
+          Mit Duckert Design
         </span>
         <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.55)", letterSpacing: "0.08em" }}>
           mit.duckert.design
@@ -831,7 +844,7 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
                     const last = s.messages.filter((m) => m.role !== "system").at(-1);
                     const isSelected = selectedChat?.id === s.id;
                     const hasUnread = unreadChats.has(s.id);
-                    const dotColor = s.status === "claimed" ? "#ea580c" : s.status === "closed" ? "#d1d5db" : s.status === "human" ? "#1647FB" : "#4ade80";
+                    const dotColor = s.status === "claimed" ? "#22c55e" : s.status === "inactive" ? "#eab308" : s.status === "archived" ? "#8b5cf6" : s.status === "closed" ? "#d1d5db" : "#d1d5db";
                     return (
                       <div key={s.id} onClick={() => selectChat(s)}
                         style={{
@@ -846,7 +859,7 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
                         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
                           <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
                           <span style={{ fontSize: "12px", fontWeight: hasUnread ? 800 : 600, color: "#080808", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {s.status === "claimed" ? "Under behandling" : s.status === "closed" ? "Lukket" : s.status === "human" ? "Live chat" : "AI chat"}
+                            {s.status === "claimed" ? "Under behandling" : s.status === "inactive" ? "Inaktiv" : s.status === "closed" ? "Lukket" : s.status === "archived" ? "Arkiveret" : "Ledig"}
                           </span>
                           <span style={{ fontSize: "10px", color: "rgba(8,8,8,0.4)", flexShrink: 0 }}>{fmtTime(s.updatedAt)}</span>
                           {hasUnread && <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#1647FB", flexShrink: 0 }} />}
@@ -922,7 +935,7 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
             )}
           </div>
 
-          <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(22,71,251,0.08)" }}>
+          <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(22,71,251,0.08)", display: "flex", flexDirection: "column", gap: "8px" }}>
             <button onClick={() => { void loadChats(); void loadEmails(); void loadFeedback(); }}
               style={{
                 width: "100%", padding: "8px", background: "rgba(22,71,251,0.06)",
@@ -938,6 +951,35 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
               </svg>
               Opdater
             </button>
+            {clearConfirm ? (
+              <div style={{ display: "flex", gap: "6px" }}>
+                <button
+                  onClick={async () => {
+                    setClearConfirm(false);
+                    const res = await fetch("/api/admin/chats/clear", { method: "POST", headers });
+                    if (res.ok) { showNotif("Alle chats slettet"); void loadChats(); setSelectedChat(null); }
+                    else showNotif("Fejl ved sletning");
+                  }}
+                  style={{ flex: 1, padding: "7px", background: "rgba(239,68,68,0.1)", border: "none", borderRadius: "8px", fontSize: "11px", fontFamily: "Montserrat, sans-serif", fontWeight: 700, color: "#ef4444", cursor: "pointer" }}>
+                  Bekræft slet
+                </button>
+                <button onClick={() => setClearConfirm(false)} style={{ flex: 1, padding: "7px", background: "rgba(8,8,8,0.06)", border: "none", borderRadius: "8px", fontSize: "11px", fontFamily: "Montserrat, sans-serif", fontWeight: 600, color: "rgba(8,8,8,0.55)", cursor: "pointer" }}>
+                  Annuller
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setClearConfirm(true)}
+                style={{
+                  width: "100%", padding: "8px", background: "transparent",
+                  border: "1px solid rgba(239,68,68,0.2)", borderRadius: "8px", fontSize: "12px",
+                  fontFamily: "Montserrat, sans-serif", fontWeight: 600, color: "rgba(239,68,68,0.7)",
+                  cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.06)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.4)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.2)"; }}>
+                Ryd alle chats
+              </button>
+            )}
           </div>
         </div>
 
@@ -979,19 +1021,19 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
                 </div>
                 <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "8px" }}>
                   <StatusBadge status={selectedChat.status} />
-                  {selectedChat.status !== "claimed" && selectedChat.status !== "closed" && (
+                  {selectedChat.status !== "claimed" && selectedChat.status !== "closed" && selectedChat.status !== "archived" && (
                     <button onClick={() => void claimChat()}
                       style={{
-                        background: "rgba(249,115,22,0.1)", border: "none", borderRadius: "8px",
+                        background: "rgba(34,197,94,0.1)", border: "none", borderRadius: "8px",
                         padding: "5px 12px", fontSize: "11px", fontFamily: "Montserrat, sans-serif",
-                        fontWeight: 700, color: "#ea580c", cursor: "pointer", transition: "background 0.15s",
+                        fontWeight: 700, color: "#16a34a", cursor: "pointer", transition: "background 0.15s",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(249,115,22,0.18)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(249,115,22,0.1)")}>
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(34,197,94,0.18)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(34,197,94,0.1)")}>
                       Overtag
                     </button>
                   )}
-                  {selectedChat.status !== "closed" && (
+                  {selectedChat.status !== "closed" && selectedChat.status !== "archived" && (
                     <button onClick={() => void closeChat()}
                       style={{
                         background: "rgba(239,68,68,0.08)", border: "none", borderRadius: "8px",
@@ -1092,9 +1134,9 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
                   </div>
                 )}
 
-                {selectedChat.status === "closed" ? (
+                {selectedChat.status === "closed" || selectedChat.status === "archived" ? (
                   <p style={{ textAlign: "center", fontSize: "12px", color: "rgba(8,8,8,0.4)", fontFamily: "Montserrat, sans-serif", margin: 0 }}>
-                    Chatten er lukket
+                    {selectedChat.status === "archived" ? "Chatten er arkiveret" : "Chatten er lukket"}
                   </p>
                 ) : (
                   <div style={{ display: "flex", gap: "10px", alignItems: "flex-end" }}>

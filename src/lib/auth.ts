@@ -12,7 +12,7 @@ export async function requireAdminKey(req: Request): Promise<Response | null> {
   const valid = await redis.get(`admin:session:${key}`);
   if (valid) {
     // Sliding 15-minute window: reset TTL on each authenticated request
-    await redis.expire(`admin:session:${key}`, 900).catch(() => {});
+    await redis.expire(`admin:session:${key}`, 3600).catch(() => {});
     return null;
   }
 

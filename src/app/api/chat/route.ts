@@ -142,8 +142,8 @@ export async function POST(req: Request) {
   session.messages.push(userMsg);
   session.updatedAt = now;
 
-  // Human/claimed/closed session: store message, notify admin, no AI response
-  if (session.status === "human" || session.status === "claimed" || session.status === "closed") {
+  // Human/claimed/inactive/closed/archived session: store message, notify admin, no AI response
+  if (session.status === "human" || session.status === "claimed" || session.status === "inactive" || session.status === "closed" || session.status === "archived") {
     await persistSession(session);
     await publishAdminEvent({
       type: "new_chat_message",

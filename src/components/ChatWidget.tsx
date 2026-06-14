@@ -146,6 +146,7 @@ export default function ChatWidget({
   const [isLoading, setIsLoading]       = useState(false);
   const [input, setInput]               = useState("");
   const [waitingHuman, setWaitingHuman] = useState(false);
+  const [chatClaimed, setChatClaimed]   = useState(false);
   const [showWelcome, setShowWelcome]   = useState(false);
   const [menuOpen, setMenuOpen]         = useState(false);
   const [chatEnded, setChatEnded]       = useState(false);
@@ -275,6 +276,11 @@ export default function ChatWidget({
           return;
         }
 
+        if (data.type === "claimed") {
+          setChatClaimed(true);
+          return;
+        }
+
         if (data.type === "system") {
           setMessages((prev) => [...prev, {
             id: "sys-" + Date.now(),
@@ -383,6 +389,7 @@ export default function ChatWidget({
     setMessages([]);
     setShowQR(false);
     setWaitingHuman(false);
+    setChatClaimed(false);
     setShowWelcome(false);
     setChatEnded(false);
     setShowFeedback(false);
@@ -906,26 +913,28 @@ export default function ChatWidget({
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 marginTop: "8px",
               }}>
-                <button
-                  className="cw-agent-btn"
-                  onClick={() => void sendMessage("Tal med en agent")}
-                  disabled={waitingHuman || isLoading}
-                  style={{
-                    background: "none", border: "none", cursor: waitingHuman ? "default" : "pointer",
-                    fontSize: "11px", color: waitingHuman ? "#888888" : "rgba(8,8,8,0.45)",
-                    fontFamily: "Montserrat, sans-serif", transition: "color 0.15s",
-                    padding: "0", display: "flex", alignItems: "center", gap: "4px",
-                  }}
-                >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
-                  </svg>
-                  {waitingHuman ? "Venter på agent…" : "Tal med en agent"}
-                </button>
+                {!waitingHuman && !chatClaimed && !chatEnded && (
+                  <button
+                    className="cw-agent-btn"
+                    onClick={() => void sendMessage("Tal med en agent")}
+                    disabled={isLoading}
+                    style={{
+                      background: "none", border: "none", cursor: "pointer",
+                      fontSize: "11px", color: "rgba(8,8,8,0.45)",
+                      fontFamily: "Montserrat, sans-serif", transition: "color 0.15s",
+                      padding: "0", display: "flex", alignItems: "center", gap: "4px",
+                    }}
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                    Tal med en agent
+                  </button>
+                )}
                 <p style={{
                   fontSize: "10px", color: "rgba(8,8,8,0.28)",
-                  fontFamily: "Montserrat, sans-serif", margin: 0,
+                  fontFamily: "Montserrat, sans-serif", margin: "0 0 0 auto",
                 }}>
                   AI-drevet · Duckert Design
                 </p>

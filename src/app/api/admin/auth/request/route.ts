@@ -54,51 +54,49 @@ function buildEmailHtml(name: string, code: string): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
 </head>
-<body style="margin:0;padding:0;background:#f9f9f9;font-family:Arial,sans-serif;">
+<body style="margin:0;padding:0;background:#f9f9f9;font-family:'Montserrat',Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f9f9f9;padding:48px 20px;">
   <tr><td align="center">
-    <table width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:24px;overflow:hidden;">
+    <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
       <tr>
-        <td style="background:#1647FB;padding:24px 40px;">
-          <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <td style="background:#ffffff;border-radius:50px;padding:52px 52px 44px;position:relative;">
+          <!-- Blue square top-right -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:32px;">
             <tr>
-              <td style="font-family:Arial,sans-serif;font-size:18px;font-weight:bold;color:#ffffff;letter-spacing:-0.02em;">Duckert Design</td>
-              <td align="right"><div style="width:28px;height:28px;background:rgba(255,255,255,0.2);border-radius:6px;display:inline-block;"></div></td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:40px 40px 16px;">
-          <p style="font-family:Arial,sans-serif;font-size:22px;font-weight:bold;color:#080808;margin:0 0 20px;letter-spacing:-0.02em;">Hej ${name},</p>
-          <p style="font-family:Arial,sans-serif;font-size:14px;color:rgba(8,8,8,0.6);margin:0 0 8px;line-height:1.7;">Du modtager denne mail fordi du har bedt om adgang til mit.duckert.design.</p>
-          <p style="font-family:Arial,sans-serif;font-size:14px;color:rgba(8,8,8,0.6);margin:0 0 28px;line-height:1.7;">Din midlertidige kode er:</p>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:0 40px 28px;">
-          <table width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td align="center" style="background:#f0f4ff;border-radius:14px;border:2px solid rgba(22,71,251,0.15);padding:24px 16px;">
-                <span style="font-family:Arial,sans-serif;font-size:48px;font-weight:bold;color:#1647FB;letter-spacing:0.25em;">${code}</span>
+              <td style="vertical-align:top;">
+                <p style="font-family:'Montserrat',Arial,sans-serif;font-size:24px;font-weight:800;color:#080808;margin:0;letter-spacing:-0.03em;">Hej ${name},</p>
+              </td>
+              <td align="right" style="vertical-align:top;padding-left:16px;">
+                <div style="width:69px;height:69px;background:#1647FB;border-radius:16px;display:inline-block;"></div>
               </td>
             </tr>
           </table>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:0 40px 40px;">
-          <p style="font-family:Arial,sans-serif;font-size:13px;color:rgba(8,8,8,0.55);margin:0 0 6px;line-height:1.6;">Indtast koden på siden for at logge ind.</p>
-          <p style="font-family:Arial,sans-serif;font-size:13px;color:rgba(8,8,8,0.55);margin:0 0 28px;line-height:1.6;">Koden udløber om <strong>5 minutter</strong>, så brug den med det samme.</p>
-          <table width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr><td style="border-top:1px solid rgba(0,0,0,0.07);padding-top:24px;">
-              <p style="font-family:Arial,sans-serif;font-size:12px;color:rgba(8,8,8,0.35);margin:0;line-height:1.6;">
-                Hvis du ikke har bedt om denne kode, kan du se bort fra denne mail.<br>
-                Har du spørgsmål, er du altid velkommen til at kontakte os.
+          <p style="font-family:'Montserrat',Arial,sans-serif;font-size:14px;color:rgba(8,8,8,0.6);margin:0 0 6px;line-height:1.75;">Du modtager denne mail fordi du har bedt om adgang til Mit Duckert Design.</p>
+          <p style="font-family:'Montserrat',Arial,sans-serif;font-size:14px;color:rgba(8,8,8,0.6);margin:0 0 32px;line-height:1.75;">Din midlertidige login-kode er:</p>
+          <!-- Code block -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:32px;">
+            <tr>
+              <td align="center" style="background:#f0f4ff;border-radius:18px;border:2px solid rgba(22,71,251,0.15);padding:28px 16px;">
+                <span style="font-family:'Montserrat',Arial,sans-serif;font-size:52px;font-weight:800;color:#1647FB;letter-spacing:0.3em;display:block;">${code}</span>
+              </td>
+            </tr>
+          </table>
+          <p style="font-family:'Montserrat',Arial,sans-serif;font-size:13px;color:rgba(8,8,8,0.55);margin:0 0 6px;line-height:1.65;">Indtast koden på siden for at logge ind. Koden udløber om <strong>5 minutter</strong>.</p>
+          <!-- Divider -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:32px;">
+            <tr><td style="border-top:1px solid rgba(0,0,0,0.06);padding-top:24px;">
+              <p style="font-family:'Montserrat',Arial,sans-serif;font-size:12px;color:rgba(8,8,8,0.32);margin:0;line-height:1.6;">
+                Hvis du ikke har bedt om denne kode, kan du roligt se bort fra denne mail.
               </p>
             </td></tr>
           </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:20px 0 0;text-align:center;">
+          <p style="font-family:'Montserrat',Arial,sans-serif;font-size:12px;color:rgba(8,8,8,0.3);margin:0;">Duckert Design · mit.duckert.design</p>
         </td>
       </tr>
     </table>
