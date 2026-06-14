@@ -3,12 +3,21 @@ import type { NextRequest } from "next/server";
 
 export function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
+
   if (host.startsWith("kundeservice.")) {
     const url = request.nextUrl.clone();
     const originalPath = url.pathname === "/" ? "" : url.pathname;
     url.pathname = `/kundeservice${originalPath}`;
     return NextResponse.rewrite(url);
   }
+
+  if (host.startsWith("mit.")) {
+    const url = request.nextUrl.clone();
+    const originalPath = url.pathname === "/" ? "" : url.pathname;
+    url.pathname = `/mit${originalPath}`;
+    return NextResponse.rewrite(url);
+  }
+
   return NextResponse.next();
 }
 

@@ -12,24 +12,37 @@ const TOPICS = [
   { label: "Support efter lancering?",   query: "Tilbyder Duckert Design vedligeholdelse og support efter lancering?" },
 ];
 
-function SearchSpinner() {
+function SkeletonCard() {
   return (
     <>
       <style>{`
-        @keyframes ks-spin { to { transform: rotate(360deg); } }
-        @keyframes ks-dash {
-          0%   { stroke-dasharray: 1 150; stroke-dashoffset: 0; }
-          50%  { stroke-dasharray: 90 150; stroke-dashoffset: -35; }
-          100% { stroke-dasharray: 90 150; stroke-dashoffset: -124; }
+        @keyframes ks-shimmer {
+          0%   { background-position: -600px 0; }
+          100% { background-position:  600px 0; }
         }
-        .ks-spin-ring { animation: ks-spin 2s linear infinite; transform-origin: center; }
-        .ks-spin-path { animation: ks-dash 1.5s ease-in-out infinite; }
+        .ks-sh {
+          background: linear-gradient(90deg, #f0f4ff 25%, #dde6ff 50%, #f0f4ff 75%);
+          background-size: 600px 100%;
+          animation: ks-shimmer 1.4s ease-in-out infinite;
+          border-radius: 8px;
+        }
       `}</style>
-      <svg className="ks-spin-ring" width="36" height="36" viewBox="0 0 50 50" fill="none" aria-label="Søger…">
-        <circle cx="25" cy="25" r="20" stroke="rgba(22,71,251,0.12)" strokeWidth="4" />
-        <circle className="ks-spin-path" cx="25" cy="25" r="20" stroke="#1647FB" strokeWidth="4"
-          strokeLinecap="round" strokeDasharray="1 150" strokeDashoffset="0" />
-      </svg>
+      <div style={{
+        border: "1px solid rgba(22,71,251,0.1)", borderRadius: "18px",
+        padding: "28px 28px 24px", marginBottom: "64px",
+        background: "#fff", boxShadow: "0 4px 40px rgba(22,71,251,0.05)",
+      }}>
+        <div className="ks-sh" style={{ height: "22px", width: "90px", marginBottom: "20px" }} />
+        <div className="ks-sh" style={{ height: "26px", width: "75%", marginBottom: "16px" }} />
+        <div className="ks-sh" style={{ height: "15px", width: "100%", marginBottom: "10px" }} />
+        <div className="ks-sh" style={{ height: "15px", width: "92%",  marginBottom: "10px" }} />
+        <div className="ks-sh" style={{ height: "15px", width: "97%",  marginBottom: "10px" }} />
+        <div className="ks-sh" style={{ height: "15px", width: "68%",  marginBottom: "28px" }} />
+        <div style={{ borderTop: "1px solid rgba(22,71,251,0.07)", paddingTop: "20px", display: "flex", gap: "10px" }}>
+          <div className="ks-sh" style={{ height: "32px", width: "80px" }} />
+          <div className="ks-sh" style={{ height: "32px", width: "80px" }} />
+        </div>
+      </div>
     </>
   );
 }
@@ -53,7 +66,7 @@ export default function KundeservicePage() {
     setFeedback(null);
     try {
       const [, data] = await Promise.all([
-        new Promise<void>((r) => setTimeout(r, 1100)),
+        new Promise<void>((r) => setTimeout(r, 900)),
         fetch("/api/search", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -68,7 +81,7 @@ export default function KundeservicePage() {
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 60);
   };
 
-  const PREVIEW_LEN = 180;
+  const PREVIEW_LEN = 200;
   const preview = result
     ? result.a.length > PREVIEW_LEN
       ? result.a.slice(0, PREVIEW_LEN).trimEnd() + "…"
@@ -79,20 +92,25 @@ export default function KundeservicePage() {
     <>
       <style>{`
         @keyframes ks-up   { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes ks-fade { from { opacity:0; } to { opacity:1; } }
-        .ks-card  { animation: ks-up 0.42s cubic-bezier(0.16,1,0.3,1) both; }
-        .ks-chip:hover  { background:rgba(22,71,251,0.07)!important; border-color:rgba(22,71,251,0.45)!important; }
-        .ks-cta:hover   { background:rgba(22,71,251,0.05)!important; }
-        .ks-email:hover { background:#1647FB!important; color:#fff!important; }
-        .ks-email:hover svg path, .ks-email:hover svg polyline { stroke:#fff!important; }
-        .ks-search-bar:focus-within { border-color:#1647FB!important; box-shadow:0 0 0 3px rgba(22,71,251,0.12)!important; }
+        @keyframes ks-grow { from { opacity:0; transform:translateY(8px);  } to { opacity:1; transform:translateY(0); } }
+        .ks-card         { animation: ks-up 0.42s cubic-bezier(0.16,1,0.3,1) both; }
+        .ks-contact-in   { animation: ks-grow 0.35s cubic-bezier(0.16,1,0.3,1) both; }
+        .ks-chip:hover   { background:rgba(22,71,251,0.07)!important; border-color:rgba(22,71,251,0.4)!important; }
+        .ks-cta:hover    { background:rgba(22,71,251,0.05)!important; }
+        .ks-mail:hover   { background:#1647FB!important; }
+        .ks-mail:hover * { color:#fff!important; }
+        .ks-mail:hover .ks-mail-icon { background:rgba(255,255,255,0.2)!important; }
+        .ks-mail:hover svg path, .ks-mail:hover svg polyline { stroke:#fff!important; }
+        .ks-search-bar:focus-within { border-color:#1647FB!important; box-shadow:0 0 0 3px rgba(22,71,251,0.1)!important; }
         .ks-fb:hover { border-color:#1647FB!important; color:#1647FB!important; background:rgba(22,71,251,0.05)!important; }
+        .ks-expand:hover { background:rgba(22,71,251,0.07)!important; border-color:#1647FB!important; }
       `}</style>
 
       <main style={{ paddingTop: "80px", minHeight: "100vh", background: "#fff" }}>
 
         {/* ── Hero ── */}
-        <section style={{ padding: "72px 24px 0", maxWidth: "680px", margin: "0 auto" }}>
+        <section style={{ padding: "72px 24px 80px", maxWidth: "680px", margin: "0 auto" }}>
+
           <span style={{
             display: "inline-flex", alignItems: "center", gap: "6px",
             background: "rgba(22,71,251,0.08)", color: "#1647FB",
@@ -139,23 +157,16 @@ export default function KundeservicePage() {
                 }}
               />
               {query && (
-                <button
-                  type="button"
+                <button type="button" aria-label="Ryd"
                   onClick={() => { setQuery(""); setState("idle"); setResult(null); }}
-                  aria-label="Ryd"
-                  style={{
-                    background: "none", border: "none", cursor: "pointer",
-                    padding: "4px", opacity: 0.35, display: "flex", alignItems: "center",
-                  }}>
+                  style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", opacity: 0.35, display: "flex", alignItems: "center" }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                     <line x1="4" y1="4" x2="20" y2="20" stroke="#080808" strokeWidth="2.5" strokeLinecap="round" />
                     <line x1="20" y1="4" x2="4" y2="20" stroke="#080808" strokeWidth="2.5" strokeLinecap="round" />
                   </svg>
                 </button>
               )}
-              <button
-                type="submit"
-                aria-label="Søg"
+              <button type="submit" aria-label="Søg"
                 style={{
                   background: "#1647FB", color: "#fff", border: "none",
                   borderRadius: "10px", padding: "10px 22px",
@@ -177,23 +188,20 @@ export default function KundeservicePage() {
           </form>
 
           {/* Topic chips */}
-          <div style={{ marginTop: "16px", marginBottom: "56px" }}>
+          <div style={{ marginTop: "16px", marginBottom: "52px" }}>
             <p style={{
               fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em",
-              textTransform: "uppercase", color: "rgba(8,8,8,0.35)",
+              textTransform: "uppercase", color: "rgba(8,8,8,0.32)",
               margin: "0 0 10px", fontFamily: "Montserrat, sans-serif",
             }}>
               Ofte stillet
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
               {TOPICS.map((t) => (
-                <button
-                  key={t.label}
-                  className="ks-chip"
+                <button key={t.label} className="ks-chip"
                   onClick={() => { setQuery(t.query); void runSearch(t.query); }}
                   style={{
-                    background: "transparent",
-                    border: "1px solid rgba(22,71,251,0.2)",
+                    background: "transparent", border: "1px solid rgba(22,71,251,0.2)",
                     borderRadius: "999px", padding: "7px 15px",
                     fontSize: "12px", fontFamily: "Montserrat, sans-serif",
                     fontWeight: 500, color: "#080808", cursor: "pointer",
@@ -205,37 +213,31 @@ export default function KundeservicePage() {
             </div>
           </div>
 
-          {/* Spinner */}
-          {state === "loading" && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", padding: "32px 0 64px", animation: "ks-fade 0.3s ease both" }}>
-              <SearchSpinner />
-              <p style={{ fontSize: "13px", color: "rgba(8,8,8,0.4)", fontFamily: "Montserrat, sans-serif", margin: 0 }}>
-                Finder svar…
-              </p>
-            </div>
-          )}
+          {/* Skeleton */}
+          {state === "loading" && <SkeletonCard />}
 
           {/* Result card */}
           {state === "result" && result && (
             <div ref={resultRef} className="ks-card" style={{
               border: "1px solid rgba(22,71,251,0.14)",
-              borderRadius: "18px", padding: "28px 28px 24px",
+              borderRadius: "18px", padding: "28px 28px 0",
               marginBottom: "64px", background: "#fff",
               boxShadow: "0 4px 40px rgba(22,71,251,0.08), 0 1px 4px rgba(0,0,0,0.04)",
+              overflow: "hidden",
             }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
-                <span style={{
-                  display: "inline-flex", alignItems: "center", gap: "6px",
-                  background: "rgba(22,71,251,0.08)", color: "#1647FB",
-                  fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em",
-                  padding: "4px 12px", borderRadius: "999px",
-                }}>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#1647FB" />
-                  </svg>
-                  AI-svar
-                </span>
-              </div>
+              {/* Badge */}
+              <span style={{
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                background: "rgba(22,71,251,0.08)", color: "#1647FB",
+                fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em",
+                padding: "4px 12px", borderRadius: "999px", marginBottom: "16px",
+              }}>
+                {/* Sparkle star */}
+                <svg width="11" height="11" viewBox="-12 -12 24 24" fill="#1647FB">
+                  <path d="M0,-10 L2.4,-2.4 L10,0 L2.4,2.4 L0,10 L-2.4,2.4 L-10,0 L-2.4,-2.4Z" />
+                </svg>
+                AI-svar
+              </span>
 
               <h2 style={{
                 fontSize: "18px", fontWeight: 700, color: "#080808",
@@ -246,47 +248,46 @@ export default function KundeservicePage() {
               </h2>
 
               <p style={{
-                fontSize: "14px", lineHeight: 1.75, color: "rgba(8,8,8,0.65)",
+                fontSize: "14px", lineHeight: 1.78, color: "rgba(8,8,8,0.65)",
                 margin: "0 0 20px", fontFamily: "Montserrat, sans-serif",
               }}>
                 {expanded ? result.a : preview}
               </p>
 
+              {/* Show "Læs hele svaret" only if not yet expanded */}
               {!expanded && result.a.length > PREVIEW_LEN && (
-                <button
+                <button className="ks-expand"
                   onClick={() => setExpanded(true)}
                   style={{
-                    background: "transparent", border: "1.5px solid rgba(22,71,251,0.25)",
+                    background: "transparent", border: "1.5px solid rgba(22,71,251,0.22)",
                     borderRadius: "999px", padding: "8px 18px",
                     fontSize: "12px", fontFamily: "Montserrat, sans-serif",
                     fontWeight: 600, color: "#1647FB", cursor: "pointer",
                     transition: "background 0.18s, border-color 0.18s",
-                    marginBottom: "20px",
+                    marginBottom: "24px",
                     display: "inline-flex", alignItems: "center", gap: "6px",
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(22,71,251,0.06)"; e.currentTarget.style.borderColor = "#1647FB"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(22,71,251,0.25)"; }}
-                >
+                  }}>
                   Læs hele svaret
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 5v14M5 12l7 7 7-7" stroke="#1647FB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M12 5v14M5 12l7 7 7-7" stroke="#1647FB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
               )}
 
-              {/* Feedback */}
-              <div style={{ borderTop: "1px solid rgba(22,71,251,0.08)", paddingTop: "18px", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+              {/* Feedback row */}
+              <div style={{
+                borderTop: "1px solid rgba(22,71,251,0.08)",
+                padding: "18px 0",
+                display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap",
+              }}>
                 <span style={{ fontSize: "12px", color: "rgba(8,8,8,0.4)", fontFamily: "Montserrat, sans-serif", fontWeight: 500 }}>
                   Var dette nyttigt?
                 </span>
                 {[
-                  { val: "up" as const, label: "Ja", icon: "M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z" },
+                  { val: "up" as const,   label: "Ja",  icon: "M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z" },
                   { val: "down" as const, label: "Nej", icon: "M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3H10z" },
                 ].map(({ val, label, icon }) => (
-                  <button
-                    key={val}
-                    className="ks-fb"
-                    onClick={() => setFeedback(val)}
+                  <button key={val} className="ks-fb" onClick={() => setFeedback(val)}
                     style={{
                       display: "inline-flex", alignItems: "center", gap: "6px",
                       background: feedback === val ? "rgba(22,71,251,0.06)" : "transparent",
@@ -294,8 +295,7 @@ export default function KundeservicePage() {
                       borderRadius: "999px", padding: "6px 14px",
                       fontSize: "12px", fontFamily: "Montserrat, sans-serif",
                       fontWeight: 500, color: feedback === val ? "#1647FB" : "rgba(8,8,8,0.55)",
-                      cursor: "pointer",
-                      transition: "border-color 0.18s, color 0.18s, background 0.18s",
+                      cursor: "pointer", transition: "border-color 0.18s, color 0.18s, background 0.18s",
                     }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d={icon} />
@@ -304,116 +304,84 @@ export default function KundeservicePage() {
                   </button>
                 ))}
               </div>
+
+              {/* ── Fik du ikke svar? — only shown after expanding ── */}
+              {expanded && (
+                <div className="ks-contact-in" style={{
+                  borderTop: "1px solid rgba(22,71,251,0.08)",
+                  padding: "28px 0 28px",
+                }}>
+                  <p style={{
+                    fontSize: "11px", fontWeight: 700, letterSpacing: "0.12em",
+                    textTransform: "uppercase", color: "rgba(22,71,251,0.5)",
+                    margin: "0 0 10px", fontFamily: "Montserrat, sans-serif",
+                  }}>
+                    Brug for mere hjælp?
+                  </p>
+                  <h3 style={{
+                    fontSize: "22px", fontWeight: 800, letterSpacing: "-0.03em",
+                    color: "#080808", margin: "0 0 20px",
+                    fontFamily: "Montserrat, sans-serif",
+                  }}>
+                    Fik du ikke svar?
+                  </h3>
+                  <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                    {/* Email */}
+                    <a href="/kontakt" className="ks-mail"
+                      style={{
+                        display: "flex", alignItems: "center", gap: "12px",
+                        background: "#fff", border: "1.5px solid rgba(22,71,251,0.18)",
+                        borderRadius: "14px", padding: "14px 20px",
+                        textDecoration: "none", flex: "1 1 190px",
+                        transition: "background 0.2s",
+                      }}>
+                      <div className="ks-mail-icon" style={{
+                        width: "36px", height: "36px", borderRadius: "10px",
+                        background: "rgba(22,71,251,0.08)",
+                        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                        transition: "background 0.2s",
+                      }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="#1647FB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          <polyline points="22,6 12,13 2,6" stroke="#1647FB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "13px", fontWeight: 700, color: "#080808", fontFamily: "Montserrat, sans-serif", marginBottom: "2px" }}>Send en mail</div>
+                        <div style={{ fontSize: "11px", color: "rgba(8,8,8,0.45)", fontFamily: "Montserrat, sans-serif" }}>Svar inden 24 timer</div>
+                      </div>
+                    </a>
+
+                    {/* Chat */}
+                    <button onClick={() => setChatOpen(true)} className="ks-cta"
+                      style={{
+                        display: "flex", alignItems: "center", gap: "12px",
+                        background: "#fff", border: "1.5px solid rgba(22,71,251,0.18)",
+                        borderRadius: "14px", padding: "14px 20px",
+                        cursor: "pointer", textAlign: "left", flex: "1 1 190px",
+                        fontFamily: "Montserrat, sans-serif",
+                        transition: "background 0.2s",
+                      }}>
+                      <div style={{
+                        width: "36px", height: "36px", borderRadius: "10px",
+                        background: "#1647FB",
+                        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                      }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="white" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "13px", fontWeight: 700, color: "#080808", marginBottom: "2px" }}>Chat med os</div>
+                        <div style={{ fontSize: "11px", color: "rgba(8,8,8,0.45)" }}>Øjeblikkelig AI-assistance</div>
+                      </div>
+                      <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#22c55e", marginLeft: "auto", flexShrink: 0 }} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
-        </section>
-
-        {/* ── Fik du ikke svar? ── */}
-        <section style={{
-          borderTop: "1px solid rgba(22,71,251,0.08)",
-          background: "#fafbff", padding: "72px 24px 80px",
-        }}>
-          <div style={{ maxWidth: "680px", margin: "0 auto" }}>
-            <span style={{
-              display: "block",
-              fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em",
-              textTransform: "uppercase", color: "rgba(22,71,251,0.5)",
-              margin: "0 0 14px", fontFamily: "Montserrat, sans-serif",
-            }}>
-              Brug for mere hjælp?
-            </span>
-            <h2 style={{
-              fontSize: "clamp(28px, 4.5vw, 52px)", fontWeight: 800,
-              letterSpacing: "-0.04em", lineHeight: 0.95,
-              color: "#080808", margin: "0 0 18px",
-              fontFamily: "Montserrat, sans-serif",
-            }}>
-              Fik du ikke svar?
-            </h2>
-            <p style={{
-              fontSize: "15px", color: "rgba(8,8,8,0.5)", lineHeight: 1.7,
-              margin: "0 0 40px", maxWidth: "440px",
-              fontFamily: "Montserrat, sans-serif",
-            }}>
-              Vores team er klar til at hjælpe dig. Vælg den metode der passer dig bedst.
-            </p>
-
-            <div style={{ display: "flex", gap: "14px", flexWrap: "wrap" }}>
-              {/* Email button */}
-              <a
-                href="/kontakt"
-                className="ks-email"
-                style={{
-                  display: "flex", alignItems: "center", gap: "14px",
-                  background: "#fff",
-                  border: "1.5px solid rgba(22,71,251,0.18)",
-                  borderRadius: "16px", padding: "18px 24px",
-                  textDecoration: "none", cursor: "pointer",
-                  transition: "background 0.2s, color 0.2s",
-                  minWidth: "220px", flex: "1 1 220px",
-                }}>
-                <div style={{
-                  width: "40px", height: "40px", borderRadius: "12px",
-                  background: "rgba(22,71,251,0.08)",
-                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                  transition: "background 0.2s",
-                }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="#1647FB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    <polyline points="22,6 12,13 2,6" stroke="#1647FB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "14px", fontWeight: 700, color: "#080808", fontFamily: "Montserrat, sans-serif", marginBottom: "3px" }}>
-                    Send en mail
-                  </div>
-                  <div style={{ fontSize: "12px", color: "rgba(8,8,8,0.45)", fontFamily: "Montserrat, sans-serif" }}>
-                    Vi svarer inden 24 timer
-                  </div>
-                </div>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.3, flexShrink: 0 }}>
-                  <path d="M5 12h14M13 6l6 6-6 6" stroke="#080808" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </a>
-
-              {/* Chat button */}
-              <button
-                onClick={() => setChatOpen(true)}
-                className="ks-cta"
-                style={{
-                  display: "flex", alignItems: "center", gap: "14px",
-                  background: "#fff",
-                  border: "1.5px solid rgba(22,71,251,0.18)",
-                  borderRadius: "16px", padding: "18px 24px",
-                  cursor: "pointer", fontFamily: "Montserrat, sans-serif",
-                  transition: "background 0.2s",
-                  minWidth: "220px", flex: "1 1 220px",
-                  textAlign: "left",
-                }}>
-                <div style={{
-                  width: "40px", height: "40px", borderRadius: "12px",
-                  background: "#1647FB",
-                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="white" />
-                  </svg>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "14px", fontWeight: 700, color: "#080808", marginBottom: "3px" }}>
-                    Chat med os
-                  </div>
-                  <div style={{ fontSize: "12px", color: "rgba(8,8,8,0.45)" }}>
-                    Øjeblikkelig AI-assistance
-                  </div>
-                </div>
-                <div style={{
-                  width: "8px", height: "8px", borderRadius: "50%",
-                  background: "#22c55e", flexShrink: 0,
-                }} />
-              </button>
-            </div>
-          </div>
         </section>
 
       </main>

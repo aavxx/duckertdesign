@@ -128,15 +128,24 @@ function PrivacyCard() {
   );
 }
 
-/* ── D avatar ── */
-function DAvatarSmall() {
+/* ── Sparkle star avatar ── */
+function SparkleAvatar({ size = 28 }: { size?: number }) {
+  const inner = Math.round(size * 0.55);
   return (
     <div style={{
-      width: "28px", height: "28px", borderRadius: "50%",
+      width: size, height: size, borderRadius: "50%",
       background: "#1647FB", display: "flex", alignItems: "center",
       justifyContent: "center", flexShrink: 0,
     }}>
-      <span style={{ fontSize: "11px", fontWeight: 800, color: "#fff", fontFamily: "Montserrat, sans-serif" }}>D</span>
+      {/* Single large sparkle + tiny accent */}
+      <svg width={inner} height={inner} viewBox="0 0 32 32" fill="none">
+        {/* Large 4-pointed star */}
+        <path d="M13 1 L15.2 7.8 L22 10 L15.2 12.2 L13 19 L10.8 12.2 L4 10 L10.8 7.8 Z" fill="white" />
+        {/* Small accent star upper-right */}
+        <path d="M24 5 L25 8.5 L28.5 9.5 L25 10.5 L24 14 L23 10.5 L19.5 9.5 L23 8.5 Z" fill="white" opacity="0.65" />
+        {/* Tiny dot lower-right */}
+        <circle cx="26" cy="20" r="1.8" fill="white" opacity="0.4" />
+      </svg>
     </div>
   );
 }
@@ -414,10 +423,14 @@ export default function ChatWidget({
           {/* Avatar */}
           <div style={{
             width: "38px", height: "38px", borderRadius: "50%",
-            background: "rgba(255,255,255,0.2)",
+            background: "rgba(255,255,255,0.18)",
             display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
           }}>
-            <span style={{ fontSize: "14px", fontWeight: 800, color: "#fff", fontFamily: "Montserrat, sans-serif" }}>D</span>
+            <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+              <path d="M13 1 L15.2 7.8 L22 10 L15.2 12.2 L13 19 L10.8 12.2 L4 10 L10.8 7.8 Z" fill="white" />
+              <path d="M24 5 L25 8.5 L28.5 9.5 L25 10.5 L24 14 L23 10.5 L19.5 9.5 L23 8.5 Z" fill="white" opacity="0.65" />
+              <circle cx="26" cy="20" r="1.8" fill="white" opacity="0.4" />
+            </svg>
           </div>
 
           {/* Title */}
@@ -510,7 +523,7 @@ export default function ChatWidget({
             if (msg.role === "admin") {
               return (
                 <div key={msg.id} style={{ display: "flex", alignItems: "flex-end", gap: "8px", animation: "cwIn 0.25s ease both" }}>
-                  <DAvatarSmall />
+                  <SparkleAvatar />
                   <div style={{ maxWidth: "82%" }}>
                     <div style={{
                       fontSize: "10px", fontWeight: 700, color: "#1647FB",
@@ -537,7 +550,7 @@ export default function ChatWidget({
             // Assistant
             return (
               <div key={msg.id} style={{ display: "flex", alignItems: "flex-end", gap: "8px", animation: "cwIn 0.25s ease both" }}>
-                <DAvatarSmall />
+                <SparkleAvatar />
                 <div style={{ maxWidth: "82%" }}>
                   <div style={{
                     background: "#fff", color: "#111",
