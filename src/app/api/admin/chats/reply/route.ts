@@ -8,7 +8,7 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: Request) {
-  const authErr = requireAdminKey(req);
+  const authErr = await requireAdminKey(req);
   if (authErr) return authErr;
 
   let sessionId: string, content: string;

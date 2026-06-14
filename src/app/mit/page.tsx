@@ -2,14 +2,21 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-/* ─── Types ───────────────────────────────────────────────── */
+/* ─── Types ───────────────────────────────────────────────────────────────── */
 type ChatMsg = { id: string; role: "user" | "assistant" | "admin"; content: string; ts: number };
 type ChatSession = { id: string; createdAt: number; updatedAt: number; status: string; messages: ChatMsg[] };
 type Email = { uid: number; subject: string; from: string; date: string | null; seen: boolean };
 type EmailBody = Email & { text: string | null; html: string | null; to: string | null };
 type Tab = "chats" | "mails";
 
-/* ─── Helpers ─────────────────────────────────────────────── */
+type LoginStage =
+  | { stage: "email" }
+  | { stage: "checking" }
+  | { stage: "sent"; email: string }
+  | { stage: "code"; email: string; err?: string }
+  | { stage: "verifying"; email: string };
+
+/* ─── Helpers ─────────────────────────────────────────────────────────────── */
 function fmtTime(ts: number | string | null) {
   if (!ts) return "";
   const d = typeof ts === "number" ? new Date(ts) : new Date(ts);
@@ -27,7 +34,7 @@ function initials(from: string) {
   return name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase() || "?";
 }
 
-/* ─── Sparkle icon ────────────────────────────────────────── */
+/* ─── Sparkle icon ────────────────────────────────────────────────────────── */
 function Sparkle({ size = 14, color = "#1647FB" }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none">
@@ -38,18 +45,179 @@ function Sparkle({ size = 14, color = "#1647FB" }: { size?: number; color?: stri
   );
 }
 
-/* ─── Login screen ────────────────────────────────────────── */
-function LoginScreen({ onLogin }: { onLogin: (key: string) => void }) {
-  const [val, setVal] = useState("");
-  const [err, setErr] = useState(false);
+/* ─── Spinner ─────────────────────────────────────────────────────────────── */
+function Spinner({ size = 24 }: { size?: number }) {
+  return (
+    <>
+      <style>{`@keyframes dkSpin{to{transform:rotate(360deg)}}`}</style>
+      <div style={{
+        width: size, height: size,
+        border: "2.5px solid rgba(22,71,251,0.15)",
+        borderTopColor: "#1647FB",
+        borderRadius: "50%",
+        animation: "dkSpin 0.75s linear infinite",
+        flexShrink: 0,
+      }} />
+    </>
+  );
+}
 
-  const attempt = async () => {
-    const res = await fetch("/api/admin/chats", { headers: { "x-admin-key": val } });
-    if (res.ok) { onLogin(val); }
-    else { setErr(true); setTimeout(() => setErr(false), 2000); }
+/* ─── 4-digit code boxes ──────────────────────────────────────────────────── */
+function CodeBoxes({
+  disabled,
+  hasError,
+  onComplete,
+}: {
+  disabled: boolean;
+  hasError: boolean;
+  onComplete: (code: string) => void;
+}) {
+  const [digits, setDigits] = useState(["", "", "", ""]);
+  const refs = useRef<(HTMLInputElement | null)[]>([null, null, null, null]);
+
+  useEffect(() => { refs.current[0]?.focus(); }, []);
+
+  const commit = (next: string[]) => {
+    setDigits(next);
+    if (next.every((d) => d !== "")) onComplete(next.join(""));
+  };
+
+  const handleChange = (i: number, val: string) => {
+    const digit = val.replace(/\D/g, "").slice(-1);
+    const next = [...digits];
+    next[i] = digit;
+    if (digit && i < 3) refs.current[i + 1]?.focus();
+    commit(next);
+  };
+
+  const handleKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace") {
+      if (digits[i]) {
+        const next = [...digits]; next[i] = ""; setDigits(next);
+      } else if (i > 0) {
+        refs.current[i - 1]?.focus();
+      }
+    }
+    if (e.key === "ArrowLeft" && i > 0) refs.current[i - 1]?.focus();
+    if (e.key === "ArrowRight" && i < 3) refs.current[i + 1]?.focus();
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const paste = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 4);
+    if (!paste) return;
+    e.preventDefault();
+    const next: string[] = ["", "", "", ""];
+    for (let i = 0; i < paste.length; i++) next[i] = paste[i];
+    refs.current[Math.min(paste.length, 3)]?.focus();
+    commit(next);
   };
 
   return (
+    <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+      {digits.map((digit, i) => (
+        <input
+          key={i}
+          ref={(el) => { refs.current[i] = el; }}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={digit}
+          maxLength={2}
+          disabled={disabled}
+          onChange={(e) => handleChange(i, e.target.value)}
+          onKeyDown={(e) => handleKeyDown(i, e)}
+          onPaste={handlePaste}
+          onClick={(e) => (e.currentTarget as HTMLInputElement).select()}
+          style={{
+            width: "62px",
+            height: "72px",
+            border: `2px solid ${hasError ? "#ef4444" : digit ? "#1647FB" : "rgba(22,71,251,0.2)"}`,
+            borderRadius: "12px",
+            textAlign: "center",
+            fontSize: "28px",
+            fontWeight: 800,
+            color: "#080808",
+            fontFamily: "Montserrat, sans-serif",
+            outline: "none",
+            background: hasError ? "rgba(239,68,68,0.04)" : digit ? "rgba(22,71,251,0.04)" : "#fff",
+            transition: "border-color 0.15s, background 0.15s",
+            caretColor: "transparent",
+            opacity: disabled ? 0.5 : 1,
+          }}
+          onFocus={(e) => {
+            if (!hasError) e.target.style.borderColor = "#1647FB";
+            e.target.style.boxShadow = "0 0 0 3px rgba(22,71,251,0.08)";
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = hasError ? "#ef4444" : digit ? "#1647FB" : "rgba(22,71,251,0.2)";
+            e.target.style.boxShadow = "none";
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ─── Login screen ────────────────────────────────────────────────────────── */
+function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
+  const [step, setStep] = useState<LoginStage>({ stage: "email" });
+  const [emailVal, setEmailVal] = useState("");
+  const [globalErr, setGlobalErr] = useState<string | null>(null);
+
+  const requestCode = async () => {
+    const email = emailVal.trim();
+    if (!email) return;
+    setGlobalErr(null);
+    setStep({ stage: "checking" });
+
+    try {
+      const [res] = await Promise.all([
+        fetch("/api/admin/auth/request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        }),
+        new Promise<void>((r) => setTimeout(r, 2000)),
+      ]);
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        setGlobalErr(data.error ?? "Noget gik galt. Prøv igen.");
+        setStep({ stage: "email" });
+        return;
+      }
+
+      setStep({ stage: "sent", email });
+      setTimeout(() => setStep({ stage: "code", email }), 5000);
+    } catch {
+      setGlobalErr("Forbindelsesfejl. Prøv igen.");
+      setStep({ stage: "email" });
+    }
+  };
+
+  const verifyCode = async (code: string, email: string) => {
+    setStep({ stage: "verifying", email });
+    try {
+      const res = await fetch("/api/admin/auth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        setStep({ stage: "code", email, err: data.error ?? "Forkert kode. Prøv igen." });
+        return;
+      }
+
+      const { token } = await res.json() as { token: string };
+      onLogin(token);
+    } catch {
+      setStep({ stage: "code", email, err: "Forbindelsesfejl. Prøv igen." });
+    }
+  };
+
+  const Card = ({ children }: { children: React.ReactNode }) => (
     <div style={{
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
       height: "100%", padding: "24px",
@@ -65,32 +233,48 @@ function LoginScreen({ onLogin }: { onLogin: (key: string) => void }) {
         }}>
           <Sparkle size={28} color="white" />
         </div>
-        <h1 style={{ fontSize: "22px", fontWeight: 800, color: "#080808", margin: "0 0 6px", letterSpacing: "-0.03em", fontFamily: "Montserrat, sans-serif" }}>
+        <h1 style={{
+          fontSize: "22px", fontWeight: 800, color: "#080808", margin: "0 0 6px",
+          letterSpacing: "-0.03em", fontFamily: "Montserrat, sans-serif",
+        }}>
           Duckert Admin
         </h1>
+        {children}
+      </div>
+    </div>
+  );
+
+  /* ── Email stage ── */
+  if (step.stage === "email") {
+    return (
+      <Card>
         <p style={{ fontSize: "13px", color: "rgba(8,8,8,0.45)", margin: "0 0 32px", fontFamily: "Montserrat, sans-serif" }}>
-          Indtast din admin-nøgle for at fortsætte
+          Indtast din e-mailadresse for at fortsætte
         </p>
         <input
-          type="password"
-          value={val}
-          onChange={(e) => setVal(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && void attempt()}
-          placeholder="Admin-nøgle"
+          type="email"
+          value={emailVal}
+          autoFocus
+          onChange={(e) => { setEmailVal(e.target.value); setGlobalErr(null); }}
+          onKeyDown={(e) => e.key === "Enter" && void requestCode()}
+          placeholder="din@email.dk"
           style={{
-            width: "100%", padding: "12px 16px", border: `1.5px solid ${err ? "#ef4444" : "rgba(22,71,251,0.2)"}`,
+            width: "100%", padding: "12px 16px",
+            border: `1.5px solid ${globalErr ? "#ef4444" : "rgba(22,71,251,0.2)"}`,
             borderRadius: "10px", fontSize: "14px", fontFamily: "Montserrat, sans-serif",
             color: "#080808", outline: "none", background: "#fff",
-            boxSizing: "border-box", marginBottom: "12px",
-            transition: "border-color 0.2s",
+            boxSizing: "border-box", marginBottom: "12px", transition: "border-color 0.2s",
           }}
+          onFocus={(e) => { e.target.style.borderColor = globalErr ? "#ef4444" : "#1647FB"; }}
+          onBlur={(e) => { e.target.style.borderColor = globalErr ? "#ef4444" : "rgba(22,71,251,0.2)"; }}
         />
-        {err && (
-          <p style={{ fontSize: "12px", color: "#ef4444", margin: "0 0 12px", fontFamily: "Montserrat, sans-serif" }}>
-            Forkert nøgle. Prøv igen.
+        {globalErr && (
+          <p style={{ fontSize: "12px", color: "#ef4444", margin: "0 0 12px", fontFamily: "Montserrat, sans-serif", textAlign: "left" }}>
+            {globalErr}
           </p>
         )}
-        <button onClick={() => void attempt()}
+        <button
+          onClick={() => void requestCode()}
           style={{
             width: "100%", padding: "12px", background: "#1647FB", color: "#fff",
             border: "none", borderRadius: "10px", fontSize: "14px",
@@ -100,15 +284,85 @@ function LoginScreen({ onLogin }: { onLogin: (key: string) => void }) {
           onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
           onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
         >
-          Log ind
+          Send kode
         </button>
-      </div>
-    </div>
+      </Card>
+    );
+  }
+
+  /* ── Checking stage ── */
+  if (step.stage === "checking") {
+    return (
+      <Card>
+        <p style={{ fontSize: "13px", color: "rgba(8,8,8,0.45)", margin: "0 0 32px", fontFamily: "Montserrat, sans-serif" }}>
+          Tjekker din adresse…
+        </p>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <Spinner />
+        </div>
+      </Card>
+    );
+  }
+
+  /* ── Sent stage ── */
+  if (step.stage === "sent") {
+    return (
+      <Card>
+        <p style={{ fontSize: "13px", color: "rgba(8,8,8,0.45)", margin: "0 0 8px", fontFamily: "Montserrat, sans-serif" }}>
+          Sendt til <strong style={{ color: "#080808" }}>{step.email}</strong>
+        </p>
+        <p style={{ fontSize: "13px", color: "rgba(8,8,8,0.45)", margin: "0 0 28px", fontFamily: "Montserrat, sans-serif" }}>
+          Tjek din indbakke
+        </p>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <Spinner />
+        </div>
+      </Card>
+    );
+  }
+
+  /* ── Code + Verifying stages ── */
+  const codeEmail = step.email;
+  const codeErr = step.stage === "code" ? (step.err ?? null) : null;
+  const isVerifying = step.stage === "verifying";
+
+  return (
+    <Card>
+      <p style={{ fontSize: "13px", color: "rgba(8,8,8,0.45)", margin: "0 0 28px", fontFamily: "Montserrat, sans-serif" }}>
+        Vi har sendt en 4-cifret kode til{" "}
+        <strong style={{ color: "#080808" }}>{codeEmail}</strong>
+      </p>
+      <CodeBoxes
+        disabled={isVerifying}
+        hasError={!!codeErr}
+        onComplete={(code) => void verifyCode(code, codeEmail)}
+      />
+      {isVerifying && (
+        <div style={{ display: "flex", justifyContent: "center", marginTop: "20px" }}>
+          <Spinner />
+        </div>
+      )}
+      {codeErr && (
+        <p style={{ fontSize: "12px", color: "#ef4444", margin: "14px 0 0", fontFamily: "Montserrat, sans-serif" }}>
+          {codeErr}
+        </p>
+      )}
+      <button
+        onClick={() => { setStep({ stage: "email" }); setGlobalErr(null); }}
+        style={{
+          background: "none", border: "none", fontSize: "12px", color: "rgba(8,8,8,0.38)",
+          fontFamily: "Montserrat, sans-serif", cursor: "pointer", marginTop: "20px",
+          textDecoration: "underline", textUnderlineOffset: "3px",
+        }}
+      >
+        Prøv en anden adresse
+      </button>
+    </Card>
   );
 }
 
-/* ─── Main admin app ──────────────────────────────────────── */
-function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => void }) {
+/* ─── Main admin app ──────────────────────────────────────────────────────── */
+function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) {
   const [tab, setTab]                       = useState<Tab>("chats");
   const [chats, setChats]                   = useState<ChatSession[]>([]);
   const [emails, setEmails]                 = useState<Email[]>([]);
@@ -122,36 +376,40 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
   const [unreadMails, setUnreadMails]       = useState(0);
   const messagesEndRef                       = useRef<HTMLDivElement>(null);
   const sseAbortRef                          = useRef<AbortController | null>(null);
-  const headers                              = { "x-admin-key": adminKey, "Content-Type": "application/json" };
+  const headers                              = { "x-admin-key": token, "Content-Type": "application/json" };
 
   const showNotif = (msg: string) => {
     setNotification(msg);
     setTimeout(() => setNotification(null), 3000);
   };
 
+  const handleUnauthorized = () => {
+    try { sessionStorage.removeItem("duckert-admin-token"); } catch {}
+    onLogout();
+  };
+
   const loadChats = useCallback(async () => {
-    const res = await fetch("/api/admin/chats", { headers: { "x-admin-key": adminKey } });
+    const res = await fetch("/api/admin/chats", { headers: { "x-admin-key": token } });
+    if (res.status === 401) { handleUnauthorized(); return; }
     if (res.ok) setChats(await res.json());
-  }, [adminKey]);
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadEmails = useCallback(async () => {
-    const res = await fetch("/api/admin/emails", { headers: { "x-admin-key": adminKey } });
+    const res = await fetch("/api/admin/emails", { headers: { "x-admin-key": token } });
+    if (res.status === 401) { handleUnauthorized(); return; }
     if (res.ok) {
       const list: Email[] = await res.json();
       setEmails(list);
       setUnreadMails(list.filter((e) => !e.seen).length);
     }
-  }, [adminKey]);
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Initial load
   useEffect(() => { void loadChats(); void loadEmails(); }, [loadChats, loadEmails]);
 
-  // Scroll chat to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [selectedChat?.messages?.length]);
 
-  // SSE for real-time events
   useEffect(() => {
     const ctrl = new AbortController();
     sseAbortRef.current = ctrl;
@@ -159,9 +417,10 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
     (async () => {
       try {
         const res = await fetch("/api/admin/events", {
-          headers: { "x-admin-key": adminKey },
+          headers: { "x-admin-key": token },
           signal: ctrl.signal,
         });
+        if (res.status === 401) { handleUnauthorized(); return; }
         if (!res.ok || !res.body) return;
         const reader = res.body.getReader();
         const dec = new TextDecoder();
@@ -177,9 +436,7 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
               const evt = JSON.parse(ln.slice(6));
               if (evt.type === "new_chat_session" || evt.type === "new_chat_message") {
                 void loadChats();
-                if (evt.sessionId) {
-                  setUnreadChats((prev) => new Set([...prev, evt.sessionId]));
-                }
+                if (evt.sessionId) setUnreadChats((prev) => new Set([...prev, evt.sessionId]));
               }
               if (evt.type === "new_email") {
                 void loadEmails();
@@ -192,9 +449,8 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
     })();
 
     return () => ctrl.abort();
-  }, [adminKey, loadChats, loadEmails]);
+  }, [token, loadChats, loadEmails]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Keep selectedChat in sync with chats list
   useEffect(() => {
     if (!selectedChat) return;
     const updated = chats.find((c) => c.id === selectedChat.id);
@@ -214,7 +470,8 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
     setReplyText("");
     setLoadingEmail(true);
     try {
-      const res = await fetch(`/api/admin/emails/${email.uid}`, { headers: { "x-admin-key": adminKey } });
+      const res = await fetch(`/api/admin/emails/${email.uid}`, { headers: { "x-admin-key": token } });
+      if (res.status === 401) { handleUnauthorized(); return; }
       if (res.ok) setSelectedEmail(await res.json());
     } finally { setLoadingEmail(false); }
   };
@@ -224,15 +481,12 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
     setSending(true);
     try {
       const res = await fetch("/api/admin/chats/reply", {
-        method: "POST",
-        headers,
+        method: "POST", headers,
         body: JSON.stringify({ sessionId: selectedChat.id, content: replyText.trim() }),
       });
-      if (res.ok) {
-        setReplyText("");
-        showNotif("Svar sendt!");
-        void loadChats();
-      } else { showNotif("Fejl ved afsendelse"); }
+      if (res.status === 401) { handleUnauthorized(); return; }
+      if (res.ok) { setReplyText(""); showNotif("Svar sendt!"); void loadChats(); }
+      else showNotif("Fejl ved afsendelse");
     } finally { setSending(false); }
   };
 
@@ -242,18 +496,16 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
     const fromAddr = selectedEmail.from.match(/<([^>]+)>/)?.[1] ?? selectedEmail.from;
     try {
       const res = await fetch("/api/admin/emails/reply", {
-        method: "POST",
-        headers,
+        method: "POST", headers,
         body: JSON.stringify({
           to: fromAddr,
           subject: selectedEmail.subject.startsWith("Re:") ? selectedEmail.subject : `Re: ${selectedEmail.subject}`,
           body: replyText.trim(),
         }),
       });
-      if (res.ok) {
-        setReplyText("");
-        showNotif("Mail sendt!");
-      } else { showNotif("Fejl ved afsendelse"); }
+      if (res.status === 401) { handleUnauthorized(); return; }
+      if (res.ok) { setReplyText(""); showNotif("Mail sendt!"); }
+      else showNotif("Fejl ved afsendelse");
     } finally { setSending(false); }
   };
 
@@ -281,12 +533,12 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
         <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.55)", letterSpacing: "0.08em" }}>
           mit.duckert.design
         </span>
-        <button onClick={onLogout}
+        <button
+          onClick={onLogout}
           style={{
             background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "8px",
             padding: "6px 14px", fontSize: "12px", color: "#fff", cursor: "pointer",
-            fontFamily: "Montserrat, sans-serif", fontWeight: 600,
-            transition: "background 0.15s",
+            fontFamily: "Montserrat, sans-serif", fontWeight: 600, transition: "background 0.15s",
           }}
           onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.25)")}
           onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}
@@ -301,10 +553,8 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
         {/* ── Sidebar ── */}
         <div style={{
           width: `${SIDEBAR_W}px`, flexShrink: 0, background: "#fff",
-          borderRight: "1px solid rgba(22,71,251,0.1)",
-          display: "flex", flexDirection: "column",
+          borderRight: "1px solid rgba(22,71,251,0.1)", display: "flex", flexDirection: "column",
         }}>
-          {/* Tabs */}
           <div style={{ display: "flex", borderBottom: "1px solid rgba(22,71,251,0.1)", padding: "8px 8px 0" }}>
             {([["chats", "Live Chat"], ["mails", "Mails"]] as [Tab, string][]).map(([t, label]) => (
               <button key={t} onClick={() => setTab(t)}
@@ -314,8 +564,7 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
                   fontSize: "12px", fontWeight: 700,
                   color: tab === t ? "#1647FB" : "rgba(8,8,8,0.45)",
                   borderBottom: `2px solid ${tab === t ? "#1647FB" : "transparent"}`,
-                  transition: "color 0.15s, border-color 0.15s",
-                  position: "relative",
+                  transition: "color 0.15s, border-color 0.15s", position: "relative",
                 }}>
                 {label}
                 {t === "chats" && unreadChats.size > 0 && (
@@ -336,7 +585,6 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
             ))}
           </div>
 
-          {/* List */}
           <div style={{ flex: 1, overflowY: "auto" }}>
             {tab === "chats" && (
               chats.length === 0
@@ -351,8 +599,7 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
                           padding: "14px 16px", cursor: "pointer",
                           background: isSelected ? "rgba(22,71,251,0.06)" : "transparent",
                           borderLeft: `3px solid ${isSelected ? "#1647FB" : "transparent"}`,
-                          borderBottom: "1px solid rgba(22,71,251,0.06)",
-                          transition: "background 0.15s",
+                          borderBottom: "1px solid rgba(22,71,251,0.06)", transition: "background 0.15s",
                         }}
                         onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = "rgba(22,71,251,0.03)"; }}
                         onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
@@ -396,8 +643,7 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
                           padding: "14px 16px", cursor: "pointer",
                           background: isSelected ? "rgba(22,71,251,0.06)" : "transparent",
                           borderLeft: `3px solid ${isSelected ? "#1647FB" : "transparent"}`,
-                          borderBottom: "1px solid rgba(22,71,251,0.06)",
-                          transition: "background 0.15s",
+                          borderBottom: "1px solid rgba(22,71,251,0.06)", transition: "background 0.15s",
                         }}
                         onMouseEnter={(ev) => { if (!isSelected) (ev.currentTarget as HTMLDivElement).style.background = "rgba(22,71,251,0.03)"; }}
                         onMouseLeave={(ev) => { if (!isSelected) (ev.currentTarget as HTMLDivElement).style.background = "transparent"; }}
@@ -429,7 +675,6 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
             )}
           </div>
 
-          {/* Refresh button */}
           <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(22,71,251,0.08)" }}>
             <button onClick={() => { void loadChats(); void loadEmails(); }}
               style={{
@@ -453,7 +698,6 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
         {/* ── Main panel ── */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-          {/* Empty state */}
           {!selectedChat && !selectedEmail && !loadingEmail && (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", color: "rgba(8,8,8,0.35)" }}>
               <div style={{ width: "64px", height: "64px", borderRadius: "18px", background: "rgba(22,71,251,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -465,18 +709,14 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
             </div>
           )}
 
-          {/* Loading email body */}
           {loadingEmail && (
             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ width: "24px", height: "24px", border: "2.5px solid rgba(22,71,251,0.2)", borderTopColor: "#1647FB", borderRadius: "50%", animation: "admin-spin 0.8s linear infinite" }} />
-              <style>{`@keyframes admin-spin { to { transform: rotate(360deg); } }`}</style>
+              <Spinner />
             </div>
           )}
 
-          {/* ── Chat detail ── */}
           {selectedChat && (
             <>
-              {/* Chat header */}
               <div style={{
                 padding: "16px 24px", background: "#fff",
                 borderBottom: "1px solid rgba(22,71,251,0.08)",
@@ -511,7 +751,6 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
                 </div>
               </div>
 
-              {/* Messages */}
               <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: "12px", background: "#f9f9fb" }}>
                 {selectedChat.messages.filter((m) => m.content).map((msg) => {
                   const { bg, color, align } = roleColor(msg.role);
@@ -534,7 +773,6 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Reply */}
               <div style={{ padding: "16px 24px", background: "#fff", borderTop: "1px solid rgba(22,71,251,0.08)", flexShrink: 0 }}>
                 <div style={{ display: "flex", gap: "10px", alignItems: "flex-end" }}>
                   <textarea
@@ -546,8 +784,7 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
                     style={{
                       flex: 1, padding: "12px 14px", border: "1.5px solid rgba(22,71,251,0.18)",
                       borderRadius: "12px", fontSize: "13px", fontFamily: "Montserrat, sans-serif",
-                      color: "#080808", resize: "none", outline: "none",
-                      transition: "border-color 0.2s",
+                      color: "#080808", resize: "none", outline: "none", transition: "border-color 0.2s",
                     }}
                     onFocus={(e) => (e.target.style.borderColor = "#1647FB")}
                     onBlur={(e) => (e.target.style.borderColor = "rgba(22,71,251,0.18)")}
@@ -560,8 +797,7 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
                       fontSize: "13px", fontFamily: "Montserrat, sans-serif", fontWeight: 700,
                       color: replyText.trim() && !sending ? "#fff" : "rgba(22,71,251,0.5)",
                       cursor: replyText.trim() && !sending ? "pointer" : "default",
-                      transition: "background 0.2s, color 0.2s",
-                      flexShrink: 0, height: "fit-content",
+                      transition: "background 0.2s, color 0.2s", flexShrink: 0, height: "fit-content",
                     }}>
                     {sending ? "Sender…" : "Send"}
                   </button>
@@ -570,10 +806,8 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
             </>
           )}
 
-          {/* ── Email detail ── */}
           {selectedEmail && !loadingEmail && (
             <>
-              {/* Email header */}
               <div style={{
                 padding: "16px 24px", background: "#fff",
                 borderBottom: "1px solid rgba(22,71,251,0.08)", flexShrink: 0,
@@ -597,7 +831,6 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
                 </div>
               </div>
 
-              {/* Email body */}
               <div style={{ flex: 1, overflowY: "auto", padding: "24px", background: "#f9f9fb" }}>
                 <div style={{
                   background: "#fff", borderRadius: "14px", padding: "24px",
@@ -609,7 +842,6 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
                 </div>
               </div>
 
-              {/* Email reply */}
               <div style={{ padding: "16px 24px", background: "#fff", borderTop: "1px solid rgba(22,71,251,0.08)", flexShrink: 0 }}>
                 <p style={{ fontSize: "11px", color: "rgba(8,8,8,0.45)", margin: "0 0 8px", fontFamily: "Montserrat, sans-serif" }}>
                   Svar til: <strong>{selectedEmail.from}</strong>
@@ -624,8 +856,7 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
                     style={{
                       flex: 1, padding: "12px 14px", border: "1.5px solid rgba(22,71,251,0.18)",
                       borderRadius: "12px", fontSize: "13px", fontFamily: "Montserrat, sans-serif",
-                      color: "#080808", resize: "none", outline: "none",
-                      transition: "border-color 0.2s",
+                      color: "#080808", resize: "none", outline: "none", transition: "border-color 0.2s",
                     }}
                     onFocus={(e) => (e.target.style.borderColor = "#1647FB")}
                     onBlur={(e) => (e.target.style.borderColor = "rgba(22,71,251,0.18)")}
@@ -638,8 +869,7 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
                       fontSize: "13px", fontFamily: "Montserrat, sans-serif", fontWeight: 700,
                       color: replyText.trim() && !sending ? "#fff" : "rgba(22,71,251,0.5)",
                       cursor: replyText.trim() && !sending ? "pointer" : "default",
-                      transition: "background 0.2s, color 0.2s",
-                      flexShrink: 0, height: "fit-content",
+                      transition: "background 0.2s, color 0.2s", flexShrink: 0, height: "fit-content",
                     }}>
                     {sending ? "Sender…" : "Send mail"}
                   </button>
@@ -650,16 +880,15 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
         </div>
       </div>
 
-      {/* ── Toast notification ── */}
       {notification && (
         <div style={{
           position: "fixed", bottom: "24px", left: "50%", transform: "translateX(-50%)",
           background: "#080808", color: "#fff", padding: "10px 20px", borderRadius: "999px",
           fontSize: "13px", fontFamily: "Montserrat, sans-serif", fontWeight: 600,
-          zIndex: 9999, animation: "admin-toast 0.25s ease both",
+          zIndex: 9999, animation: "dkToast 0.25s ease both",
           boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
         }}>
-          <style>{`@keyframes admin-toast { from { opacity:0; transform:translateX(-50%) translateY(8px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }`}</style>
+          <style>{`@keyframes dkToast{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`}</style>
           {notification}
         </div>
       )}
@@ -667,23 +896,23 @@ function AdminApp({ adminKey, onLogout }: { adminKey: string; onLogout: () => vo
   );
 }
 
-/* ─── Root ────────────────────────────────────────────────── */
+/* ─── Root ────────────────────────────────────────────────────────────────── */
 export default function MitPage() {
-  const [adminKey, setAdminKey] = useState<string | null>(() => {
+  const [token, setToken] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
-    return sessionStorage.getItem("duckert-admin-key");
+    return sessionStorage.getItem("duckert-admin-token");
   });
 
-  const handleLogin = (key: string) => {
-    try { sessionStorage.setItem("duckert-admin-key", key); } catch {}
-    setAdminKey(key);
+  const handleLogin = (t: string) => {
+    try { sessionStorage.setItem("duckert-admin-token", t); } catch {}
+    setToken(t);
   };
 
   const handleLogout = () => {
-    try { sessionStorage.removeItem("duckert-admin-key"); } catch {}
-    setAdminKey(null);
+    try { sessionStorage.removeItem("duckert-admin-token"); } catch {}
+    setToken(null);
   };
 
-  if (!adminKey) return <LoginScreen onLogin={handleLogin} />;
-  return <AdminApp adminKey={adminKey} onLogout={handleLogout} />;
+  if (!token) return <LoginScreen onLogin={handleLogin} />;
+  return <AdminApp token={token} onLogout={handleLogout} />;
 }

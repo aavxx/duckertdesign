@@ -10,7 +10,7 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ uid: string }> }
 ) {
-  const authErr = requireAdminKey(req);
+  const authErr = await requireAdminKey(req);
   if (authErr) return authErr;
 
   const { uid } = await params;
