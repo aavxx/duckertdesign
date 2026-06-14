@@ -2,147 +2,195 @@
 
 import { useRouter } from "next/navigation";
 
+const MARQUEE_BASE = [
+  "Webdesign", "UI/UX Design", "Webudvikling",
+  "Webdesign", "UI/UX Design", "Webudvikling",
+  "Webdesign", "UI/UX Design", "Webudvikling",
+];
+const MARQUEE_ITEMS = [...MARQUEE_BASE, ...MARQUEE_BASE];
+
 export default function Hero() {
   const router = useRouter();
   const scrollTo = (id: string) =>
     document.querySelector(id)?.scrollIntoView({ behavior: "smooth" });
 
   return (
-    <section
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        padding: "0 40px",
-        maxWidth: "1200px",
-        margin: "0 auto",
-        boxSizing: "border-box",
-        width: "100%",
-      }}
-    >
-      {/* Top labels */}
+    <section style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
       <div
         style={{
-          paddingTop: "120px",
+          flex: 1,
           display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          flexDirection: "column",
+          padding: "0 clamp(20px, 5vw, 80px)",
+          maxWidth: "1400px",
+          margin: "0 auto",
+          width: "100%",
+          boxSizing: "border-box",
         }}
       >
-        <span
+        {/* Top labels */}
+        <div
           style={{
-            fontSize: "10px",
-            letterSpacing: "0.16em",
-            color: "#bbb",
-            textTransform: "uppercase",
-            fontWeight: 600,
+            paddingTop: "clamp(100px, 13vh, 140px)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
-          Duckert Design Studio
-        </span>
-        <span
-          style={{
-            fontSize: "10px",
-            letterSpacing: "0.16em",
-            color: "#bbb",
-            textTransform: "uppercase",
-            fontWeight: 600,
-          }}
-        >
-          Est. 2024
-        </span>
-      </div>
-
-      {/* Headline — centered vertically */}
-      <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
-        <h1
-          style={{
-            fontSize: "clamp(48px, 8vw, 96px)",
-            fontWeight: 700,
-            letterSpacing: "-0.03em",
-            lineHeight: 1,
-            color: "#080808",
-            margin: 0,
-          }}
-        >
-          Design der{" "}
-          <em
+          <span
             style={{
-              fontStyle: "italic",
-              fontWeight: 300,
-              color: "#1647FB",
-            }}
-          >
-            mærkes.
-          </em>
-        </h1>
-      </div>
-
-      {/* Bottom row */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "space-between",
-          gap: "40px",
-          flexWrap: "wrap",
-          paddingBottom: "60px",
-          paddingTop: "32px",
-          borderTop: "1px solid #ebebeb",
-        }}
-      >
-        <p
-          style={{
-            fontSize: "15px",
-            color: "#888",
-            lineHeight: 1.75,
-            maxWidth: "360px",
-            margin: 0,
-          }}
-        >
-          Vi designer og udvikler professionelle hjemmesider til virksomheder der vil mere online.
-        </p>
-        <div style={{ display: "flex", gap: "12px", flexShrink: 0 }}>
-          <button
-            onClick={() => router.push("/kontakt")}
-            style={{
-              padding: "14px 28px",
-              background: "#1647FB",
-              color: "#fff",
-              border: "none",
               fontSize: "10px",
-              fontFamily: "Montserrat, sans-serif",
-              fontWeight: 700,
-              letterSpacing: "0.14em",
+              letterSpacing: "0.16em",
+              color: "#bbb",
               textTransform: "uppercase",
-              cursor: "pointer",
-              transition: "opacity 0.2s",
+              fontWeight: 600,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
           >
-            Start et projekt
-          </button>
-          <button
-            onClick={() => scrollTo("#ydelser")}
+            Duckert Design Studio
+          </span>
+          <span
             style={{
-              padding: "14px 28px",
-              background: "transparent",
+              fontSize: "10px",
+              letterSpacing: "0.16em",
+              color: "#bbb",
+              textTransform: "uppercase",
+              fontWeight: 600,
+            }}
+          >
+            Est. 2024
+          </span>
+        </div>
+
+        {/* Headline */}
+        <div style={{ flex: 1, display: "flex", alignItems: "center" }}>
+          <h1
+            style={{
+              fontSize: "clamp(54px, 10.5vw, 136px)",
+              fontWeight: 800,
+              letterSpacing: "-0.04em",
+              lineHeight: 0.95,
               color: "#080808",
-              border: "1px solid #e0e0e0",
-              fontSize: "10px",
-              fontFamily: "Montserrat, sans-serif",
-              fontWeight: 700,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              cursor: "pointer",
-              transition: "border-color 0.2s",
+              margin: 0,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#aaa")}
-            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e0e0e0")}
           >
-            Se ydelser
-          </button>
+            Design der{" "}
+            <em
+              style={{
+                fontStyle: "italic",
+                fontWeight: 400,
+                color: "#1647FB",
+                fontFamily: "'Instrument Serif', Georgia, serif",
+              }}
+            >
+              mærkes.
+            </em>
+          </h1>
+        </div>
+
+        {/* Bottom row */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            gap: "32px",
+            flexWrap: "wrap",
+            paddingBottom: "56px",
+            paddingTop: "32px",
+            borderTop: "1px solid #ebebeb",
+          }}
+        >
+          <p
+            style={{
+              fontSize: "15px",
+              color: "#888",
+              lineHeight: 1.8,
+              maxWidth: "360px",
+              margin: 0,
+            }}
+          >
+            Vi designer og udvikler professionelle hjemmesider til virksomheder der vil mere online.
+          </p>
+          <div style={{ display: "flex", gap: "10px", flexShrink: 0, flexWrap: "wrap" }}>
+            <button
+              onClick={() => router.push("/kontakt")}
+              style={{
+                padding: "15px 32px",
+                background: "#1647FB",
+                color: "#fff",
+                border: "none",
+                fontSize: "10px",
+                fontFamily: "Montserrat, sans-serif",
+                fontWeight: 700,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                transition: "opacity 0.2s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.8")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            >
+              Start et projekt
+            </button>
+            <button
+              onClick={() => scrollTo("#ydelser")}
+              style={{
+                padding: "15px 32px",
+                background: "transparent",
+                color: "#080808",
+                border: "1px solid #ddd",
+                fontSize: "10px",
+                fontFamily: "Montserrat, sans-serif",
+                fontWeight: 700,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+                transition: "border-color 0.2s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#080808")}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#ddd")}
+            >
+              Se ydelser
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Marquee ticker */}
+      <div
+        aria-hidden="true"
+        style={{
+          background: "#080808",
+          overflow: "hidden",
+          whiteSpace: "nowrap",
+        }}
+      >
+        <div
+          className="marquee-inner"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            animation: "marquee 22s linear infinite",
+            paddingBlock: "14px",
+          }}
+        >
+          {MARQUEE_ITEMS.map((item, i) => (
+            <span key={i} style={{ display: "inline-flex", alignItems: "center" }}>
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  letterSpacing: "0.2em",
+                  textTransform: "uppercase",
+                  color: "#ffffff",
+                  paddingInline: "28px",
+                }}
+              >
+                {item}
+              </span>
+              <span style={{ color: "#1647FB", fontSize: "12px", lineHeight: 1 }}>✦</span>
+            </span>
+          ))}
         </div>
       </div>
     </section>

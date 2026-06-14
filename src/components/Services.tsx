@@ -31,8 +31,8 @@ export default function Services() {
     <section
       id="ydelser"
       style={{
-        padding: "120px 40px",
-        maxWidth: "1200px",
+        padding: "clamp(80px, 12vw, 160px) clamp(20px, 5vw, 80px)",
+        maxWidth: "1400px",
         margin: "0 auto",
       }}
     >
@@ -41,7 +41,7 @@ export default function Services() {
           display: "flex",
           alignItems: "baseline",
           justifyContent: "space-between",
-          paddingBottom: "24px",
+          paddingBottom: "20px",
           borderBottom: "1px solid #ebebeb",
         }}
       >
@@ -83,87 +83,107 @@ function ServiceRow({ service }: { service: (typeof services)[0] }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        display: "grid",
-        gridTemplateColumns: "72px 1fr 32px",
-        gap: "40px",
-        alignItems: "start",
-        padding: "48px 0",
+        padding: "clamp(32px, 5vw, 52px) 0",
         borderBottom: "1px solid #ebebeb",
         cursor: "default",
         transition: "opacity 0.2s",
-        opacity: hovered ? 1 : 0.85,
+        opacity: hovered ? 1 : 0.88,
       }}
     >
-      <span
-        style={{
-          fontSize: "11px",
-          color: "#ddd",
-          fontWeight: 600,
-          letterSpacing: "0.1em",
-          paddingTop: "8px",
-        }}
-      >
-        {service.number}
-      </span>
-
-      <div>
-        <h3
+      {/* Desktop layout */}
+      <div className="hidden md:grid" style={{ gridTemplateColumns: "72px 1fr 32px", gap: "40px", alignItems: "start" }}>
+        <span
           style={{
-            fontSize: "clamp(28px, 3.5vw, 48px)",
-            fontWeight: 700,
-            letterSpacing: "-0.025em",
-            lineHeight: 1.05,
-            margin: "0 0 16px",
-            color: hovered ? "#1647FB" : "#080808",
-            transition: "color 0.2s",
+            fontSize: "11px",
+            color: "#ddd",
+            fontWeight: 600,
+            letterSpacing: "0.1em",
+            paddingTop: "8px",
           }}
         >
-          {service.title}
-        </h3>
-        <p
+          {service.number}
+        </span>
+        <ServiceContent service={service} hovered={hovered} />
+        <div
           style={{
-            fontSize: "15px",
-            color: "#999",
-            lineHeight: 1.75,
-            maxWidth: "480px",
-            margin: "0 0 20px",
+            fontSize: "22px",
+            color: hovered ? "#1647FB" : "#ddd",
+            paddingTop: "6px",
+            transition: "color 0.2s, transform 0.25s",
+            transform: hovered ? "translate(3px, -3px)" : "translate(0, 0)",
+            userSelect: "none",
+            lineHeight: 1,
           }}
         >
-          {service.description}
-        </p>
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          {service.tags.map((tag) => (
-            <span
-              key={tag}
-              style={{
-                fontSize: "9px",
-                fontWeight: 600,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                color: "#bbb",
-                border: "1px solid #ebebeb",
-                padding: "5px 12px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {tag}
-            </span>
-          ))}
+          ↗
         </div>
       </div>
 
-      <div
+      {/* Mobile layout */}
+      <div className="md:hidden">
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "12px" }}>
+          <span style={{ fontSize: "10px", color: "#ddd", fontWeight: 600, letterSpacing: "0.1em" }}>
+            {service.number}
+          </span>
+          <span style={{ fontSize: "18px", color: hovered ? "#1647FB" : "#ddd", transition: "color 0.2s" }}>↗</span>
+        </div>
+        <ServiceContent service={service} hovered={hovered} />
+      </div>
+    </div>
+  );
+}
+
+function ServiceContent({
+  service,
+  hovered,
+}: {
+  service: (typeof services)[0];
+  hovered: boolean;
+}) {
+  return (
+    <div>
+      <h3
         style={{
-          fontSize: "20px",
-          color: hovered ? "#1647FB" : "#ddd",
-          paddingTop: "8px",
-          transition: "color 0.2s, transform 0.2s",
-          transform: hovered ? "translate(3px, -3px)" : "translate(0, 0)",
-          userSelect: "none",
-          lineHeight: 1,
+          fontSize: "clamp(26px, 3.5vw, 48px)",
+          fontWeight: 700,
+          letterSpacing: "-0.025em",
+          lineHeight: 1.05,
+          margin: "0 0 14px",
+          color: hovered ? "#1647FB" : "#080808",
+          transition: "color 0.2s",
         }}
       >
-        ↗
+        {service.title}
+      </h3>
+      <p
+        style={{
+          fontSize: "15px",
+          color: "#999",
+          lineHeight: 1.75,
+          maxWidth: "480px",
+          margin: "0 0 18px",
+        }}
+      >
+        {service.description}
+      </p>
+      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+        {service.tags.map((tag) => (
+          <span
+            key={tag}
+            style={{
+              fontSize: "9px",
+              fontWeight: 600,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: "#bbb",
+              border: "1px solid #e8e8e8",
+              padding: "5px 12px",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {tag}
+          </span>
+        ))}
       </div>
     </div>
   );

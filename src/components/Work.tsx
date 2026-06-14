@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 const projects = [
   {
     number: "01",
@@ -8,7 +10,6 @@ const projects = [
     year: "2024",
     bg: "#f0f0f0",
     color: "#080808",
-    wide: true,
   },
   {
     number: "02",
@@ -17,25 +18,22 @@ const projects = [
     year: "2024",
     bg: "#1647FB",
     color: "#ffffff",
-    wide: false,
   },
   {
     number: "03",
     category: "UI/UX",
     title: "Projekt Gamma",
-    year: "2023",
+    year: "2024",
     bg: "#080808",
     color: "#ffffff",
-    wide: false,
   },
   {
     number: "04",
     category: "Webudvikling",
     title: "Projekt Delta",
-    year: "2023",
+    year: "2024",
     bg: "#f0f0f0",
     color: "#080808",
-    wide: true,
   },
 ];
 
@@ -44,135 +42,134 @@ export default function Work() {
     <section
       id="arbejde"
       style={{
-        padding: "120px 40px",
+        padding: "clamp(80px, 12vw, 160px) clamp(20px, 5vw, 80px)",
         background: "#f9f9f9",
       }}
     >
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-        {/* Header */}
         <div
           style={{
             display: "flex",
             alignItems: "baseline",
             justifyContent: "space-between",
-            marginBottom: "64px",
+            marginBottom: "clamp(32px, 4vw, 52px)",
             borderBottom: "1px solid #e0e0e0",
-            paddingBottom: "24px",
+            paddingBottom: "20px",
           }}
         >
-          <h2
+          <span
             style={{
-              fontSize: "11px",
-              fontWeight: 600,
-              letterSpacing: "0.15em",
+              fontSize: "10px",
+              fontWeight: 700,
+              letterSpacing: "0.18em",
               textTransform: "uppercase",
-              color: "#aaa",
-              margin: 0,
+              color: "#bbb",
             }}
           >
             Udvalgte projekter
-          </h2>
-          <span style={{ fontSize: "11px", color: "#aaa", letterSpacing: "0.1em" }}>
-            04 projekter
+          </span>
+          <span
+            style={{
+              fontSize: "10px",
+              color: "#bbb",
+              letterSpacing: "0.14em",
+              fontWeight: 600,
+            }}
+          >
+            04
           </span>
         </div>
 
-        {/* Grid */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(12, 1fr)",
-            gap: "16px",
-          }}
-        >
-          {/* Row 1: wide + narrow */}
-          <ProjectCard project={projects[0]} colSpan={7} />
-          <ProjectCard project={projects[1]} colSpan={5} />
-          {/* Row 2: narrow + wide */}
-          <ProjectCard project={projects[2]} colSpan={5} />
-          <ProjectCard project={projects[3]} colSpan={7} />
+        <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: "10px" }}>
+          {projects.map((p) => (
+            <ProjectCard key={p.number} project={p} />
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
-function ProjectCard({
-  project,
-  colSpan,
-}: {
-  project: (typeof projects)[0];
-  colSpan: number;
-}) {
+function ProjectCard({ project }: { project: (typeof projects)[0] }) {
+  const [hovered, setHovered] = useState(false);
+
   return (
     <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
-        gridColumn: `span ${colSpan}`,
         background: project.bg,
-        aspectRatio: colSpan === 7 ? "16/10" : "4/5",
+        aspectRatio: "4/3",
         position: "relative",
         overflow: "hidden",
         cursor: "pointer",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        padding: "32px",
+        padding: "clamp(24px, 3vw, 40px)",
         transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLDivElement).style.transform = "scale(0.985)";
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLDivElement).style.transform = "scale(1)";
+        transform: hovered ? "scale(0.984)" : "scale(1)",
       }}
     >
-      {/* Top: number */}
-      <span
-        style={{
-          fontSize: "11px",
-          fontWeight: 500,
-          letterSpacing: "0.1em",
-          color: project.color,
-          opacity: 0.4,
-        }}
-      >
-        {project.number}
-      </span>
+      {/* Top row */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <span
+          style={{
+            fontSize: "11px",
+            fontWeight: 500,
+            letterSpacing: "0.1em",
+            color: project.color,
+            opacity: 0.35,
+          }}
+        >
+          {project.number}
+        </span>
+        <span
+          style={{
+            fontSize: "22px",
+            color: project.color,
+            lineHeight: 1,
+            opacity: hovered ? 1 : 0,
+            transform: hovered ? "translate(0, 0)" : "translate(-6px, 6px)",
+            transition: "opacity 0.25s, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+        >
+          ↗
+        </span>
+      </div>
 
-      {/* Bottom: info */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-        <div>
-          <p
-            style={{
-              fontSize: "10px",
-              fontWeight: 600,
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
-              color: project.color,
-              opacity: 0.5,
-              margin: "0 0 8px",
-            }}
-          >
-            {project.category}
-          </p>
-          <h3
-            style={{
-              fontSize: "clamp(20px, 2.5vw, 32px)",
-              fontWeight: 600,
-              letterSpacing: "-0.02em",
-              color: project.color,
-              margin: 0,
-              lineHeight: 1.1,
-            }}
-          >
-            {project.title}
-          </h3>
-        </div>
+      {/* Bottom info */}
+      <div>
+        <p
+          style={{
+            fontSize: "9px",
+            fontWeight: 700,
+            letterSpacing: "0.16em",
+            textTransform: "uppercase",
+            color: project.color,
+            opacity: 0.5,
+            margin: "0 0 10px",
+          }}
+        >
+          {project.category}
+        </p>
+        <h3
+          style={{
+            fontSize: "clamp(22px, 2.5vw, 36px)",
+            fontWeight: 700,
+            letterSpacing: "-0.025em",
+            color: project.color,
+            margin: "0 0 10px",
+            lineHeight: 1.05,
+          }}
+        >
+          {project.title}
+        </h3>
         <span
           style={{
             fontSize: "11px",
             color: project.color,
-            opacity: 0.4,
+            opacity: 0.35,
             letterSpacing: "0.05em",
           }}
         >

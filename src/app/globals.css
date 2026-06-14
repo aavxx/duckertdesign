@@ -1,11 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,200;1,300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,200;1,300;1,400&family=Instrument+Serif:ital@0;1&display=swap');
 @import "tailwindcss";
 
 :root {
   --blue: #1647FB;
   --black: #080808;
   --white: #ffffff;
-  --gray: #f4f4f4;
+  --gray: #f5f5f5;
+  --border: #ebebeb;
 }
 
 html {
@@ -34,6 +35,22 @@ body {
 input, textarea {
   -webkit-appearance: none;
   border-radius: 0;
+}
+
+:focus-visible {
+  outline: 2px solid #1647FB;
+  outline-offset: 3px;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-inner {
+    animation-play-state: paused;
+  }
 }
 
 @keyframes chatDotBounce {
