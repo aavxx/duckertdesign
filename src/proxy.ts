@@ -19,21 +19,17 @@ export function proxy(request: NextRequest) {
     urlHost.startsWith("mit.");
 
   if (isKundeservice) {
+    if (request.nextUrl.pathname.startsWith("/kundeservice")) return NextResponse.next();
     const url = request.nextUrl.clone();
-    if (!url.pathname.startsWith("/kundeservice")) {
-      url.pathname = url.pathname === "/" ? "/kundeservice" : `/kundeservice${url.pathname}`;
-    }
+    url.pathname = request.nextUrl.pathname === "/" ? "/kundeservice" : `/kundeservice${request.nextUrl.pathname}`;
     return NextResponse.rewrite(url);
   }
 
   if (isMit) {
+    if (request.nextUrl.pathname.startsWith("/mit")) return NextResponse.next();
     const url = request.nextUrl.clone();
-    if (!url.pathname.startsWith("/mit")) {
-      url.pathname = url.pathname === "/" ? "/mit" : `/mit${url.pathname}`;
-    }
-    const res = NextResponse.rewrite(url);
-    res.headers.set("x-proxy-debug", `eff=${effectiveHost} host=${host} url=${urlHost}`);
-    return res;
+    url.pathname = request.nextUrl.pathname === "/" ? "/mit" : `/mit${request.nextUrl.pathname}`;
+    return NextResponse.rewrite(url);
   }
 
   const res = NextResponse.next();
