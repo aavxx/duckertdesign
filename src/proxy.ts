@@ -4,32 +4,40 @@ import type { NextRequest } from "next/server";
 export function proxy(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const xfHost = request.headers.get("x-forwarded-host") ?? "";
-  const effectiveHost = xfHost || host;
+  // nextUrl.hostname is parsed from the actual incoming URL — most reliable on Node.js runtime
+  const urlHost = request.nextUrl.hostname ?? "";
+  const effectiveHost = xfHost || host || urlHost;
 
-  if (effectiveHost.startsWith("kundeservice.") || host.startsWith("kundeservice.")) {
+  const isKundeservice =
+    effectiveHost.startsWith("kundeservice.") ||
+    host.startsWith("kundeservice.") ||
+    urlHost.startsWith("kundeservice.");
+
+  const isMit =
+    effectiveHost.startsWith("mit.") ||
+    host.startsWith("mit.") ||
+    urlHost.startsWith("mit.");
+
+  if (isKundeservice) {
     const url = request.nextUrl.clone();
-    const originalPath = url.pathname === "/" ? "" : url.pathname;
-    url.pathname = `/kundeservice${originalPath}`;
+    if (!url.pathname.startsWith("/kundeservice")) {
+      url.pathname = url.pathname === "/" ? "/kundeservice" : `/kundeservice${url.pathname}`;
+    }
     return NextResponse.rewrite(url);
   }
 
-  if (
-    effectiveHost.startsWith("mit.") ||
-    host.startsWith("mit.") ||
-    effectiveHost === "mit.duckert.design" ||
-    host === "mit.duckert.design"
-  ) {
+  if (isMit) {
     const url = request.nextUrl.clone();
-    const originalPath = url.pathname === "/" ? "" : url.pathname;
-    url.pathname = `/mit${originalPath}`;
+    if (!url.pathname.startsWith("/mit")) {
+      url.pathname = url.pathname === "/" ? "/mit" : `/mit${url.pathname}`;
+    }
     const res = NextResponse.rewrite(url);
-    res.headers.set("x-proxy-host-seen", effectiveHost || host);
+    res.headers.set("x-proxy-debug", `eff=${effectiveHost} host=${host} url=${urlHost}`);
     return res;
   }
 
-  // Diagnostic: expose which host the proxy sees (remove after debugging)
   const res = NextResponse.next();
-  res.headers.set("x-proxy-host-seen", effectiveHost || host);
+  res.headers.set("x-proxy-debug", `eff=${effectiveHost} host=${host} url=${urlHost}`);
   return res;
 }
 
