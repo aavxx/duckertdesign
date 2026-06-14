@@ -114,6 +114,15 @@ export async function POST(req: Request) {
   if (humanHandoff) {
     session.status = "human";
     session.updatedAt = now;
+    // Store the user's "Tal med en agent" message in the session
+    if (userMessage) {
+      session.messages.push({
+        id: crypto.randomUUID(),
+        role: "user",
+        content: userMessage,
+        ts: now,
+      });
+    }
     await persistSession(session);
     await publishAdminEvent({ type: "new_chat_session", sessionId: sid, humanRequested: true, ts: now });
     const responseHeaders = new Headers({
@@ -171,7 +180,7 @@ export async function POST(req: Request) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
+      model: process.env.GROQ_MODEL ?? "llama-3.1-8b-instant",
       stream: true,
       max_tokens: 512,
       temperature: 0.7,
@@ -203,13 +212,15 @@ export async function POST(req: Request) {
         const chunk = decoder.decode(value, { stream: true });
         buf += chunk;
 
-        // Extract text content from SSE lines to build full response
-        const lines = buf.split("\n");
+        // Extract text content from SSE lines to build full response.
+        // Groq returns \r\n line endings, so split on /\r?\n/ and trim.
+        const lines = buf.split(/\r?\n/);
         buf = lines.pop() ?? "";
-        for (const ln of lines) {
-          if (!ln.startsWith("data: ") || ln === "data: [DONE]") continue;
+        for (const raw of lines) {
+          const ln = raw.trim();
+          if (!ln.startsWith("data:") || ln === "data: [DONE]") continue;
           try {
-            fullResponse += JSON.parse(ln.slice(6)).choices?.[0]?.delta?.content ?? "";
+            fullResponse += JSON.parse(ln.slice(5).trim()).choices?.[0]?.delta?.content ?? "";
           } catch {}
         }
 

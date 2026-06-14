@@ -10,7 +10,11 @@ export async function requireAdminKey(req: Request): Promise<Response | null> {
 
   // OTP session token
   const valid = await redis.get(`admin:session:${key}`);
-  if (valid) return null;
+  if (valid) {
+    // Sliding 15-minute window: reset TTL on each authenticated request
+    await redis.expire(`admin:session:${key}`, 900).catch(() => {});
+    return null;
+  }
 
   return new Response("Unauthorized", { status: 401, headers: corsHeaders() });
 }

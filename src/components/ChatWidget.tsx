@@ -13,10 +13,12 @@ const INITIAL_QUICK_REPLIES = [
   "Hvad koster en hjemmeside?",
   "Hvor lang tid tager det?",
   "Laver I webshops?",
-  "Tal med en agent",
 ];
 
 const GREETING = "Hej! 👋 Hvad kan jeg hjælpe dig med?";
+
+const FEEDBACK_EMOJIS = ["😠", "😞", "😐", "😊", "😄"];
+const FEEDBACK_LABELS = ["Meget dårlig", "Dårlig", "Okay", "God", "Fantastisk"];
 
 /* ─── Types ───────────────────────────────────────────────────────────────── */
 type Message = {
@@ -24,6 +26,7 @@ type Message = {
   role: "user" | "assistant" | "admin";
   content: string;
   isPrivacyCard?: boolean;
+  isSystem?: boolean;
   quickReplies?: string[];
   streaming?: boolean;
   timestamp?: string;
@@ -88,7 +91,7 @@ function parseQuickReplies(text: string): { content: string; quickReplies: strin
   };
 }
 
-/* ─── Bouncing dots (loading) ─────────────────────────────────────────────── */
+/* ─── Bouncing dots ───────────────────────────────────────────────────────── */
 function BouncingDots() {
   return (
     <div style={{ display: "flex", gap: "4px", alignItems: "center", padding: "2px 0" }}>
@@ -131,25 +134,34 @@ export default function ChatWidget({
   onClose?: () => void;
 }) {
   const pathname = usePathname();
-  const [visible, setVisible]         = useState(false);
-  const [isOpen, setIsOpen]           = useState(false);
-  const [messages, setMessages]       = useState<Message[]>(() => loadMessages());
-  const [showQR, setShowQR]           = useState<boolean>(() => {
+  const [visible, setVisible]           = useState(false);
+  const [isOpen, setIsOpen]             = useState(false);
+  const [messages, setMessages]         = useState<Message[]>(() => loadMessages());
+  const [showQR, setShowQR]             = useState<boolean>(() => {
     const saved = loadMessages();
     if (!saved.length) return false;
     const last = saved[saved.length - 1];
     return last.role === "assistant" && !!(last.quickReplies?.length);
   });
-  const [isLoading, setIsLoading]     = useState(false);
-  const [input, setInput]             = useState("");
+  const [isLoading, setIsLoading]       = useState(false);
+  const [input, setInput]               = useState("");
   const [waitingHuman, setWaitingHuman] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false);
+  const [showWelcome, setShowWelcome]   = useState(false);
+  const [menuOpen, setMenuOpen]         = useState(false);
+  const [chatEnded, setChatEnded]       = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackSent, setFeedbackSent] = useState(false);
+  const [agentTyping, setAgentTyping]   = useState(false);
 
-  const hasInit    = useRef(false);
-  const endRef     = useRef<HTMLDivElement>(null);
-  const inputRef   = useRef<HTMLInputElement>(null);
-  const sessionRef = useRef<string | null>(null);
-  const sseRef     = useRef<EventSource | null>(null);
+  const hasInit             = useRef(false);
+  const endRef              = useRef<HTMLDivElement>(null);
+  const inputRef            = useRef<HTMLInputElement>(null);
+  const sessionRef          = useRef<string | null>(null);
+  const sseRef              = useRef<EventSource | null>(null);
+  const msgAudioRef         = useRef<HTMLAudioElement | null>(null);
+  const typingTimerRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTypingRef         = useRef(false);
+  const agentTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Floating button delay
   useEffect(() => {
@@ -171,10 +183,10 @@ export default function ChatWidget({
     if (isOpen) {
       setTimeout(() => {
         endRef.current?.scrollIntoView({ behavior: "smooth" });
-        inputRef.current?.focus();
+        if (!chatEnded) inputRef.current?.focus();
       }, 80);
     }
-  }, [messages, isLoading, isOpen]);
+  }, [messages, isLoading, isOpen, chatEnded]);
 
   // Init on first open
   useEffect(() => {
@@ -201,43 +213,165 @@ export default function ChatWidget({
     }, 1200);
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { return () => { sseRef.current?.close(); }; }, []);
+  useEffect(() => {
+    return () => {
+      sseRef.current?.close();
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      if (agentTypingTimerRef.current) clearTimeout(agentTypingTimerRef.current);
+    };
+  }, []);
 
   // Don't render on admin page
   if (pathname?.startsWith("/mit")) return null;
+
+  /* ── Helpers ── */
+  const playMsgSound = () => {
+    if (typeof window === "undefined" || !document.hidden) return;
+    try {
+      if (!msgAudioRef.current) msgAudioRef.current = new Audio("/newmessage.m4a");
+      msgAudioRef.current.currentTime = 0;
+      msgAudioRef.current.play().catch(() => {});
+    } catch {}
+  };
+
+  const sendTypingStatus = (typing: boolean) => {
+    const sid = sessionRef.current;
+    if (!sid) return;
+    fetch("/api/chat/typing", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId: sid, typing }),
+    }).catch(() => {});
+  };
+
+  const handleInputChange = (val: string) => {
+    setInput(val);
+    if (!sessionRef.current || chatEnded) return;
+    if (!isTypingRef.current) {
+      isTypingRef.current = true;
+      sendTypingStatus(true);
+    }
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    typingTimerRef.current = setTimeout(() => {
+      isTypingRef.current = false;
+      sendTypingStatus(false);
+    }, 2000);
+  };
 
   function subscribeAdminReplies(sid: string) {
     sseRef.current?.close();
     const es = new EventSource(`/api/chat/events?sessionId=${sid}`);
     es.onmessage = (e) => {
       try {
-        const msg = JSON.parse(e.data) as { id?: string; content: string };
-        setMessages((prev) => [...prev, {
-          id: msg.id ?? Date.now().toString(),
-          role: "admin",
-          content: msg.content,
-        }]);
-        setWaitingHuman(false);
+        const data = JSON.parse(e.data) as Record<string, unknown>;
+
+        if (data.type === "typing" && data.who === "agent") {
+          const isTyping = !!data.typing;
+          setAgentTyping(isTyping);
+          if (agentTypingTimerRef.current) clearTimeout(agentTypingTimerRef.current);
+          if (isTyping) {
+            agentTypingTimerRef.current = setTimeout(() => setAgentTyping(false), 5000);
+          }
+          return;
+        }
+
+        if (data.type === "system") {
+          setMessages((prev) => [...prev, {
+            id: "sys-" + Date.now(),
+            role: "assistant" as const,
+            content: String(data.content ?? "Chat Afsluttet"),
+            isSystem: true,
+          }]);
+          setChatEnded(true);
+          setShowFeedback(true);
+          playMsgSound();
+          return;
+        }
+
+        // Regular admin message
+        const msg = data as { id?: string; content?: string };
+        if (msg.content) {
+          setMessages((prev) => [...prev, {
+            id: msg.id ?? String(Date.now()),
+            role: "admin" as const,
+            content: msg.content!,
+          }]);
+          setWaitingHuman(false);
+          playMsgSound();
+        }
       } catch {}
     };
     sseRef.current = es;
   }
 
-  const handleOpen = () => {
-    setIsOpen(true);
+  const downloadTranscript = () => {
+    const lines = messages
+      .filter((m) => !m.isPrivacyCard && m.content)
+      .map((m) => {
+        const who = m.role === "user" ? "Kunde" : m.role === "admin" ? "Agent" : m.isSystem ? "System" : "Duckert AI";
+        return `[${m.timestamp ?? ""}] ${who}: ${m.content}`;
+      });
+    const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "duckert-chat.txt"; a.click();
+    URL.revokeObjectURL(url);
+    setMenuOpen(false);
   };
 
-  const handleClose = () => {
-    setIsOpen(false);
-    onClose?.();
+  const endChat = () => {
+    setMenuOpen(false);
+    const sid = sessionRef.current;
+    if (sid) {
+      fetch("/api/chat/close", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: sid }),
+      }).catch(() => {});
+    }
+    if (isTypingRef.current && sid) {
+      isTypingRef.current = false;
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      sendTypingStatus(false);
+    }
+    setMessages((prev) => [...prev, {
+      id: "sys-" + Date.now(),
+      role: "assistant" as const,
+      content: "Chat Afsluttet",
+      isSystem: true,
+    }]);
+    setChatEnded(true);
+    setShowFeedback(true);
   };
+
+  const submitFeedback = (rating: number) => {
+    const sid = sessionRef.current;
+    if (sid) {
+      fetch("/api/chat/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: sid, rating }),
+      }).catch(() => {});
+    }
+    setFeedbackSent(true);
+    setTimeout(() => resetChat(), 5000);
+  };
+
+  const handleOpen  = () => setIsOpen(true);
+  const handleClose = () => { setIsOpen(false); onClose?.(); };
 
   const resetChat = () => {
+    sseRef.current?.close();
     clearChat();
     setMessages([]);
     setShowQR(false);
     setWaitingHuman(false);
     setShowWelcome(false);
+    setChatEnded(false);
+    setShowFeedback(false);
+    setFeedbackSent(false);
+    setAgentTyping(false);
+    setMenuOpen(false);
     hasInit.current = false;
     setIsOpen(false);
     onClose?.();
@@ -245,7 +379,14 @@ export default function ChatWidget({
 
   const sendMessage = async (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed || isLoading) return;
+    if (!trimmed || isLoading || chatEnded) return;
+
+    // Stop typing indicator
+    if (isTypingRef.current) {
+      isTypingRef.current = false;
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      sendTypingStatus(false);
+    }
 
     if (trimmed === "Tal med en agent") {
       setShowQR(false);
@@ -291,7 +432,7 @@ export default function ChatWidget({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: messages
-            .filter((m) => !m.isPrivacyCard && m.role !== "admin")
+            .filter((m) => !m.isPrivacyCard && !m.isSystem && m.role !== "admin")
             .map((m) => ({ role: m.role === "admin" ? "assistant" : m.role, content: m.content })),
           userMessage: trimmed,
           sessionId: sessionRef.current ?? undefined,
@@ -315,11 +456,13 @@ export default function ChatWidget({
         const { done, value } = await reader.read();
         if (done) break;
         buf += dec.decode(value, { stream: true });
-        const lines = buf.split("\n"); buf = lines.pop() ?? "";
-        for (const ln of lines) {
-          if (!ln.startsWith("data: ") || ln === "data: [DONE]") continue;
+        // Fix: Groq uses \r\n line endings
+        const lines = buf.split(/\r?\n/); buf = lines.pop() ?? "";
+        for (const raw of lines) {
+          const ln = raw.trim();
+          if (!ln.startsWith("data:") || ln === "data: [DONE]") continue;
           try {
-            const chunk = (JSON.parse(ln.slice(6)) as { choices?: [{ delta?: { content?: string } }] }).choices?.[0]?.delta?.content ?? "";
+            const chunk = (JSON.parse(ln.slice(5).trim()) as { choices?: [{ delta?: { content?: string } }] }).choices?.[0]?.delta?.content ?? "";
             if (chunk) {
               full += chunk;
               const cur = full;
@@ -338,6 +481,8 @@ export default function ChatWidget({
           : m
       ));
       if (quickReplies.length) setShowQR(true);
+      // Play sound if tab hidden after AI responds
+      playMsgSound();
     } catch {
       setMessages((prev) => prev.map((m) =>
         m.id === streamId
@@ -358,16 +503,21 @@ export default function ChatWidget({
         @keyframes cwSlideUp { from{opacity:0;transform:translateY(16px) scale(0.96)} to{opacity:1;transform:translateY(0) scale(1)} }
         @keyframes cwMsgIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
         @keyframes cwFabIn { from{opacity:0;transform:scale(0.7)} to{opacity:1;transform:scale(1)} }
+        @keyframes cwFeedbackIn { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
         .cw-msg { animation: cwMsgIn 0.25s ease-out both; }
         .cw-scroll::-webkit-scrollbar { width: 3px; }
         .cw-scroll::-webkit-scrollbar-track { background: transparent; }
         .cw-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 2px; }
-        .cw-qr-btn:hover { background: rgba(22,71,251,0.08) !important; border-color: #1647FB !important; }
+        .cw-qr-btn:hover { background: rgba(8,8,8,0.08) !important; border-color: rgba(8,8,8,0.3) !important; }
         .cw-input:focus { outline: none; box-shadow: none; }
         .cw-send:hover:not(:disabled) { opacity: 0.8; }
         .cw-close:hover { color: #080808 !important; }
         .cw-agent-btn:hover { color: #1647FB !important; text-decoration: underline; }
-        .cw-new-btn:hover { opacity: 0.6; }
+        .cw-menu-item { display:block; width:100%; padding:10px 14px; border:none; cursor:pointer; background:transparent; text-align:left; font-size:13px; font-family:Montserrat,sans-serif; color:#080808; transition:background 0.12s; }
+        .cw-menu-item:hover { background:rgba(8,8,8,0.05); }
+        .cw-menu-item:disabled { color:rgba(8,8,8,0.3); cursor:default; }
+        .cw-emoji-btn { border:none; background:transparent; cursor:pointer; font-size:28px; padding:6px; border-radius:12px; transition:transform 0.15s, background 0.15s; display:flex; flex-direction:column; align-items:center; gap:4px; }
+        .cw-emoji-btn:hover { transform:scale(1.18); background:rgba(8,8,8,0.05); }
 
         /* Floating button */
         .cw-fab {
@@ -400,15 +550,8 @@ export default function ChatWidget({
         }
 
         @media (min-width: 640px) {
-          .cw-fab {
-            bottom: 24px; right: 24px;
-            width: 56px; height: 56px;
-          }
-          .cw-window {
-            bottom: 24px; right: 24px;
-            width: 384px; height: 500px;
-            border-radius: 18px;
-          }
+          .cw-fab { bottom: 24px; right: 24px; width: 56px; height: 56px; }
+          .cw-window { bottom: 24px; right: 24px; width: 384px; height: 500px; border-radius: 18px; }
         }
       `}</style>
 
@@ -424,7 +567,7 @@ export default function ChatWidget({
 
       {/* ── Chat window ── */}
       {isOpen && (
-        <div className="cw-window" role="dialog" aria-modal="true" aria-label="Chat med Duckert Design">
+        <div className="cw-window" role="dialog" aria-modal="true" aria-label="Chat med Duckert Design" style={{ position: "fixed" }}>
 
           {/* Header */}
           <div style={{
@@ -437,34 +580,68 @@ export default function ChatWidget({
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <span style={{
                 width: "9px", height: "9px", borderRadius: "50%", flexShrink: 0,
-                background: waitingHuman ? "#facc15" : "#4ade80",
+                background: chatEnded ? "#d1d5db" : waitingHuman ? "#facc15" : "#4ade80",
               }} />
               <span style={{
                 fontSize: "14px", fontWeight: 600, color: "#080808",
                 fontFamily: "Montserrat, sans-serif", letterSpacing: "-0.01em",
               }}>
-                {waitingHuman ? "Forbinder med teamet…" : "Duckert AI"}
+                {chatEnded ? "Chat afsluttet" : waitingHuman ? "Forbinder med teamet…" : "Duckert AI"}
               </span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              {msgCount > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
+              {/* 3-dot menu */}
+              <div style={{ position: "relative" }}>
                 <button
-                  className="cw-new-btn"
-                  onClick={resetChat}
-                  title="Ny samtale"
-                  aria-label="Ny samtale"
+                  onClick={() => setMenuOpen((v) => !v)}
+                  aria-label="Menuindstillinger"
                   style={{
                     background: "none", border: "none", cursor: "pointer",
                     color: "#888888", padding: "6px",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    borderRadius: "8px", transition: "opacity 0.15s",
+                    borderRadius: "8px", transition: "color 0.15s",
                   }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#080808")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "#888888")}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="5" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="12" cy="19" r="1.5" />
                   </svg>
                 </button>
-              )}
+                {menuOpen && (
+                  <>
+                    <div
+                      style={{ position: "fixed", inset: 0, zIndex: 1000 }}
+                      onClick={() => setMenuOpen(false)}
+                    />
+                    <div style={{
+                      position: "absolute", top: "calc(100% + 4px)", right: 0,
+                      background: "#fff", borderRadius: "12px",
+                      boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
+                      border: "1px solid #ebebeb",
+                      zIndex: 1001, minWidth: "180px", overflow: "hidden",
+                    }}>
+                      <button className="cw-menu-item" onClick={downloadTranscript}>
+                        <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          Download transkript
+                        </span>
+                      </button>
+                      <button className="cw-menu-item" onClick={endChat} disabled={chatEnded} style={{ color: chatEnded ? "rgba(8,8,8,0.3)" : "#ef4444" }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                          </svg>
+                          Afslut chat
+                        </span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+              {/* X close */}
               <button
                 className="cw-close"
                 onClick={handleClose}
@@ -497,10 +674,7 @@ export default function ChatWidget({
             {/* Welcome loading dots */}
             {showWelcome && (
               <div className="cw-msg" style={{ display: "flex", justifyContent: "flex-start" }}>
-                <div style={{
-                  borderRadius: "16px", borderBottomLeftRadius: "4px",
-                  padding: "12px 16px", background: "#f2f2f2",
-                }}>
+                <div style={{ borderRadius: "16px", borderBottomLeftRadius: "4px", padding: "12px 16px", background: "#f2f2f2" }}>
                   <BouncingDots />
                 </div>
               </div>
@@ -515,6 +689,21 @@ export default function ChatWidget({
                 );
               }
 
+              // System message (centered badge)
+              if (msg.isSystem) {
+                return (
+                  <div key={msg.id} className="cw-msg" style={{ display: "flex", justifyContent: "center", padding: "4px 0" }}>
+                    <span style={{
+                      background: "rgba(8,8,8,0.06)", color: "rgba(8,8,8,0.5)",
+                      borderRadius: "999px", padding: "5px 18px",
+                      fontSize: "11px", fontWeight: 600, fontFamily: "Montserrat, sans-serif",
+                    }}>
+                      {msg.content}
+                    </span>
+                  </div>
+                );
+              }
+
               const isLast = idx === messages.length - 1;
 
               if (msg.role === "user") {
@@ -523,7 +712,7 @@ export default function ChatWidget({
                     <div style={{
                       borderRadius: "16px", borderBottomRightRadius: "4px",
                       padding: "10px 14px", maxWidth: "85%",
-                      background: "#080808", color: "#ffffff",
+                      background: "#f2f2f2", color: "#080808",
                       fontSize: "14px", fontFamily: "Montserrat, sans-serif", lineHeight: 1.55,
                     }}>
                       {msg.content}
@@ -584,10 +773,10 @@ export default function ChatWidget({
                           className="cw-qr-btn"
                           onClick={() => void sendMessage(reply)}
                           style={{
-                            background: "#ffffff", border: "1.5px solid rgba(22,71,251,0.2)",
+                            background: "#f7f7f7", border: "1.5px solid rgba(8,8,8,0.12)",
                             borderRadius: "999px", padding: "6px 14px",
                             fontSize: "12px", fontFamily: "Montserrat, sans-serif",
-                            fontWeight: 500, color: "#1647FB", cursor: "pointer",
+                            fontWeight: 500, color: "#444444", cursor: "pointer",
                             transition: "background 0.15s, border-color 0.15s",
                           }}
                         >
@@ -603,6 +792,22 @@ export default function ChatWidget({
             {/* AI loading (between user send and stream start) */}
             {isLoading && messages[messages.length - 1]?.role === "user" && (
               <div className="cw-msg" style={{ display: "flex", justifyContent: "flex-start" }}>
+                <div style={{ borderRadius: "16px", borderBottomLeftRadius: "4px", padding: "12px 16px", background: "#f2f2f2" }}>
+                  <BouncingDots />
+                </div>
+              </div>
+            )}
+
+            {/* Agent typing indicator */}
+            {agentTyping && (
+              <div className="cw-msg" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                <span style={{
+                  fontSize: "10px", fontWeight: 700, color: "#1647FB",
+                  letterSpacing: "0.1em", textTransform: "uppercase",
+                  fontFamily: "Montserrat, sans-serif", marginBottom: "4px", paddingLeft: "2px",
+                }}>
+                  Duckert Design
+                </span>
                 <div style={{
                   borderRadius: "16px", borderBottomLeftRadius: "4px",
                   padding: "12px 16px", background: "#f2f2f2",
@@ -615,95 +820,162 @@ export default function ChatWidget({
             <div ref={endRef} />
           </div>
 
-          {/* Input */}
-          <div style={{
-            padding: "12px 14px 14px",
-            borderTop: "1px solid #ebebeb",
-            background: "#ffffff",
-            flexShrink: 0,
-          }}>
-            <form
-              onSubmit={(e) => { e.preventDefault(); if (input.trim() && !isLoading) void sendMessage(input.trim()); }}
-              style={{ display: "flex", gap: "8px", alignItems: "center" }}
-            >
-              <input
-                ref={inputRef}
-                className="cw-input"
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                disabled={isLoading}
-                placeholder={
-                  isLoading      ? "Skriver…" :
-                  waitingHuman   ? "Venter på svar fra teamet…" :
-                                   "Skriv en besked..."
-                }
-                style={{
-                  flex: 1,
-                  border: "1px solid #ebebeb",
-                  borderRadius: "999px",
-                  padding: "10px 16px",
-                  fontSize: "14px",
-                  fontFamily: "Montserrat, sans-serif",
-                  color: "#080808",
-                  background: "#f7f7f7",
-                  outline: "none",
-                }}
-              />
-              <button
-                type="submit"
-                className="cw-send"
-                disabled={!input.trim() || isLoading}
-                aria-label="Send besked"
-                style={{
-                  width: "38px", height: "38px", flexShrink: 0,
-                  borderRadius: "50%",
-                  background: input.trim() && !isLoading ? "#1647FB" : "rgba(8,8,8,0.08)",
-                  border: "none", cursor: input.trim() && !isLoading ? "pointer" : "default",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  transition: "background 0.2s, opacity 0.2s",
-                  opacity: isLoading ? 0.4 : 1,
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <line x1="22" y1="2" x2="11" y2="13" stroke={input.trim() && !isLoading ? "white" : "#888"} strokeWidth="2" strokeLinecap="round" />
-                  <polygon points="22 2 15 22 11 13 2 9 22 2" stroke={input.trim() && !isLoading ? "white" : "#888"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                </svg>
-              </button>
-            </form>
-
-            {/* Agent button + branding */}
+          {/* Input / ended area */}
+          {chatEnded ? (
             <div style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              marginTop: "8px",
+              padding: "16px", borderTop: "1px solid #ebebeb",
+              background: "#fff", flexShrink: 0, textAlign: "center",
             }}>
-              <button
-                className="cw-agent-btn"
-                onClick={() => void sendMessage("Tal med en agent")}
-                disabled={waitingHuman || isLoading}
-                style={{
-                  background: "none", border: "none", cursor: waitingHuman ? "default" : "pointer",
-                  fontSize: "11px", color: waitingHuman ? "#888888" : "rgba(8,8,8,0.45)",
-                  fontFamily: "Montserrat, sans-serif",
-                  transition: "color 0.15s",
-                  padding: "0",
-                  display: "flex", alignItems: "center", gap: "4px",
-                }}
-              >
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
-                </svg>
-                {waitingHuman ? "Venter på agent…" : "Tal med en agent"}
-              </button>
               <p style={{
-                fontSize: "10px", color: "rgba(8,8,8,0.28)",
+                fontSize: "12px", color: "rgba(8,8,8,0.4)",
                 fontFamily: "Montserrat, sans-serif", margin: 0,
               }}>
-                AI-drevet · Duckert Design
+                Chatten er afsluttet
               </p>
             </div>
-          </div>
+          ) : (
+            <div style={{
+              padding: "12px 14px 14px",
+              borderTop: "1px solid #ebebeb",
+              background: "#ffffff",
+              flexShrink: 0,
+            }}>
+              <form
+                onSubmit={(e) => { e.preventDefault(); if (input.trim() && !isLoading) void sendMessage(input.trim()); }}
+                style={{ display: "flex", gap: "8px", alignItems: "center" }}
+              >
+                <input
+                  ref={inputRef}
+                  className="cw-input"
+                  type="text"
+                  value={input}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  disabled={isLoading}
+                  placeholder={
+                    isLoading    ? "Skriver…" :
+                    waitingHuman ? "Venter på svar fra teamet…" :
+                                   "Skriv en besked..."
+                  }
+                  style={{
+                    flex: 1, border: "1px solid #ebebeb", borderRadius: "999px",
+                    padding: "10px 16px", fontSize: "14px",
+                    fontFamily: "Montserrat, sans-serif", color: "#080808",
+                    background: "#f7f7f7", outline: "none",
+                  }}
+                />
+                <button
+                  type="submit"
+                  className="cw-send"
+                  disabled={!input.trim() || isLoading}
+                  aria-label="Send besked"
+                  style={{
+                    width: "38px", height: "38px", flexShrink: 0, borderRadius: "50%",
+                    background: input.trim() && !isLoading ? "#1647FB" : "rgba(8,8,8,0.08)",
+                    border: "none", cursor: input.trim() && !isLoading ? "pointer" : "default",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "background 0.2s, opacity 0.2s",
+                    opacity: isLoading ? 0.4 : 1,
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <line x1="22" y1="2" x2="11" y2="13" stroke={input.trim() && !isLoading ? "white" : "#888"} strokeWidth="2" strokeLinecap="round" />
+                    <polygon points="22 2 15 22 11 13 2 9 22 2" stroke={input.trim() && !isLoading ? "white" : "#888"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  </svg>
+                </button>
+              </form>
+
+              {/* Agent button + branding */}
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                marginTop: "8px",
+              }}>
+                <button
+                  className="cw-agent-btn"
+                  onClick={() => void sendMessage("Tal med en agent")}
+                  disabled={waitingHuman || isLoading}
+                  style={{
+                    background: "none", border: "none", cursor: waitingHuman ? "default" : "pointer",
+                    fontSize: "11px", color: waitingHuman ? "#888888" : "rgba(8,8,8,0.45)",
+                    fontFamily: "Montserrat, sans-serif", transition: "color 0.15s",
+                    padding: "0", display: "flex", alignItems: "center", gap: "4px",
+                  }}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
+                  </svg>
+                  {waitingHuman ? "Venter på agent…" : "Tal med en agent"}
+                </button>
+                <p style={{
+                  fontSize: "10px", color: "rgba(8,8,8,0.28)",
+                  fontFamily: "Montserrat, sans-serif", margin: 0,
+                }}>
+                  AI-drevet · Duckert Design
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Feedback popup ── */}
+          {showFeedback && (
+            <div style={{
+              position: "absolute", bottom: 0, left: 0, right: 0,
+              background: "#ffffff",
+              borderTop: "1px solid #ebebeb",
+              padding: "20px 20px 28px",
+              borderRadius: "0 0 18px 18px",
+              boxShadow: "0 -8px 32px rgba(0,0,0,0.06)",
+              animation: "cwFeedbackIn 0.35s cubic-bezier(0.16,1,0.3,1) both",
+              zIndex: 10,
+            }}>
+              {feedbackSent ? (
+                <div style={{ textAlign: "center", padding: "12px 0" }}>
+                  <div style={{ fontSize: "32px", marginBottom: "8px" }}>😊</div>
+                  <p style={{
+                    fontSize: "15px", fontWeight: 700, color: "#080808",
+                    fontFamily: "Montserrat, sans-serif", margin: "0 0 4px",
+                  }}>
+                    Tak for din feedback!
+                  </p>
+                  <p style={{
+                    fontSize: "12px", color: "rgba(8,8,8,0.4)",
+                    fontFamily: "Montserrat, sans-serif", margin: 0,
+                  }}>
+                    Chatten lukkes automatisk om et øjeblik…
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <p style={{
+                    fontSize: "13px", fontWeight: 700, color: "#080808",
+                    fontFamily: "Montserrat, sans-serif", textAlign: "center",
+                    margin: "0 0 16px",
+                  }}>
+                    Hvordan var din oplevelse?
+                  </p>
+                  <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
+                    {FEEDBACK_EMOJIS.map((emoji, i) => (
+                      <button
+                        key={i}
+                        className="cw-emoji-btn"
+                        onClick={() => submitFeedback(i + 1)}
+                        title={FEEDBACK_LABELS[i]}
+                      >
+                        <span style={{ fontSize: "26px", lineHeight: 1 }}>{emoji}</span>
+                        <span style={{
+                          fontSize: "9px", color: "rgba(8,8,8,0.4)",
+                          fontFamily: "Montserrat, sans-serif", fontWeight: 600,
+                          whiteSpace: "nowrap",
+                        }}>
+                          {FEEDBACK_LABELS[i]}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       )}
     </>

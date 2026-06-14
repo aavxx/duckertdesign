@@ -38,7 +38,7 @@ export async function GET(req: Request) {
           closed = true;
           clearInterval(heartbeatInterval);
         }
-      }, 20_000);
+      }, 8_000);
 
       sub.on("message", (event) => {
         if (closed) return;

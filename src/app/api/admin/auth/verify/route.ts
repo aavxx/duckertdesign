@@ -25,8 +25,8 @@ export async function POST(req: Request) {
   await redis.del(`admin:otp:${email.toLowerCase()}`);
 
   const token = randomBytes(32).toString("hex");
-  // 10-minute session
-  await redis.set(`admin:session:${token}`, email, { ex: 600 });
+  // 15-minute session (sliding window refreshed on each request)
+  await redis.set(`admin:session:${token}`, email, { ex: 900 });
 
   return Response.json({ token }, { headers: corsHeaders() });
 }
