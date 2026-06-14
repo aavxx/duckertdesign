@@ -357,7 +357,13 @@ export default function ChatWidget({
     setTimeout(() => resetChat(), 5000);
   };
 
-  const handleOpen  = () => setIsOpen(true);
+  const handleOpen = () => {
+    setIsOpen(true);
+    // Pre-init audio during user gesture so tab-hidden play works later
+    if (!msgAudioRef.current) {
+      try { msgAudioRef.current = new Audio("/newmessage.m4a"); } catch {}
+    }
+  };
   const handleClose = () => { setIsOpen(false); onClose?.(); };
 
   const resetChat = () => {
@@ -386,6 +392,22 @@ export default function ChatWidget({
       isTypingRef.current = false;
       if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
       sendTypingStatus(false);
+    }
+
+    // When a human agent has the chat, just forward message — no AI streaming
+    if (waitingHuman) {
+      const userMsg: Message = { id: Date.now().toString(), role: "user", content: trimmed, timestamp: nowTime() };
+      setMessages((prev) => [...prev, userMsg]);
+      setInput("");
+      const sid = sessionRef.current;
+      if (sid) {
+        fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userMessage: trimmed, sessionId: sid, messages: [] }),
+        }).catch(() => {});
+      }
+      return;
     }
 
     if (trimmed === "Tal med en agent") {

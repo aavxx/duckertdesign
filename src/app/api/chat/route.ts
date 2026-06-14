@@ -142,8 +142,8 @@ export async function POST(req: Request) {
   session.messages.push(userMsg);
   session.updatedAt = now;
 
-  // Human session: store message, notify admin, no AI response
-  if (session.status === "human") {
+  // Human/claimed/closed session: store message, notify admin, no AI response
+  if (session.status === "human" || session.status === "claimed" || session.status === "closed") {
     await persistSession(session);
     await publishAdminEvent({
       type: "new_chat_message",
@@ -182,7 +182,7 @@ export async function POST(req: Request) {
     body: JSON.stringify({
       model: process.env.GROQ_MODEL ?? "llama-3.1-8b-instant",
       stream: true,
-      max_tokens: 512,
+      max_tokens: 1024,
       temperature: 0.7,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },

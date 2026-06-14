@@ -31,14 +31,21 @@ type LoginStage =
 
 /* ─── Slash commands ──────────────────────────────────────────────────────── */
 const SLASH_COMMANDS = [
-  { cmd: "/hej",     label: "Hej",          desc: "Overtag og byd velkommen" },
-  { cmd: "/farvel",  label: "Farvel",        desc: "Send farvel og luk chat" },
-  { cmd: "/luk",     label: "Luk",           desc: "Luk chat uden besked" },
-  { cmd: "/inaktiv", label: "Inaktiv",       desc: "Inaktivitetsadvarsel (2 min timer)" },
-  { cmd: "/pris",    label: "Pris",          desc: "Udfyld med prisinfo" },
-  { cmd: "/kontakt", label: "Kontakt",       desc: "Udfyld med kontaktinfo" },
-  { cmd: "/venlist", label: "Vent venligst", desc: "Send ventebesked" },
-  { cmd: "/hjælp",   label: "Hjælp",         desc: "Vis tilgængelige kommandoer" },
+  { cmd: "/hej",         label: "Hej",             desc: "Overtag og byd velkommen" },
+  { cmd: "/farvel",      label: "Farvel",           desc: "Send farvel og luk chat" },
+  { cmd: "/luk",         label: "Luk",              desc: "Luk chat uden besked" },
+  { cmd: "/inaktiv",     label: "Inaktiv",          desc: "Inaktivitetsadvarsel (2 min timer)" },
+  { cmd: "/tilbud",      label: "Tilbud",           desc: "Spørg ind til projekt og tilbud" },
+  { cmd: "/møde",        label: "Møde",             desc: "Foreslå møde/opkald" },
+  { cmd: "/pris",        label: "Pris",             desc: "Send prisoversigt" },
+  { cmd: "/webshop",     label: "Webshop",          desc: "Info om webshop-løsninger" },
+  { cmd: "/tid",         label: "Tid",              desc: "Info om leveringstid" },
+  { cmd: "/reference",   label: "Reference",        desc: "Send link til portfolio" },
+  { cmd: "/mail",        label: "Mail",             desc: "Bed om kontaktmail" },
+  { cmd: "/kontakt",     label: "Kontakt",          desc: "Send kontaktoplysninger" },
+  { cmd: "/venlist",     label: "Vent venligst",    desc: "Send ventebesked" },
+  { cmd: "/overlevering",label: "Overlevering",     desc: "Info om hvad kunden skal levere" },
+  { cmd: "/hjælp",       label: "Hjælp",            desc: "Vis tilgængelige kommandoer" },
 ];
 
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
@@ -362,6 +369,14 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
 
   const headers = { "x-admin-key": token, "Content-Type": "application/json" };
 
+  // Pre-init audio on mount (after login = user has already clicked = autoplay allowed)
+  useEffect(() => {
+    try {
+      msgAudioRef.current  = new Audio("/newmessage.m4a");
+      chatAudioRef.current = new Audio("/newchat.m4a");
+    } catch {}
+  }, []);
+
   // Keep ref in sync with state for use inside callbacks
   useEffect(() => { selectedChatRef.current = selectedChat; }, [selectedChat]);
 
@@ -586,20 +601,68 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
         showNotif("Inaktivitetstimer startet (2 min)");
         break;
       }
-      case "/pris":
-        setReplyText("En ny hjemmeside hos Duckert Design starter fra 8.000 kr. Prisen afhænger af dine ønsker. Vil du have et uforpligtende tilbud?");
+      case "/tilbud": {
+        const msg = "Super! For at vi kan sende dig et skræddersyet tilbud, vil jeg gerne høre lidt mere. Hvad har du brug for — landing page, webshop eller noget helt tredje? Og hvad er din omtrentlige tidsramme? 😊";
+        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
+        void loadChats();
         break;
-      case "/kontakt":
-        setReplyText("Du kan kontakte os på hej@duckert.design. Vi svarer inden for 1–2 hverdage.");
+      }
+      case "/møde": {
+        const msg = "Vi holder meget gerne et kort indledende opkald for at høre mere om dit projekt! 📅 Skriv til hej@duckert.design med et par tidspunkter der passer dig, så finder vi en tid.";
+        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
+        void loadChats();
         break;
+      }
+      case "/pris": {
+        const msg = "Her er en hurtig prisoversigt 👇\n\n• Landing page: fra 5.000 kr.\n• Business-site (flere sider): fra 10.000 kr.\n• Webshop: fra 15.000 kr.\n\nPriserne afhænger altid af dit konkrete projekt. Vi giver altid et gratis, uforpligtende tilbud — ønsker du det?";
+        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
+        void loadChats();
+        break;
+      }
+      case "/webshop": {
+        const msg = "Ja, vi laver skræddersyede webshops! 🛒 Vi bygger typisk med Next.js kombineret med Shopify Headless eller Stripe til betalingshåndtering. Hvad slags produkter sælger du, og har du et omtrentligt antal?";
+        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
+        void loadChats();
+        break;
+      }
+      case "/tid": {
+        const msg = "Leveringstiden afhænger af projektets omfang ⏱️\n\n• Landing page: 1–2 uger\n• Business-site: 3–5 uger\n• Webshop: 4–8 uger\n\nHar du en bestemt deadline vi skal ramme?";
+        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
+        void loadChats();
+        break;
+      }
+      case "/reference": {
+        const msg = "Du kan se eksempler på vores tidligere arbejde på duckert.design 🎨 Er der et bestemt udtryk eller en branche du søger inspiration fra?";
+        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
+        void loadChats();
+        break;
+      }
+      case "/mail": {
+        const msg = "For at vi kan følge op med mere information, hvad er din e-mailadresse? Vi sender dig gerne en oversigt direkte i indbakken 📧";
+        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
+        void loadChats();
+        break;
+      }
+      case "/kontakt": {
+        const msg = "Du er altid velkommen til at kontakte os direkte 📬\n\n✉️ hej@duckert.design\n🌐 duckert.design\n\nVi svarer inden for 1–2 hverdage.";
+        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
+        void loadChats();
+        break;
+      }
       case "/venlist": {
-        const msg = "Tak for din tålmodighed! Jeg vender tilbage til dig hurtigst muligt. 🙏";
+        const msg = "Tak for din tålmodighed! Jeg kigger på det nu og vender tilbage til dig hurtigst muligt 🙏";
+        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
+        void loadChats();
+        break;
+      }
+      case "/overlevering": {
+        const msg = "For at komme godt i gang har vi brug for følgende fra dig 📋\n\n• Logo (helst i SVG eller PNG)\n• Tekst/indhold til siderne\n• Billeder du ønsker brugt\n• Ønsket farver/udtryk\n\nHar du dette klar, eller hjælper vi med noget af det?";
         await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
         void loadChats();
         break;
       }
       case "/hjælp":
-        showNotif("/hej /farvel /luk /inaktiv /pris /kontakt /venlist");
+        showNotif("/hej /farvel /luk /inaktiv /tilbud /møde /pris /webshop /tid /reference /mail /kontakt /venlist /overlevering");
         break;
     }
   };
