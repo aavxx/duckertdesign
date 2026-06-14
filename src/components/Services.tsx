@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 
-const services = [
+const SERVICES = [
   {
     number: "01",
     title: "Webdesign",
     description:
-      "Skræddersyede hjemmesider fra bunden — med fokus på brugeroplevelse, konvertering og æstetik.",
+      "Skræddersyede hjemmesider med fokus på brugeroplevelse, konvertering og visuel identitet. Fra idé til live.",
     tags: ["Landing pages", "E-commerce", "Portfolios"],
   },
   {
@@ -21,7 +21,7 @@ const services = [
     number: "03",
     title: "Webudvikling",
     description:
-      "Hurtige, tilgængelige og skalerbare webapplikationer bygget med moderne teknologier.",
+      "Hurtige, tilgængelige og skalerbare webapplikationer bygget med moderne teknologier som Next.js og React.",
     tags: ["Next.js", "React", "Headless CMS"],
   },
 ];
@@ -30,52 +30,59 @@ export default function Services() {
   return (
     <section
       id="ydelser"
-      style={{
-        padding: "clamp(80px, 12vw, 160px) clamp(20px, 5vw, 80px)",
-        maxWidth: "1400px",
-        margin: "0 auto",
-      }}
+      style={{ padding: "clamp(80px, 12vw, 160px) clamp(20px, 5vw, 80px)" }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "baseline",
-          justifyContent: "space-between",
-          paddingBottom: "20px",
-          borderBottom: "1px solid #ebebeb",
-        }}
-      >
-        <span
+      <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+        {/* Section header */}
+        <div
           style={{
-            fontSize: "10px",
-            fontWeight: 700,
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
-            color: "#bbb",
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            paddingBottom: "20px",
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
+            marginBottom: "clamp(40px, 6vw, 64px)",
           }}
         >
-          Ydelser
-        </span>
-        <span
-          style={{
-            fontSize: "10px",
-            letterSpacing: "0.14em",
-            color: "#bbb",
-            fontWeight: 600,
-          }}
-        >
-          03
-        </span>
-      </div>
+          <span
+            style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "11px",
+              fontWeight: 600,
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: "#333",
+            }}
+          >
+            Ydelser
+          </span>
+          <span
+            style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "11px",
+              color: "#222",
+              fontWeight: 500,
+            }}
+          >
+            03
+          </span>
+        </div>
 
-      {services.map((s) => (
-        <ServiceRow key={s.number} service={s} />
-      ))}
+        {/* Cards — separated by 1px dividers */}
+        <div
+          className="grid grid-cols-1 md:grid-cols-3"
+          style={{ gap: "1px", background: "rgba(255,255,255,0.07)" }}
+        >
+          {SERVICES.map((s) => (
+            <ServiceCard key={s.number} service={s} />
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
 
-function ServiceRow({ service }: { service: (typeof services)[0] }) {
+function ServiceCard({ service }: { service: (typeof SERVICES)[0] }) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -83,102 +90,99 @@ function ServiceRow({ service }: { service: (typeof services)[0] }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        padding: "clamp(32px, 5vw, 52px) 0",
-        borderBottom: "1px solid #ebebeb",
+        background: hovered ? "#0f0f0f" : "#080808",
+        padding: "clamp(28px, 4vw, 52px)",
+        transition: "background 0.22s",
         cursor: "default",
-        transition: "opacity 0.2s",
-        opacity: hovered ? 1 : 0.88,
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      {/* Desktop layout */}
-      <div className="hidden md:grid" style={{ gridTemplateColumns: "72px 1fr 32px", gap: "40px", alignItems: "start" }}>
+      {/* Blue top accent line */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0, left: 0, right: 0,
+          height: "2px",
+          background: "#1647FB",
+          transform: hovered ? "scaleX(1)" : "scaleX(0)",
+          transformOrigin: "left",
+          transition: "transform 0.32s cubic-bezier(0.16,1,0.3,1)",
+        }}
+      />
+
+      {/* Number + arrow */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          marginBottom: "clamp(20px, 3vw, 36px)",
+        }}
+      >
         <span
           style={{
+            fontFamily: "'Space Grotesk', sans-serif",
             fontSize: "11px",
-            color: "#ddd",
-            fontWeight: 600,
-            letterSpacing: "0.1em",
-            paddingTop: "8px",
+            color: "#222",
+            fontWeight: 500,
           }}
         >
           {service.number}
         </span>
-        <ServiceContent service={service} hovered={hovered} />
-        <div
+        <span
           style={{
-            fontSize: "22px",
-            color: hovered ? "#1647FB" : "#ddd",
-            paddingTop: "6px",
-            transition: "color 0.2s, transform 0.25s",
-            transform: hovered ? "translate(3px, -3px)" : "translate(0, 0)",
-            userSelect: "none",
+            fontSize: "18px",
+            color: hovered ? "#1647FB" : "#222",
+            transition: "color 0.2s, transform 0.22s",
+            transform: hovered ? "translate(2px,-2px)" : "translate(0,0)",
             lineHeight: 1,
           }}
         >
           ↗
-        </div>
+        </span>
       </div>
 
-      {/* Mobile layout */}
-      <div className="md:hidden">
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "12px" }}>
-          <span style={{ fontSize: "10px", color: "#ddd", fontWeight: 600, letterSpacing: "0.1em" }}>
-            {service.number}
-          </span>
-          <span style={{ fontSize: "18px", color: hovered ? "#1647FB" : "#ddd", transition: "color 0.2s" }}>↗</span>
-        </div>
-        <ServiceContent service={service} hovered={hovered} />
-      </div>
-    </div>
-  );
-}
-
-function ServiceContent({
-  service,
-  hovered,
-}: {
-  service: (typeof services)[0];
-  hovered: boolean;
-}) {
-  return (
-    <div>
       <h3
         style={{
-          fontSize: "clamp(26px, 3.5vw, 48px)",
+          fontFamily: "'Archivo', sans-serif",
+          fontSize: "clamp(22px, 2.5vw, 34px)",
           fontWeight: 700,
-          letterSpacing: "-0.025em",
-          lineHeight: 1.05,
+          letterSpacing: "-0.02em",
+          color: "#fff",
           margin: "0 0 14px",
-          color: hovered ? "#1647FB" : "#080808",
-          transition: "color 0.2s",
+          lineHeight: 1.1,
         }}
       >
         {service.title}
       </h3>
+
       <p
         style={{
-          fontSize: "15px",
-          color: "#999",
-          lineHeight: 1.75,
-          maxWidth: "480px",
-          margin: "0 0 18px",
+          fontFamily: "'Space Grotesk', sans-serif",
+          fontSize: "14px",
+          color: "#555",
+          lineHeight: 1.72,
+          margin: "0 0 24px",
         }}
       >
         {service.description}
       </p>
+
       <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
         {service.tags.map((tag) => (
           <span
             key={tag}
             style={{
-              fontSize: "9px",
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "10px",
               fontWeight: 600,
-              letterSpacing: "0.12em",
+              letterSpacing: "0.1em",
               textTransform: "uppercase",
-              color: "#bbb",
-              border: "1px solid #e8e8e8",
-              padding: "5px 12px",
-              whiteSpace: "nowrap",
+              color: "#333",
+              border: "1px solid rgba(255,255,255,0.07)",
+              padding: "4px 10px",
+              borderRadius: "2px",
             }}
           >
             {tag}

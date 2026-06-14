@@ -37,52 +37,54 @@ export default function Contact() {
     }
   };
 
-  const field: React.CSSProperties = {
+  const inputStyle: React.CSSProperties = {
     width: "100%",
-    background: "transparent",
-    border: "none",
-    borderBottom: "1px solid #e0e0e0",
-    padding: "16px 0",
+    background: "#0f0f0f",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "4px",
+    padding: "14px 16px",
     fontSize: "15px",
-    fontFamily: "Montserrat, sans-serif",
-    color: "#080808",
+    fontFamily: "'Space Grotesk', sans-serif",
+    color: "#f0f0f0",
     outline: "none",
-    transition: "border-color 0.2s",
+    transition: "border-color 0.18s",
     display: "block",
   };
 
-  const label: React.CSSProperties = {
-    fontSize: "9px",
-    fontWeight: 700,
-    letterSpacing: "0.18em",
+  const labelStyle: React.CSSProperties = {
+    fontFamily: "'Space Grotesk', sans-serif",
+    fontSize: "11px",
+    fontWeight: 600,
+    letterSpacing: "0.14em",
     textTransform: "uppercase",
-    color: "#bbb",
+    color: "#333",
     display: "block",
-    marginBottom: "4px",
-    marginTop: "40px",
+    marginBottom: "8px",
+    marginTop: "24px",
   };
 
   return (
     <section
       id="kontakt"
-      style={{ padding: "120px 40px 0" }}
+      style={{ padding: "clamp(80px, 12vw, 140px) clamp(20px, 5vw, 80px)" }}
     >
-      <div style={{ maxWidth: "720px", margin: "0 auto" }}>
-        {/* Header */}
+      <div style={{ maxWidth: "660px", margin: "0 auto" }}>
+        {/* Section label */}
         <div
           style={{
-            paddingBottom: "24px",
-            borderBottom: "1px solid #ebebeb",
-            marginBottom: "64px",
+            paddingBottom: "20px",
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
+            marginBottom: "clamp(40px, 6vw, 60px)",
           }}
         >
           <span
             style={{
-              fontSize: "10px",
-              fontWeight: 700,
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "11px",
+              fontWeight: 600,
               letterSpacing: "0.18em",
               textTransform: "uppercase",
-              color: "#bbb",
+              color: "#333",
             }}
           >
             Kontakt
@@ -91,23 +93,26 @@ export default function Contact() {
 
         <h1
           style={{
-            fontSize: "clamp(36px, 5vw, 72px)",
-            fontWeight: 800,
+            fontFamily: "'Archivo', sans-serif",
+            fontSize: "clamp(36px, 5vw, 64px)",
+            fontWeight: 900,
             letterSpacing: "-0.04em",
             lineHeight: 0.95,
-            color: "#080808",
-            margin: "0 0 28px",
+            color: "#fff",
+            margin: "0 0 20px",
           }}
         >
-          Lad os bygge noget fedt.
+          Lad os bygge<br />
+          <span style={{ color: "#1647FB" }}>noget fedt.</span>
         </h1>
+
         <p
           style={{
+            fontFamily: "'Space Grotesk', sans-serif",
             fontSize: "15px",
-            color: "#999",
+            color: "#555",
             lineHeight: 1.8,
-            margin: "0 0 64px",
-            maxWidth: "520px",
+            margin: "0 0 clamp(40px, 6vw, 60px)",
           }}
         >
           Har du et projekt i tankerne? Skriv til os — vi vender tilbage inden for 24 timer.
@@ -120,10 +125,11 @@ export default function Contact() {
                 width: "48px",
                 height: "48px",
                 background: "#1647FB",
+                borderRadius: "4px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                marginBottom: "28px",
+                marginBottom: "24px",
               }}
             >
               <svg
@@ -141,84 +147,105 @@ export default function Contact() {
             </div>
             <h4
               style={{
-                fontSize: "26px",
+                fontFamily: "'Archivo', sans-serif",
+                fontSize: "24px",
                 fontWeight: 700,
-                color: "#080808",
-                margin: "0 0 10px",
-                letterSpacing: "-0.025em",
+                color: "#fff",
+                margin: "0 0 8px",
+                letterSpacing: "-0.02em",
               }}
             >
               Besked sendt!
             </h4>
-            <p style={{ fontSize: "15px", color: "#999", margin: 0 }}>
+            <p
+              style={{
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontSize: "15px",
+                color: "#555",
+                margin: 0,
+              }}
+            >
               Vi vender tilbage hurtigst muligt.
             </p>
             <button
               onClick={() => setStatus("idle")}
               style={{
-                marginTop: "36px",
+                marginTop: "32px",
                 background: "none",
                 border: "none",
                 color: "#1647FB",
-                fontSize: "10px",
-                fontFamily: "Montserrat, sans-serif",
-                fontWeight: 700,
-                letterSpacing: "0.14em",
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontSize: "13px",
+                fontWeight: 600,
                 cursor: "pointer",
                 padding: 0,
-                textTransform: "uppercase",
+                letterSpacing: "0.03em",
               }}
             >
               Send ny besked →
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
-            <label style={{ ...label, marginTop: 0 }}>Navn</label>
+          <form onSubmit={handleSubmit} noValidate>
+            <label style={{ ...labelStyle, marginTop: 0 }} htmlFor="name">
+              Navn *
+            </label>
             <input
+              id="name"
               type="text"
               name="name"
               value={form.name}
               onChange={handleChange}
               required
+              autoComplete="name"
               placeholder="Dit navn"
-              style={field}
-              onFocus={(e) => (e.target.style.borderBottomColor = "#080808")}
-              onBlur={(e) => (e.target.style.borderBottomColor = "#e0e0e0")}
+              style={inputStyle}
+              onFocus={(e) => (e.target.style.borderColor = "#1647FB")}
+              onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.08)")}
             />
-            <label style={label}>Email</label>
+
+            <label style={labelStyle} htmlFor="email">
+              Email *
+            </label>
             <input
+              id="email"
               type="email"
               name="email"
               value={form.email}
               onChange={handleChange}
               required
+              autoComplete="email"
               placeholder="din@email.dk"
-              style={field}
-              onFocus={(e) => (e.target.style.borderBottomColor = "#080808")}
-              onBlur={(e) => (e.target.style.borderBottomColor = "#e0e0e0")}
+              style={inputStyle}
+              onFocus={(e) => (e.target.style.borderColor = "#1647FB")}
+              onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.08)")}
             />
 
-            <label style={label}>Besked</label>
+            <label style={labelStyle} htmlFor="message">
+              Besked *
+            </label>
             <textarea
+              id="message"
               name="message"
               value={form.message}
               onChange={handleChange}
               required
               rows={6}
               placeholder="Fortæl om dit projekt..."
-              style={{ ...field, resize: "none" }}
-              onFocus={(e) => (e.target.style.borderBottomColor = "#080808")}
-              onBlur={(e) => (e.target.style.borderBottomColor = "#e0e0e0")}
+              style={{ ...inputStyle, resize: "none" }}
+              onFocus={(e) => (e.target.style.borderColor = "#1647FB")}
+              onBlur={(e) => (e.target.style.borderColor = "rgba(255,255,255,0.08)")}
             />
 
             {status === "error" && (
               <p
+                role="alert"
                 style={{
-                  color: "#e53935",
-                  fontSize: "12px",
-                  marginTop: "16px",
-                  letterSpacing: "0.02em",
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  color: "#ff4545",
+                  fontSize: "13px",
+                  marginTop: "12px",
+                  letterSpacing: "0.01em",
                 }}
               >
                 {errorMsg}
@@ -229,29 +256,32 @@ export default function Contact() {
               type="submit"
               disabled={status === "loading"}
               style={{
-                marginTop: "48px",
-                padding: "18px 56px",
+                marginTop: "32px",
+                padding: "16px 48px",
                 background: "#1647FB",
                 color: "#fff",
                 border: "none",
-                fontSize: "10px",
-                fontFamily: "Montserrat, sans-serif",
-                fontWeight: 700,
-                letterSpacing: "0.16em",
-                textTransform: "uppercase",
+                borderRadius: "4px",
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontSize: "14px",
+                fontWeight: 600,
+                letterSpacing: "0.03em",
                 cursor: status === "loading" ? "not-allowed" : "pointer",
                 opacity: status === "loading" ? 0.6 : 1,
-                transition: "opacity 0.2s",
+                transition: "background 0.18s, opacity 0.18s, transform 0.15s",
               }}
-              onMouseEnter={(e) =>
-                status !== "loading" && (e.currentTarget.style.opacity = "0.8")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.opacity =
-                  status === "loading" ? "0.6" : "1")
-              }
+              onMouseEnter={(e) => {
+                if (status !== "loading") {
+                  e.currentTarget.style.background = "#2355FF";
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#1647FB";
+                e.currentTarget.style.transform = "translateY(0)";
+              }}
             >
-              {status === "loading" ? "Sender..." : "Send besked"}
+              {status === "loading" ? "Sender..." : "Send besked →"}
             </button>
           </form>
         )}

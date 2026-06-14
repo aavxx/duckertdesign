@@ -9,170 +9,152 @@ export default function Footer() {
   return (
     <footer
       style={{
-        background: "#1647FB",
-        borderRadius: "80px 80px 0 0",
-        position: "relative",
-        overflow: "hidden",
+        background: "#060606",
+        borderTop: "1px solid rgba(255,255,255,0.07)",
       }}
     >
-      {/* Decorative ellipse */}
+      {/* CTA section */}
       <div
         style={{
-          position: "absolute",
-          width: "130%",
-          height: "700px",
-          borderRadius: "50%",
-          background: "#0540F2",
-          top: "160px",
-          left: "-15%",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* CTA block */}
-      <div
-        style={{
-          padding: "clamp(64px, 10vw, 112px) clamp(32px, 6vw, 80px) 0",
-          position: "relative",
-          zIndex: 1,
+          padding: "clamp(80px, 12vw, 160px) clamp(20px, 5vw, 80px) clamp(60px, 8vw, 100px)",
+          maxWidth: "1400px",
+          margin: "0 auto",
+          textAlign: "center",
         }}
       >
         <h2
           style={{
-            fontSize: "clamp(40px, 7.5vw, 108px)",
-            fontWeight: 800,
+            fontFamily: "'Archivo', sans-serif",
+            fontSize: "clamp(36px, 7vw, 96px)",
+            fontWeight: 900,
             letterSpacing: "-0.04em",
-            lineHeight: 0.92,
-            color: "#ffffff",
-            margin: "0 0 clamp(32px, 4vw, 52px)",
+            lineHeight: 0.93,
+            color: "#fff",
+            margin: "0 0 clamp(24px, 3vw, 40px)",
           }}
         >
-          Lad os skabe{" "}
-          <em
-            style={{
-              fontStyle: "italic",
-              fontWeight: 400,
-              fontFamily: "'Instrument Serif', Georgia, serif",
-              color: "rgba(255,255,255,0.7)",
-            }}
-          >
-            noget fedt.
-          </em>
+          Klar til at komme<br />
+          <span style={{ color: "#1647FB" }}>online?</span>
         </h2>
+
+        <p
+          style={{
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: "15px",
+            color: "#444",
+            lineHeight: 1.75,
+            margin: "0 auto clamp(32px, 4vw, 52px)",
+            maxWidth: "400px",
+          }}
+        >
+          Vi vender tilbage inden for 24 timer. Fortæl os om dit projekt.
+        </p>
+
         <Link
           href="/kontakt"
           style={{
             display: "inline-block",
-            padding: "15px 36px",
-            background: "#ffffff",
-            color: "#1647FB",
-            fontSize: "10px",
-            fontFamily: "Montserrat, sans-serif",
-            fontWeight: 700,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
+            padding: "16px 44px",
+            background: "#1647FB",
+            color: "#fff",
+            borderRadius: "4px",
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: "14px",
+            fontWeight: 600,
+            letterSpacing: "0.03em",
             textDecoration: "none",
-            transition: "opacity 0.2s",
+            transition: "background 0.18s, transform 0.15s",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "#2355FF"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "#1647FB"; e.currentTarget.style.transform = "translateY(0)"; }}
         >
-          Start et projekt
+          Start et projekt →
         </Link>
       </div>
 
-      {/* Footer content */}
+      {/* Bottom bar */}
       <div
         style={{
-          padding: "clamp(60px, 8vw, 96px) clamp(32px, 6vw, 80px) clamp(32px, 4vw, 48px)",
-          position: "relative",
-          zIndex: 1,
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+          padding: "28px clamp(20px, 5vw, 80px)",
+          maxWidth: "1400px",
+          margin: "0 auto",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "20px",
         }}
       >
-        {/* Logo */}
-        <div style={{ marginBottom: "40px" }}>
-          <Logo
-            style={{
-              height: "clamp(48px, 6vw, 72px)",
-              width: "auto",
-              filter: "brightness(0) invert(1)",
-            }}
-          />
-        </div>
+        <Logo
+          style={{
+            height: "28px",
+            width: "auto",
+            filter: "brightness(0) invert(1)",
+            opacity: 0.3,
+          }}
+        />
 
-        {/* Contact links */}
-        <div style={{ display: "flex", gap: "clamp(20px, 4vw, 40px)", flexWrap: "wrap", marginBottom: "56px" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "clamp(16px, 3vw, 32px)",
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
           <a
             href="mailto:hej@duckert.design"
             style={{
-              fontSize: "15px",
-              color: "rgba(255,255,255,0.75)",
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "13px",
+              color: "#333",
               textDecoration: "none",
-              transition: "color 0.2s",
+              transition: "color 0.18s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#ffffff")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#333")}
           >
             hej@duckert.design
           </a>
-          <a
-            href="https://kundeservice.duckert.design"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              fontSize: "15px",
-              color: "rgba(255,255,255,0.75)",
-              textDecoration: "none",
-              transition: "color 0.2s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#ffffff")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
-          >
-            Kontakt Formular
-          </a>
-        </div>
 
-        {/* Bottom bar */}
-        <div
-          style={{
-            borderTop: "1px solid rgba(255,255,255,0.12)",
-            paddingTop: "24px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: "16px",
-          }}
-        >
-          <div style={{ display: "flex", gap: "clamp(16px, 3vw, 32px)", flexWrap: "wrap" }}>
-            <Link
-              href="/service-vilkar"
-              style={{
-                fontSize: "13px",
-                color: "rgba(255,255,255,0.55)",
-                textDecoration: "none",
-                transition: "color 0.2s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#ffffff")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.55)")}
-            >
-              Service Vilkår
-            </Link>
-            <Link
-              href="/privatlivspolitik"
-              style={{
-                fontSize: "13px",
-                color: "rgba(255,255,255,0.55)",
-                textDecoration: "none",
-                transition: "color 0.2s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#ffffff")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.55)")}
-            >
-              Privatlivspolitik
-            </Link>
-          </div>
-          <span style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)" }}>
+          <Link
+            href="/service-vilkar"
+            style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "13px",
+              color: "#333",
+              textDecoration: "none",
+              transition: "color 0.18s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#333")}
+          >
+            Service Vilkår
+          </Link>
+
+          <Link
+            href="/privatlivspolitik"
+            style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "13px",
+              color: "#333",
+              textDecoration: "none",
+              transition: "color 0.18s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#fff")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "#333")}
+          >
+            Privatlivspolitik
+          </Link>
+
+          <span
+            style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "13px",
+              color: "#222",
+            }}
+          >
             © {year} Duckert Design
           </span>
         </div>

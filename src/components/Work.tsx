@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 
-const projects = [
+const PROJECTS = [
   {
     number: "01",
     category: "Webdesign",
     title: "Projekt Alfa",
     year: "2024",
-    bg: "#f0f0f0",
-    color: "#080808",
+    bg: "#101010",
+    accent: "#1647FB",
   },
   {
     number: "02",
@@ -17,23 +17,23 @@ const projects = [
     title: "Projekt Beta",
     year: "2024",
     bg: "#1647FB",
-    color: "#ffffff",
+    accent: "#ffffff",
   },
   {
     number: "03",
     category: "UI/UX",
     title: "Projekt Gamma",
     year: "2024",
-    bg: "#080808",
-    color: "#ffffff",
+    bg: "#0d0d18",
+    accent: "#4d72ff",
   },
   {
     number: "04",
     category: "Webudvikling",
     title: "Projekt Delta",
     year: "2024",
-    bg: "#f0f0f0",
-    color: "#080808",
+    bg: "#131313",
+    accent: "#1647FB",
   },
 ];
 
@@ -43,7 +43,7 @@ export default function Work() {
       id="arbejde"
       style={{
         padding: "clamp(80px, 12vw, 160px) clamp(20px, 5vw, 80px)",
-        background: "#f9f9f9",
+        background: "#060606",
       }}
     >
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
@@ -52,28 +52,29 @@ export default function Work() {
             display: "flex",
             alignItems: "baseline",
             justifyContent: "space-between",
-            marginBottom: "clamp(32px, 4vw, 52px)",
-            borderBottom: "1px solid #e0e0e0",
             paddingBottom: "20px",
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
+            marginBottom: "clamp(40px, 6vw, 52px)",
           }}
         >
           <span
             style={{
-              fontSize: "10px",
-              fontWeight: 700,
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "11px",
+              fontWeight: 600,
               letterSpacing: "0.18em",
               textTransform: "uppercase",
-              color: "#bbb",
+              color: "#333",
             }}
           >
             Udvalgte projekter
           </span>
           <span
             style={{
-              fontSize: "10px",
-              color: "#bbb",
-              letterSpacing: "0.14em",
-              fontWeight: 600,
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "11px",
+              color: "#222",
+              fontWeight: 500,
             }}
           >
             04
@@ -81,7 +82,7 @@ export default function Work() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: "10px" }}>
-          {projects.map((p) => (
+          {PROJECTS.map((p) => (
             <ProjectCard key={p.number} project={p} />
           ))}
         </div>
@@ -90,7 +91,7 @@ export default function Work() {
   );
 }
 
-function ProjectCard({ project }: { project: (typeof projects)[0] }) {
+function ProjectCard({ project }: { project: (typeof PROJECTS)[0] }) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -99,7 +100,7 @@ function ProjectCard({ project }: { project: (typeof projects)[0] }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         background: project.bg,
-        aspectRatio: "4/3",
+        aspectRatio: "4 / 3",
         position: "relative",
         overflow: "hidden",
         cursor: "pointer",
@@ -107,59 +108,62 @@ function ProjectCard({ project }: { project: (typeof projects)[0] }) {
         flexDirection: "column",
         justifyContent: "space-between",
         padding: "clamp(24px, 3vw, 40px)",
-        transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: "4px",
+        transition: "transform 0.38s cubic-bezier(0.16,1,0.3,1), border-color 0.22s",
         transform: hovered ? "scale(0.984)" : "scale(1)",
+        borderColor: hovered ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.06)",
       }}
     >
-      {/* Top row */}
+      {/* Top */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <span
           style={{
+            fontFamily: "'Space Grotesk', sans-serif",
             fontSize: "11px",
             fontWeight: 500,
-            letterSpacing: "0.1em",
-            color: project.color,
-            opacity: 0.35,
+            color: "rgba(255,255,255,0.2)",
           }}
         >
           {project.number}
         </span>
         <span
           style={{
-            fontSize: "22px",
-            color: project.color,
+            fontSize: "20px",
+            color: project.accent,
             lineHeight: 1,
             opacity: hovered ? 1 : 0,
-            transform: hovered ? "translate(0, 0)" : "translate(-6px, 6px)",
-            transition: "opacity 0.25s, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+            transform: hovered ? "translate(0,0)" : "translate(-6px,6px)",
+            transition: "opacity 0.22s, transform 0.3s cubic-bezier(0.16,1,0.3,1)",
           }}
         >
           ↗
         </span>
       </div>
 
-      {/* Bottom info */}
+      {/* Bottom */}
       <div>
         <p
           style={{
-            fontSize: "9px",
+            fontFamily: "'Space Grotesk', sans-serif",
+            fontSize: "10px",
             fontWeight: 700,
             letterSpacing: "0.16em",
             textTransform: "uppercase",
-            color: project.color,
-            opacity: 0.5,
-            margin: "0 0 10px",
+            color: "rgba(255,255,255,0.3)",
+            margin: "0 0 8px",
           }}
         >
           {project.category}
         </p>
         <h3
           style={{
-            fontSize: "clamp(22px, 2.5vw, 36px)",
+            fontFamily: "'Archivo', sans-serif",
+            fontSize: "clamp(20px, 2.2vw, 32px)",
             fontWeight: 700,
-            letterSpacing: "-0.025em",
-            color: project.color,
-            margin: "0 0 10px",
+            letterSpacing: "-0.02em",
+            color: "#fff",
+            margin: "0 0 8px",
             lineHeight: 1.05,
           }}
         >
@@ -167,10 +171,9 @@ function ProjectCard({ project }: { project: (typeof projects)[0] }) {
         </h3>
         <span
           style={{
+            fontFamily: "'Space Grotesk', sans-serif",
             fontSize: "11px",
-            color: project.color,
-            opacity: 0.35,
-            letterSpacing: "0.05em",
+            color: "rgba(255,255,255,0.2)",
           }}
         >
           {project.year}

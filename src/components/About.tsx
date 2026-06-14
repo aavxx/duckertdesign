@@ -2,18 +2,18 @@
 
 import Link from "next/link";
 
-const differentiators = [
+const VALUES = [
   {
-    label: "Hurtig levering",
-    desc: "Fra idé til færdig hjemmeside på rekordtid.",
+    label: "Æstetik",
+    desc: "Design der er smukt og funktionelt på én gang — uden kompromis.",
   },
   {
-    label: "Mobilvenlig",
-    desc: "Alle sites fungerer perfekt på alle enheder.",
+    label: "Hastighed",
+    desc: "Fra idé til live hjemmeside hurtigere end du forventer.",
   },
   {
-    label: "Personlig service",
-    desc: "Direkte kontakt og løbende dialog undervejs.",
+    label: "Resultater",
+    desc: "Vi måler succes i konverteringer og vækst, ikke likes.",
   },
 ];
 
@@ -22,7 +22,6 @@ export default function About() {
     <section
       id="om"
       style={{
-        background: "#ffffff",
         padding: "clamp(80px, 12vw, 160px) clamp(20px, 5vw, 80px)",
       }}
     >
@@ -31,130 +30,121 @@ export default function About() {
         <div
           style={{
             paddingBottom: "20px",
-            borderBottom: "1px solid #ebebeb",
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
             marginBottom: "clamp(56px, 8vw, 100px)",
           }}
         >
           <span
             style={{
-              fontSize: "10px",
-              fontWeight: 700,
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "11px",
+              fontWeight: 600,
               letterSpacing: "0.18em",
               textTransform: "uppercase",
-              color: "#bbb",
+              color: "#333",
             }}
           >
             Om os
           </span>
         </div>
 
-        {/* Main two-column grid */}
+        {/* Two-column grid */}
         <div
           className="grid grid-cols-1 lg:grid-cols-2"
-          style={{ gap: "clamp(40px, 7vw, 100px)", alignItems: "start" }}
+          style={{ gap: "clamp(48px, 8vw, 120px)", alignItems: "start" }}
         >
-          {/* Left: headline */}
-          <h2
-            style={{
-              fontSize: "clamp(28px, 3.5vw, 52px)",
-              fontWeight: 700,
-              letterSpacing: "-0.03em",
-              lineHeight: 1.1,
-              color: "#080808",
-              margin: 0,
-            }}
-          >
-            Vi tror på at godt design løser problemer —{" "}
-            <em
+          {/* Left — headline + CTA */}
+          <div>
+            <h2
               style={{
-                fontStyle: "italic",
-                fontWeight: 400,
-                color: "#1647FB",
-                fontFamily: "'Instrument Serif', Georgia, serif",
+                fontFamily: "'Archivo', sans-serif",
+                fontSize: "clamp(30px, 4vw, 56px)",
+                fontWeight: 800,
+                letterSpacing: "-0.03em",
+                lineHeight: 1.05,
+                color: "#fff",
+                margin: "0 0 clamp(20px, 3vw, 36px)",
               }}
             >
+              Godt design løser<br />
+              <span style={{ color: "#1647FB" }}>problemer</span> —<br />
               ikke bare ser godt ud.
-            </em>
-          </h2>
+            </h2>
 
-          {/* Right: body + differentiators + CTA */}
-          <div>
             <p
               style={{
+                fontFamily: "'Space Grotesk', sans-serif",
                 fontSize: "15px",
-                color: "#888",
-                lineHeight: 1.9,
-                margin: "0 0 48px",
+                color: "#555",
+                lineHeight: 1.8,
+                margin: "0 0 clamp(28px, 4vw, 44px)",
+                maxWidth: "460px",
               }}
             >
-              Vi designer og udvikler professionelle hjemmesider til virksomheder, der ønsker et stærkt, stilrent og moderne udtryk online. Vores mål er at gøre det nemt og overskueligt for dig at få en ny hjemmeside, der virker perfekt på alle skærmstørrelser.
+              Vi er et dansk webdesign studio med fokus på at skabe professionelle digitale løsninger der reelt bidrager til din virksomheds vækst online.
             </p>
-
-            {/* Differentiators */}
-            <div
-              style={{
-                borderTop: "1px solid #ebebeb",
-                marginBottom: "48px",
-              }}
-            >
-              {differentiators.map((d) => (
-                <div
-                  key={d.label}
-                  style={{
-                    display: "flex",
-                    gap: "24px",
-                    alignItems: "flex-start",
-                    padding: "18px 0",
-                    borderBottom: "1px solid #ebebeb",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "9px",
-                      fontWeight: 700,
-                      letterSpacing: "0.14em",
-                      textTransform: "uppercase",
-                      color: "#1647FB",
-                      minWidth: "110px",
-                      paddingTop: "3px",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {d.label}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "14px",
-                      color: "#888",
-                      lineHeight: 1.65,
-                    }}
-                  >
-                    {d.desc}
-                  </span>
-                </div>
-              ))}
-            </div>
 
             <Link
               href="/kontakt"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "12px",
-                fontSize: "10px",
-                fontWeight: 700,
-                letterSpacing: "0.16em",
-                textTransform: "uppercase",
+                gap: "8px",
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontSize: "13px",
+                fontWeight: 600,
                 color: "#1647FB",
                 textDecoration: "none",
-                transition: "opacity 0.2s",
+                letterSpacing: "0.02em",
+                transition: "opacity 0.18s",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.6")}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.65")}
               onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
             >
-              Start et projekt
-              <span style={{ fontSize: "18px", fontWeight: 300 }}>→</span>
+              Start et projekt →
             </Link>
+          </div>
+
+          {/* Right — values list */}
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+            {VALUES.map((v) => (
+              <div
+                key={v.label}
+                style={{
+                  display: "flex",
+                  gap: "clamp(16px, 3vw, 36px)",
+                  padding: "clamp(18px, 2.5vw, 28px) 0",
+                  borderBottom: "1px solid rgba(255,255,255,0.07)",
+                  alignItems: "flex-start",
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: "#1647FB",
+                    minWidth: "84px",
+                    paddingTop: "2px",
+                    flexShrink: 0,
+                  }}
+                >
+                  {v.label}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    fontSize: "14px",
+                    color: "#555",
+                    lineHeight: 1.68,
+                  }}
+                >
+                  {v.desc}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
