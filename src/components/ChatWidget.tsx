@@ -1,23 +1,44 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
+/* ─── Constants ───────────────────────────────────────────────────────────── */
 const LS_KEY      = "duckert-chat-v1";
 const EXPIRY_KEY  = "duckert-chat-expiry";
 const SESSION_KEY = "duckert-chat-session-id";
 const EXPIRY_MS   = 10 * 60 * 1000;
 
+const INITIAL_QUICK_REPLIES = [
+  "Hvad koster en hjemmeside?",
+  "Hvor lang tid tager det?",
+  "Laver I webshops?",
+  "Tal med en agent",
+];
+
+const GREETING = "Hej! 👋 Hvad kan jeg hjælpe dig med?";
+
+/* ─── Types ───────────────────────────────────────────────────────────────── */
+type Message = {
+  id: string;
+  role: "user" | "assistant" | "admin";
+  content: string;
+  isPrivacyCard?: boolean;
+  quickReplies?: string[];
+  streaming?: boolean;
+  timestamp?: string;
+};
+
+/* ─── Session helpers ─────────────────────────────────────────────────────── */
 function isExpired(): boolean {
   if (typeof window === "undefined") return false;
   const expiry = parseInt(localStorage.getItem(EXPIRY_KEY) ?? "0", 10);
   return expiry > 0 && Date.now() > expiry;
 }
-
 function touchExpiry(): void {
   if (typeof window === "undefined") return;
   try { localStorage.setItem(EXPIRY_KEY, String(Date.now() + EXPIRY_MS)); } catch {}
 }
-
 function clearChat(): void {
   if (typeof window === "undefined") return;
   try {
@@ -26,50 +47,29 @@ function clearChat(): void {
     localStorage.removeItem(SESSION_KEY);
   } catch {}
 }
-
-type Message = {
-  id: string;
-  role: "user" | "assistant" | "admin";
-  content: string;
-  isPrivacyCard?: boolean;
-  quickReplies?: string[];
-  streaming?: boolean;
-};
-
-const INITIAL_QUICK_REPLIES = [
-  "Hvad koster en hjemmeside?",
-  "Hvor lang tid tager det?",
-  "Laver I webshops?",
-  "Tal med en person",
-];
-
-const GREETING =
-  "Hej! Jeg er Duckerts AI-assistent og klar til at hjælpe dig med spørgsmål om webdesign og webudvikling.";
-
 function loadMessages(): Message[] {
   if (typeof window === "undefined") return [];
   if (isExpired()) { clearChat(); return []; }
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    return raw ? (JSON.parse(raw) as Message[]) : [];
-  } catch { return []; }
+  try { return JSON.parse(localStorage.getItem(LS_KEY) ?? "[]") as Message[]; } catch { return []; }
 }
-
 function saveMessages(msgs: Message[]): void {
   if (typeof window === "undefined") return;
   try { localStorage.setItem(LS_KEY, JSON.stringify(msgs)); touchExpiry(); } catch {}
 }
+function nowTime(): string {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
 
+/* ─── Content renderer ────────────────────────────────────────────────────── */
 function parseContent(text: string): React.ReactNode[] {
   const nodes: React.ReactNode[] = [];
   text.split("\n").forEach((line, li, arr) => {
     line.split(/(\[[^\]]+\]\([^)]+\))/g).forEach((part, pi) => {
       const m = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
       if (m) {
-        nodes.push(
-          <a key={`${li}-${pi}`} href={m[2]} target="_blank" rel="noopener noreferrer"
-            style={{ color: "#1647FB", textDecoration: "underline" }}>{m[1]}</a>
-        );
+        nodes.push(<a key={`${li}-${pi}`} href={m[2]} target="_blank" rel="noopener noreferrer"
+          style={{ color: "#1647FB", textDecoration: "underline" }}>{m[1]}</a>);
       } else if (part) {
         nodes.push(<span key={`${li}-${pi}`}>{part}</span>);
       }
@@ -88,69 +88,41 @@ function parseQuickReplies(text: string): { content: string; quickReplies: strin
   };
 }
 
-/* ── Blinking cursor shown while streaming ── */
-function StreamCursor() {
+/* ─── Bouncing dots (loading) ─────────────────────────────────────────────── */
+function BouncingDots() {
   return (
-    <>
-      <style>{`
-        @keyframes cw-blink { 0%,100%{opacity:1} 50%{opacity:0} }
-        .cw-cursor { display:inline-block; width:2px; height:14px; background:#888; borderRadius:1px; marginLeft:2px; verticalAlign:middle; animation:cw-blink 0.9s ease infinite; }
-      `}</style>
-      <span className="cw-cursor" aria-hidden="true" />
-    </>
+    <div style={{ display: "flex", gap: "4px", alignItems: "center", padding: "2px 0" }}>
+      {[0, 150, 300].map((delay) => (
+        <span key={delay} style={{
+          width: "7px", height: "7px", borderRadius: "50%",
+          background: "rgba(8,8,8,0.3)",
+          animation: `cwBounce 1.2s ease-in-out ${delay}ms infinite`,
+          display: "inline-block",
+        }} />
+      ))}
+    </div>
   );
 }
 
-/* ── Privacy notice card ── */
+/* ─── Privacy card ────────────────────────────────────────────────────────── */
 function PrivacyCard() {
   return (
-    <div style={{ animation: "cwIn 0.3s ease both" }}>
-      <div style={{
-        background: "rgba(22,71,251,0.04)", border: "1px solid rgba(22,71,251,0.12)",
-        borderRadius: "14px", padding: "20px",
-      }}>
-        <p style={{
-          fontSize: "10px", fontWeight: 800, color: "#1647FB",
-          letterSpacing: "0.12em", textTransform: "uppercase",
-          fontFamily: "Montserrat, sans-serif", margin: "0 0 12px",
-        }}>
-          Før du begynder
-        </p>
-        <p style={{ fontSize: "13px", color: "#333", lineHeight: 1.65, margin: "0 0 10px", fontFamily: "Montserrat, sans-serif" }}>
-          Vi prioriterer sikkerheden af dit privatliv. Læs vores{" "}
-          <a href="/privatlivspolitik" style={{ color: "#1647FB", textDecoration: "underline" }}>privatlivspolitik</a>.
-        </p>
-        <p style={{ fontSize: "13px", color: "rgba(8,8,8,0.5)", lineHeight: 1.65, margin: 0, fontFamily: "Montserrat, sans-serif" }}>
-          Prøv f.eks. at spørge: <em>"Hvad koster en hjemmeside?"</em>
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/* ── Sparkle star avatar ── */
-function SparkleAvatar({ size = 28 }: { size?: number }) {
-  const inner = Math.round(size * 0.55);
-  return (
     <div style={{
-      width: size, height: size, borderRadius: "50%",
-      background: "#1647FB", display: "flex", alignItems: "center",
-      justifyContent: "center", flexShrink: 0,
+      background: "#f7f7f7", borderRadius: "16px", borderBottomLeftRadius: "4px",
+      padding: "14px 16px", maxWidth: "85%",
     }}>
-      {/* Single large sparkle + tiny accent */}
-      <svg width={inner} height={inner} viewBox="0 0 32 32" fill="none">
-        {/* Large 4-pointed star */}
-        <path d="M13 1 L15.2 7.8 L22 10 L15.2 12.2 L13 19 L10.8 12.2 L4 10 L10.8 7.8 Z" fill="white" />
-        {/* Small accent star upper-right */}
-        <path d="M24 5 L25 8.5 L28.5 9.5 L25 10.5 L24 14 L23 10.5 L19.5 9.5 L23 8.5 Z" fill="white" opacity="0.65" />
-        {/* Tiny dot lower-right */}
-        <circle cx="26" cy="20" r="1.8" fill="white" opacity="0.4" />
-      </svg>
+      <p style={{ fontSize: "13px", color: "#080808", lineHeight: 1.6, margin: "0 0 6px", fontFamily: "inherit" }}>
+        Vi prioriterer dit privatliv. Læs vores{" "}
+        <a href="/privatlivspolitik" style={{ color: "#1647FB", textDecoration: "underline" }}>privatlivspolitik</a>.
+      </p>
+      <p style={{ fontSize: "12px", color: "#888888", margin: 0, fontFamily: "inherit" }}>
+        Prøv f.eks. at spørge: <em>"Hvad koster en hjemmeside?"</em>
+      </p>
     </div>
   );
 }
 
-/* ── Main component ── */
+/* ─── Main component ──────────────────────────────────────────────────────── */
 export default function ChatWidget({
   open,
   onClose,
@@ -158,18 +130,20 @@ export default function ChatWidget({
   open?: boolean;
   onClose?: () => void;
 }) {
-  const [isOpen, setIsOpen]         = useState(false);
-  const [messages, setMessages]     = useState<Message[]>(() => loadMessages());
-  const [showQR, setShowQR]         = useState<boolean>(() => {
+  const pathname = usePathname();
+  const [visible, setVisible]         = useState(false);
+  const [isOpen, setIsOpen]           = useState(false);
+  const [messages, setMessages]       = useState<Message[]>(() => loadMessages());
+  const [showQR, setShowQR]           = useState<boolean>(() => {
     const saved = loadMessages();
     if (!saved.length) return false;
     const last = saved[saved.length - 1];
     return last.role === "assistant" && !!(last.quickReplies?.length);
   });
-  const [isLoading, setIsLoading]   = useState(false);
-  const [input, setInput]           = useState("");
+  const [isLoading, setIsLoading]     = useState(false);
+  const [input, setInput]             = useState("");
   const [waitingHuman, setWaitingHuman] = useState(false);
-  const [newMsgCount, setNewMsgCount]   = useState(0);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   const hasInit    = useRef(false);
   const endRef     = useRef<HTMLDivElement>(null);
@@ -177,24 +151,32 @@ export default function ChatWidget({
   const sessionRef = useRef<string | null>(null);
   const sseRef     = useRef<EventSource | null>(null);
 
+  // Floating button delay
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      sessionRef.current = localStorage.getItem(SESSION_KEY);
-    }
+    const t = setTimeout(() => setVisible(true), 3000);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") sessionRef.current = localStorage.getItem(SESSION_KEY);
   }, []);
 
   useEffect(() => { if (messages.length > 0) saveMessages(messages); }, [messages]);
 
+  // External open prop
   useEffect(() => { if (open) setIsOpen(true); }, [open]);
 
+  // Scroll + focus when open
   useEffect(() => {
     if (isOpen) {
-      setNewMsgCount(0);
-      endRef.current?.scrollIntoView({ behavior: "smooth" });
-      setTimeout(() => inputRef.current?.focus(), 80);
+      setTimeout(() => {
+        endRef.current?.scrollIntoView({ behavior: "smooth" });
+        inputRef.current?.focus();
+      }, 80);
     }
   }, [messages, isLoading, isOpen]);
 
+  // Init on first open
   useEffect(() => {
     if (!isOpen || hasInit.current) return;
     hasInit.current = true;
@@ -205,67 +187,86 @@ export default function ChatWidget({
       return;
     }
 
+    setShowWelcome(true);
     setTimeout(() => {
-      touchExpiry();
-      setMessages([{ id: "privacy", role: "assistant", content: "", isPrivacyCard: true }]);
-      setTimeout(() => {
-        setMessages((prev) => [...prev, {
+      setShowWelcome(false);
+      setMessages([
+        { id: "privacy", role: "assistant", content: "", isPrivacyCard: true },
+        {
           id: "greeting", role: "assistant", content: GREETING,
           quickReplies: INITIAL_QUICK_REPLIES,
-        }]);
-        setShowQR(true);
-      }, 700);
-    }, 400);
+        },
+      ]);
+      setShowQR(true);
+    }, 1200);
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    return () => { sseRef.current?.close(); };
-  }, []);
+  useEffect(() => { return () => { sseRef.current?.close(); }; }, []);
+
+  // Don't render on admin page
+  if (pathname?.startsWith("/mit")) return null;
 
   function subscribeAdminReplies(sid: string) {
     sseRef.current?.close();
     const es = new EventSource(`/api/chat/events?sessionId=${sid}`);
     es.onmessage = (e) => {
       try {
-        const msg = JSON.parse(e.data);
-        const adminMsg: Message = { id: msg.id ?? Date.now().toString(), role: "admin", content: msg.content };
-        setMessages((prev) => [...prev, adminMsg]);
+        const msg = JSON.parse(e.data) as { id?: string; content: string };
+        setMessages((prev) => [...prev, {
+          id: msg.id ?? Date.now().toString(),
+          role: "admin",
+          content: msg.content,
+        }]);
         setWaitingHuman(false);
-        if (!isOpen) setNewMsgCount((n) => n + 1);
       } catch {}
     };
     sseRef.current = es;
   }
 
-  const handleClose = () => { setIsOpen(false); onClose?.(); };
+  const handleOpen = () => {
+    setIsOpen(true);
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    onClose?.();
+  };
+
+  const resetChat = () => {
+    clearChat();
+    setMessages([]);
+    setShowQR(false);
+    setWaitingHuman(false);
+    setShowWelcome(false);
+    hasInit.current = false;
+    setIsOpen(false);
+    onClose?.();
+  };
 
   const sendMessage = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
 
-    if (trimmed === "Tal med en person") {
+    if (trimmed === "Tal med en agent") {
       setShowQR(false);
-      const userMsg: Message = { id: Date.now().toString(), role: "user", content: trimmed };
+      const userMsg: Message = { id: Date.now().toString(), role: "user", content: trimmed, timestamp: nowTime() };
       setMessages((prev) => [...prev, userMsg]);
       setInput("");
       setWaitingHuman(true);
 
-      const sid = sessionRef.current ?? undefined;
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: [], userMessage: trimmed, sessionId: sid, humanHandoff: true }),
+          body: JSON.stringify({ messages: [], userMessage: trimmed, sessionId: sessionRef.current ?? undefined, humanHandoff: true }),
         });
-        const data = await res.json();
-        const newSid = data.sessionId ?? res.headers.get("X-Session-Id") ?? sid;
+        const data = await res.json() as { sessionId?: string };
+        const newSid = data.sessionId ?? sessionRef.current;
         if (newSid && newSid !== sessionRef.current) {
           sessionRef.current = newSid;
           try { localStorage.setItem(SESSION_KEY, newSid); } catch {}
-          subscribeAdminReplies(newSid);
-        } else if (newSid) {
-          subscribeAdminReplies(newSid);
         }
+        if (newSid) subscribeAdminReplies(newSid);
       } catch {}
 
       setMessages((prev) => [...prev, {
@@ -276,12 +277,11 @@ export default function ChatWidget({
     }
 
     setShowQR(false);
-    const userMsg: Message = { id: Date.now().toString(), role: "user", content: trimmed };
+    const userMsg: Message = { id: Date.now().toString(), role: "user", content: trimmed, timestamp: nowTime() };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setIsLoading(true);
 
-    // Add streaming placeholder
     const streamId = `stream-${Date.now()}`;
     setMessages((prev) => [...prev, { id: streamId, role: "assistant", content: "", streaming: true }]);
 
@@ -308,7 +308,7 @@ export default function ChatWidget({
       }
 
       const reader = res.body.getReader();
-      const dec    = new TextDecoder();
+      const dec = new TextDecoder();
       let full = "", buf = "";
 
       while (true) {
@@ -319,13 +319,11 @@ export default function ChatWidget({
         for (const ln of lines) {
           if (!ln.startsWith("data: ") || ln === "data: [DONE]") continue;
           try {
-            const chunk = JSON.parse(ln.slice(6)).choices?.[0]?.delta?.content ?? "";
+            const chunk = (JSON.parse(ln.slice(6)) as { choices?: [{ delta?: { content?: string } }] }).choices?.[0]?.delta?.content ?? "";
             if (chunk) {
               full += chunk;
-              const current = full;
-              setMessages((prev) =>
-                prev.map((m) => m.id === streamId ? { ...m, content: current } : m)
-              );
+              const cur = full;
+              setMessages((prev) => prev.map((m) => m.id === streamId ? { ...m, content: cur } : m));
             }
           } catch {}
         }
@@ -334,336 +332,380 @@ export default function ChatWidget({
       const { content, quickReplies } = parseQuickReplies(
         full || "Beklager, jeg kunne ikke svare. Skriv til hej@duckert.design."
       );
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === streamId
-            ? { ...m, content, quickReplies: quickReplies.length ? quickReplies : undefined, streaming: false }
-            : m
-        )
-      );
+      setMessages((prev) => prev.map((m) =>
+        m.id === streamId
+          ? { ...m, content, quickReplies: quickReplies.length ? quickReplies : undefined, streaming: false }
+          : m
+      ));
       if (quickReplies.length) setShowQR(true);
     } catch {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === streamId
-            ? { ...m, content: "Beklager, noget gik galt. Skriv til hej@duckert.design.", streaming: false }
-            : m
-        )
-      );
+      setMessages((prev) => prev.map((m) =>
+        m.id === streamId
+          ? { ...m, content: "Beklager, noget gik galt. Skriv til hej@duckert.design.", streaming: false }
+          : m
+      ));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const msgCount  = messages.filter((m) => !m.isPrivacyCard).length;
-  const isActive  = isOpen;
+  const msgCount = messages.filter((m) => !m.isPrivacyCard).length;
 
   return (
     <>
       <style>{`
-        @keyframes cwIn {
-          from { opacity:0; transform:translateY(8px); }
-          to   { opacity:1; transform:translateY(0); }
+        @keyframes cwBounce { 0%,80%,100%{transform:scale(0.6);opacity:0.4} 40%{transform:scale(1);opacity:1} }
+        @keyframes cwSlideUp { from{opacity:0;transform:translateY(16px) scale(0.96)} to{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes cwMsgIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes cwFabIn { from{opacity:0;transform:scale(0.7)} to{opacity:1;transform:scale(1)} }
+        .cw-msg { animation: cwMsgIn 0.25s ease-out both; }
+        .cw-scroll::-webkit-scrollbar { width: 3px; }
+        .cw-scroll::-webkit-scrollbar-track { background: transparent; }
+        .cw-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 2px; }
+        .cw-qr-btn:hover { background: rgba(22,71,251,0.08) !important; border-color: #1647FB !important; }
+        .cw-input:focus { outline: none; box-shadow: none; }
+        .cw-send:hover:not(:disabled) { opacity: 0.8; }
+        .cw-close:hover { color: #080808 !important; }
+        .cw-agent-btn:hover { color: #1647FB !important; text-decoration: underline; }
+        .cw-new-btn:hover { opacity: 0.6; }
+
+        /* Floating button */
+        .cw-fab {
+          position: fixed;
+          bottom: 16px; right: 16px;
+          z-index: 999;
+          width: 48px; height: 48px;
+          border-radius: 50%;
+          background: #1647FB;
+          border: none;
+          cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          box-shadow: 0 4px 24px rgba(22,71,251,0.35);
+          animation: cwFabIn 0.4s cubic-bezier(0.16,1,0.3,1) both;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        @keyframes cwPanelIn {
-          from { opacity:0; transform:translateX(32px); }
-          to   { opacity:1; transform:translateX(0); }
+        .cw-fab:hover { transform: scale(1.08); box-shadow: 0 6px 32px rgba(22,71,251,0.45); }
+
+        /* Chat window */
+        .cw-window {
+          position: fixed;
+          z-index: 999;
+          bottom: 0; right: 0;
+          width: 100%; height: 100dvh;
+          background: #ffffff;
+          display: flex; flex-direction: column; overflow: hidden;
+          border-radius: 0;
+          box-shadow: 0 25px 80px rgba(0,0,0,0.18);
+          animation: cwSlideUp 0.35s cubic-bezier(0.16,1,0.3,1) both;
         }
-        @keyframes cwFade { from{opacity:0} to{opacity:1} }
-        @keyframes cwBlink { 0%,100%{opacity:1} 50%{opacity:0} }
-        .cw-scroll::-webkit-scrollbar { width:4px; }
-        .cw-scroll::-webkit-scrollbar-track { background:transparent; }
-        .cw-scroll::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.1); border-radius:2px; }
-        .cw-qr:hover { background:rgba(22,71,251,0.08)!important; border-color:#1647FB!important; }
-        .cw-hbtn:hover { background:rgba(255,255,255,0.18)!important; }
-        .cw-send:hover:not(:disabled) { opacity:0.82!important; }
-        .cw-input-wrap:focus-within { background:#ebebeb!important; }
-        .cw-cursor { display:inline-block; width:2px; height:13px; background:rgba(8,8,8,0.5); border-radius:1px; margin-left:2px; vertical-align:middle; animation:cwBlink 0.85s ease infinite; }
+
+        @media (min-width: 640px) {
+          .cw-fab {
+            bottom: 24px; right: 24px;
+            width: 56px; height: 56px;
+          }
+          .cw-window {
+            bottom: 24px; right: 24px;
+            width: 384px; height: 500px;
+            border-radius: 18px;
+          }
+        }
       `}</style>
 
-      {/* Backdrop */}
-      <div
-        onClick={handleClose}
-        aria-hidden="true"
-        style={{
-          position: "fixed", inset: 0, zIndex: 400,
-          background: "rgba(8,8,8,0.35)",
-          backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)",
-          opacity: isActive ? 1 : 0,
-          pointerEvents: isActive ? "auto" : "none",
-          transition: "opacity 0.3s ease",
-        }}
-      />
+      {/* ── Floating button ── */}
+      {!isOpen && visible && (
+        <button className="cw-fab" onClick={handleOpen} aria-label="Åbn chat">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
+              stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      )}
 
-      {/* Panel */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Chat med Duckert Design"
-        style={{
-          position: "fixed", top: 0, right: 0, bottom: 0,
-          width: "min(440px, 100vw)",
-          background: "#fff",
-          zIndex: 401,
-          display: "flex", flexDirection: "column",
-          boxShadow: "-4px 0 48px rgba(0,0,0,0.18)",
-          transform: isActive ? "translateX(0)" : "translateX(100%)",
-          transition: "transform 0.38s cubic-bezier(0.16,1,0.3,1)",
-          willChange: "transform",
-        }}
-      >
-        {/* ── Header ── */}
-        <div style={{
-          background: "#1647FB",
-          padding: "0 16px",
-          height: "64px",
-          display: "flex", alignItems: "center", gap: "12px",
-          flexShrink: 0,
-        }}>
-          {/* Avatar */}
+      {/* ── Chat window ── */}
+      {isOpen && (
+        <div className="cw-window" role="dialog" aria-modal="true" aria-label="Chat med Duckert Design">
+
+          {/* Header */}
           <div style={{
-            width: "38px", height: "38px", borderRadius: "50%",
-            background: "rgba(255,255,255,0.18)",
-            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "14px 16px",
+            borderBottom: "1px solid #ebebeb",
+            background: "#ffffff",
+            flexShrink: 0,
           }}>
-            <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-              <path d="M13 1 L15.2 7.8 L22 10 L15.2 12.2 L13 19 L10.8 12.2 L4 10 L10.8 7.8 Z" fill="white" />
-              <path d="M24 5 L25 8.5 L28.5 9.5 L25 10.5 L24 14 L23 10.5 L19.5 9.5 L23 8.5 Z" fill="white" opacity="0.65" />
-              <circle cx="26" cy="20" r="1.8" fill="white" opacity="0.4" />
-            </svg>
-          </div>
-
-          {/* Title */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontSize: "14px", fontWeight: 700, color: "#fff",
-              fontFamily: "Montserrat, sans-serif",
-              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-            }}>
-              {waitingHuman ? "Forbinder med teamet…" : "Duckert Design AI"}
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "2px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <span style={{
-                width: "6px", height: "6px", borderRadius: "50%",
-                background: waitingHuman ? "#facc15" : "#4ade80", flexShrink: 0,
+                width: "9px", height: "9px", borderRadius: "50%", flexShrink: 0,
+                background: waitingHuman ? "#facc15" : "#4ade80",
               }} />
-              <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.7)", fontFamily: "Montserrat, sans-serif" }}>
-                {waitingHuman ? "Venter på svar" : "Online"}
+              <span style={{
+                fontSize: "14px", fontWeight: 600, color: "#080808",
+                fontFamily: "Montserrat, sans-serif", letterSpacing: "-0.01em",
+              }}>
+                {waitingHuman ? "Forbinder med teamet…" : "Duckert AI"}
               </span>
             </div>
-          </div>
-
-          {/* Right actions */}
-          <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
-            {msgCount > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              {msgCount > 0 && (
+                <button
+                  className="cw-new-btn"
+                  onClick={resetChat}
+                  title="Ny samtale"
+                  aria-label="Ny samtale"
+                  style={{
+                    background: "none", border: "none", cursor: "pointer",
+                    color: "#888888", padding: "6px",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    borderRadius: "8px", transition: "opacity 0.15s",
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              )}
               <button
-                className="cw-hbtn"
-                onClick={() => { clearChat(); setMessages([]); setShowQR(false); setWaitingHuman(false); hasInit.current = false; setIsOpen(false); onClose?.(); }}
-                aria-label="Ny samtale"
-                title="Ny samtale"
+                className="cw-close"
+                onClick={handleClose}
+                aria-label="Luk chat"
                 style={{
-                  background: "none", border: "none", cursor: "pointer", padding: "8px",
-                  borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center",
-                  transition: "background 0.15s",
-                }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 5v14M5 12h14" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "#888888", padding: "6px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  borderRadius: "8px", transition: "color 0.15s",
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="20" y1="4" x2="4" y2="20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                 </svg>
               </button>
-            )}
-            <button
-              className="cw-hbtn"
-              onClick={handleClose}
-              aria-label="Luk chat"
-              style={{
-                background: "none", border: "none", cursor: "pointer", padding: "8px",
-                borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "background 0.15s",
-              }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                <line x1="4" y1="4" x2="20" y2="20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-                <line x1="20" y1="4" x2="4" y2="20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-              </svg>
-            </button>
+            </div>
           </div>
-        </div>
 
-        {/* ── Messages ── */}
-        <div
-          className="cw-scroll"
-          style={{
-            flex: 1, overflowY: "auto",
-            padding: "20px 16px",
-            display: "flex", flexDirection: "column", gap: "16px",
-            background: "#f9f9fb",
-          }}
-        >
-          {messages.map((msg, idx) => {
-            if (msg.isPrivacyCard) return <PrivacyCard key={msg.id} />;
-
-            const isLast = idx === messages.length - 1;
-
-            if (msg.role === "user") {
-              return (
-                <div key={msg.id} style={{ display: "flex", justifyContent: "flex-end", animation: "cwIn 0.25s ease both" }}>
-                  <div style={{
-                    maxWidth: "82%",
-                    background: "#1647FB", color: "#fff",
-                    padding: "11px 16px",
-                    borderRadius: "18px 18px 4px 18px",
-                    fontSize: "14px", fontFamily: "Montserrat, sans-serif", lineHeight: 1.6,
-                    boxShadow: "0 2px 12px rgba(22,71,251,0.25)",
-                  }}>
-                    {parseContent(msg.content)}
-                  </div>
+          {/* Messages */}
+          <div
+            className="cw-scroll"
+            style={{
+              flex: 1, overflowY: "auto",
+              padding: "16px",
+              display: "flex", flexDirection: "column", gap: "12px",
+              background: "#ffffff",
+            }}
+          >
+            {/* Welcome loading dots */}
+            {showWelcome && (
+              <div className="cw-msg" style={{ display: "flex", justifyContent: "flex-start" }}>
+                <div style={{
+                  borderRadius: "16px", borderBottomLeftRadius: "4px",
+                  padding: "12px 16px", background: "#f2f2f2",
+                }}>
+                  <BouncingDots />
                 </div>
-              );
-            }
+              </div>
+            )}
 
-            if (msg.role === "admin") {
-              return (
-                <div key={msg.id} style={{ display: "flex", alignItems: "flex-end", gap: "8px", animation: "cwIn 0.25s ease both" }}>
-                  <SparkleAvatar />
-                  <div style={{ maxWidth: "82%" }}>
+            {messages.map((msg, idx) => {
+              if (msg.isPrivacyCard) {
+                return (
+                  <div key={msg.id} className="cw-msg" style={{ display: "flex", justifyContent: "flex-start" }}>
+                    <PrivacyCard />
+                  </div>
+                );
+              }
+
+              const isLast = idx === messages.length - 1;
+
+              if (msg.role === "user") {
+                return (
+                  <div key={msg.id} className="cw-msg" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
                     <div style={{
+                      borderRadius: "16px", borderBottomRightRadius: "4px",
+                      padding: "10px 14px", maxWidth: "85%",
+                      background: "#080808", color: "#ffffff",
+                      fontSize: "14px", fontFamily: "Montserrat, sans-serif", lineHeight: 1.55,
+                    }}>
+                      {msg.content}
+                    </div>
+                    {msg.timestamp && (
+                      <span style={{
+                        fontSize: "10px", color: "rgba(8,8,8,0.35)",
+                        marginTop: "3px", marginRight: "2px",
+                        fontFamily: "Montserrat, sans-serif",
+                      }}>
+                        {msg.timestamp} · Set
+                      </span>
+                    )}
+                  </div>
+                );
+              }
+
+              // Admin or assistant
+              return (
+                <div key={msg.id} className="cw-msg" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                  {msg.role === "admin" && (
+                    <span style={{
                       fontSize: "10px", fontWeight: 700, color: "#1647FB",
                       letterSpacing: "0.1em", textTransform: "uppercase",
-                      fontFamily: "Montserrat, sans-serif", marginBottom: "5px", paddingLeft: "2px",
+                      fontFamily: "Montserrat, sans-serif", marginBottom: "4px", paddingLeft: "2px",
                     }}>
                       Duckert Design
-                    </div>
-                    <div style={{
-                      background: "#fff", color: "#111",
-                      border: "1.5px solid rgba(22,71,251,0.2)",
-                      padding: "12px 16px",
-                      borderRadius: "4px 18px 18px 18px",
-                      fontSize: "14px", fontFamily: "Montserrat, sans-serif", lineHeight: 1.65,
-                      boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
-                    }}>
-                      {parseContent(msg.content)}
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            // Assistant
-            return (
-              <div key={msg.id} style={{ display: "flex", alignItems: "flex-end", gap: "8px", animation: "cwIn 0.25s ease both" }}>
-                <SparkleAvatar />
-                <div style={{ maxWidth: "82%" }}>
+                    </span>
+                  )}
                   <div style={{
-                    background: "#fff", color: "#111",
-                    padding: "12px 16px",
-                    borderRadius: "4px 18px 18px 18px",
-                    fontSize: "14px", fontFamily: "Montserrat, sans-serif", lineHeight: 1.65,
-                    boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
-                    minHeight: "44px",
+                    borderRadius: "16px", borderBottomLeftRadius: "4px",
+                    padding: "10px 14px", maxWidth: "85%",
+                    background: "#f2f2f2", color: "#080808",
+                    fontSize: "14px", fontFamily: "Montserrat, sans-serif", lineHeight: 1.6,
+                    minHeight: msg.streaming && !msg.content ? "42px" : undefined,
+                    display: "flex", alignItems: "center",
                   }}>
-                    {msg.content ? parseContent(msg.content) : null}
-                    {msg.streaming && <span className="cw-cursor" aria-hidden="true" />}
+                    {msg.streaming && !msg.content
+                      ? <BouncingDots />
+                      : <span>{parseContent(msg.content)}</span>
+                    }
+                    {msg.streaming && msg.content && (
+                      <span style={{
+                        display: "inline-block", width: "2px", height: "13px",
+                        background: "rgba(8,8,8,0.4)", borderRadius: "1px",
+                        marginLeft: "2px", verticalAlign: "middle",
+                        animation: "cwBounce 0.85s ease infinite",
+                      }} />
+                    )}
                   </div>
 
                   {/* Quick replies */}
-                  {isLast && showQR && !msg.streaming && msg.quickReplies && msg.quickReplies.length > 0 && (
+                  {isLast && showQR && !msg.streaming && msg.quickReplies?.length ? (
                     <div style={{ marginTop: "8px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
                       {msg.quickReplies.map((reply) => (
                         <button
                           key={reply}
-                          className="cw-qr"
-                          onClick={() => sendMessage(reply)}
+                          className="cw-qr-btn"
+                          onClick={() => void sendMessage(reply)}
                           style={{
-                            background: "#fff",
-                            border: "1.5px solid rgba(22,71,251,0.22)",
+                            background: "#ffffff", border: "1.5px solid rgba(22,71,251,0.2)",
                             borderRadius: "999px", padding: "6px 14px",
                             fontSize: "12px", fontFamily: "Montserrat, sans-serif",
                             fontWeight: 500, color: "#1647FB", cursor: "pointer",
                             transition: "background 0.15s, border-color 0.15s",
-                          }}>
+                          }}
+                        >
                           {reply}
                         </button>
                       ))}
                     </div>
-                  )}
+                  ) : null}
+                </div>
+              );
+            })}
+
+            {/* AI loading (between user send and stream start) */}
+            {isLoading && messages[messages.length - 1]?.role === "user" && (
+              <div className="cw-msg" style={{ display: "flex", justifyContent: "flex-start" }}>
+                <div style={{
+                  borderRadius: "16px", borderBottomLeftRadius: "4px",
+                  padding: "12px 16px", background: "#f2f2f2",
+                }}>
+                  <BouncingDots />
                 </div>
               </div>
-            );
-          })}
+            )}
 
-          <div ref={endRef} />
-        </div>
-
-        {/* ── Input ── */}
-        <div style={{
-          background: "#fff",
-          borderTop: "1px solid rgba(0,0,0,0.07)",
-          padding: "12px 14px",
-          flexShrink: 0,
-        }}>
-          <div
-            className="cw-input-wrap"
-            style={{
-              display: "flex", alignItems: "center", gap: "8px",
-              background: "#f2f2f2", borderRadius: "14px",
-              padding: "10px 10px 10px 16px",
-              transition: "background 0.2s",
-            }}
-          >
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey && !isLoading) {
-                  e.preventDefault();
-                  void sendMessage(input);
-                }
-              }}
-              disabled={isLoading}
-              placeholder={
-                isLoading        ? "Skriver…" :
-                waitingHuman     ? "Venter på svar fra teamet…" :
-                                   "Skriv en besked…"
-              }
-              style={{
-                flex: 1, background: "transparent", border: "none", outline: "none",
-                fontSize: "14px", fontFamily: "Montserrat, sans-serif",
-                color: "#111", opacity: isLoading ? 0.5 : 1,
-                minHeight: "22px",
-              }}
-            />
-
-            <button
-              className="cw-send"
-              onClick={() => void sendMessage(input)}
-              disabled={isLoading || !input.trim()}
-              aria-label="Send besked"
-              style={{
-                background: input.trim() && !isLoading ? "#1647FB" : "rgba(8,8,8,0.1)",
-                border: "none", borderRadius: "10px",
-                width: "36px", height: "36px", flexShrink: 0,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: input.trim() && !isLoading ? "pointer" : "default",
-                transition: "background 0.2s, opacity 0.2s",
-                opacity: isLoading ? 0.4 : 1,
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <line x1="22" y1="2" x2="11" y2="13" stroke={input.trim() && !isLoading ? "white" : "#888"} strokeWidth="2" strokeLinecap="round" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" stroke={input.trim() && !isLoading ? "white" : "#888"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-              </svg>
-            </button>
+            <div ref={endRef} />
           </div>
 
-          <p style={{
-            textAlign: "center", fontSize: "10px", color: "rgba(8,8,8,0.3)",
-            fontFamily: "Montserrat, sans-serif", margin: "8px 0 0", letterSpacing: "0.02em",
+          {/* Input */}
+          <div style={{
+            padding: "12px 14px 14px",
+            borderTop: "1px solid #ebebeb",
+            background: "#ffffff",
+            flexShrink: 0,
           }}>
-            AI-drevet · hej@duckert.design
-          </p>
+            <form
+              onSubmit={(e) => { e.preventDefault(); if (input.trim() && !isLoading) void sendMessage(input.trim()); }}
+              style={{ display: "flex", gap: "8px", alignItems: "center" }}
+            >
+              <input
+                ref={inputRef}
+                className="cw-input"
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                disabled={isLoading}
+                placeholder={
+                  isLoading      ? "Skriver…" :
+                  waitingHuman   ? "Venter på svar fra teamet…" :
+                                   "Skriv en besked..."
+                }
+                style={{
+                  flex: 1,
+                  border: "1px solid #ebebeb",
+                  borderRadius: "999px",
+                  padding: "10px 16px",
+                  fontSize: "14px",
+                  fontFamily: "Montserrat, sans-serif",
+                  color: "#080808",
+                  background: "#f7f7f7",
+                  outline: "none",
+                }}
+              />
+              <button
+                type="submit"
+                className="cw-send"
+                disabled={!input.trim() || isLoading}
+                aria-label="Send besked"
+                style={{
+                  width: "38px", height: "38px", flexShrink: 0,
+                  borderRadius: "50%",
+                  background: input.trim() && !isLoading ? "#1647FB" : "rgba(8,8,8,0.08)",
+                  border: "none", cursor: input.trim() && !isLoading ? "pointer" : "default",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  transition: "background 0.2s, opacity 0.2s",
+                  opacity: isLoading ? 0.4 : 1,
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <line x1="22" y1="2" x2="11" y2="13" stroke={input.trim() && !isLoading ? "white" : "#888"} strokeWidth="2" strokeLinecap="round" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" stroke={input.trim() && !isLoading ? "white" : "#888"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                </svg>
+              </button>
+            </form>
+
+            {/* Agent button + branding */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              marginTop: "8px",
+            }}>
+              <button
+                className="cw-agent-btn"
+                onClick={() => void sendMessage("Tal med en agent")}
+                disabled={waitingHuman || isLoading}
+                style={{
+                  background: "none", border: "none", cursor: waitingHuman ? "default" : "pointer",
+                  fontSize: "11px", color: waitingHuman ? "#888888" : "rgba(8,8,8,0.45)",
+                  fontFamily: "Montserrat, sans-serif",
+                  transition: "color 0.15s",
+                  padding: "0",
+                  display: "flex", alignItems: "center", gap: "4px",
+                }}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
+                </svg>
+                {waitingHuman ? "Venter på agent…" : "Tal med en agent"}
+              </button>
+              <p style={{
+                fontSize: "10px", color: "rgba(8,8,8,0.28)",
+                fontFamily: "Montserrat, sans-serif", margin: 0,
+              }}>
+                AI-drevet · Duckert Design
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }
