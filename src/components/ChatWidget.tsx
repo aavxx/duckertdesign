@@ -357,13 +357,24 @@ export default function ChatWidget({
     setTimeout(() => resetChat(), 5000);
   };
 
-  const handleOpen = () => {
-    setIsOpen(true);
-    // Pre-init audio during user gesture so tab-hidden play works later
-    if (!msgAudioRef.current) {
-      try { msgAudioRef.current = new Audio("/newmessage.m4a"); } catch {}
-    }
-  };
+  // Unlock audio on first interaction — runs once per page load
+  useEffect(() => {
+    const unlock = () => {
+      try {
+        if (!msgAudioRef.current) msgAudioRef.current = new Audio("/newmessage.m4a");
+      } catch {}
+      document.removeEventListener("click",   unlock, true);
+      document.removeEventListener("keydown", unlock, true);
+    };
+    document.addEventListener("click",   unlock, { capture: true, once: true });
+    document.addEventListener("keydown", unlock, { capture: true, once: true });
+    return () => {
+      document.removeEventListener("click",   unlock, true);
+      document.removeEventListener("keydown", unlock, true);
+    };
+  }, []);
+
+  const handleOpen = () => setIsOpen(true);
   const handleClose = () => { setIsOpen(false); onClose?.(); };
 
   const resetChat = () => {
@@ -755,15 +766,6 @@ export default function ChatWidget({
               // Admin or assistant
               return (
                 <div key={msg.id} className="cw-msg" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                  {msg.role === "admin" && (
-                    <span style={{
-                      fontSize: "10px", fontWeight: 700, color: "#1647FB",
-                      letterSpacing: "0.1em", textTransform: "uppercase",
-                      fontFamily: "Montserrat, sans-serif", marginBottom: "4px", paddingLeft: "2px",
-                    }}>
-                      Duckert Design
-                    </span>
-                  )}
                   <div style={{
                     borderRadius: "16px", borderBottomLeftRadius: "4px",
                     padding: "10px 14px", maxWidth: "85%",
@@ -822,14 +824,7 @@ export default function ChatWidget({
 
             {/* Agent typing indicator */}
             {agentTyping && (
-              <div className="cw-msg" style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                <span style={{
-                  fontSize: "10px", fontWeight: 700, color: "#1647FB",
-                  letterSpacing: "0.1em", textTransform: "uppercase",
-                  fontFamily: "Montserrat, sans-serif", marginBottom: "4px", paddingLeft: "2px",
-                }}>
-                  Duckert Design
-                </span>
+              <div className="cw-msg" style={{ display: "flex", alignItems: "flex-start" }}>
                 <div style={{
                   borderRadius: "16px", borderBottomLeftRadius: "4px",
                   padding: "12px 16px", background: "#f2f2f2",

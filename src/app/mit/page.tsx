@@ -369,12 +369,22 @@ function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) 
 
   const headers = { "x-admin-key": token, "Content-Type": "application/json" };
 
-  // Pre-init audio on mount (after login = user has already clicked = autoplay allowed)
+  // Unlock audio on first interaction anywhere on the page
   useEffect(() => {
-    try {
-      msgAudioRef.current  = new Audio("/newmessage.m4a");
-      chatAudioRef.current = new Audio("/newchat.m4a");
-    } catch {}
+    const unlock = () => {
+      try {
+        if (!msgAudioRef.current)  msgAudioRef.current  = new Audio("/newmessage.m4a");
+        if (!chatAudioRef.current) chatAudioRef.current = new Audio("/newchat.m4a");
+      } catch {}
+      document.removeEventListener("click",   unlock, true);
+      document.removeEventListener("keydown", unlock, true);
+    };
+    document.addEventListener("click",   unlock, { capture: true, once: true });
+    document.addEventListener("keydown", unlock, { capture: true, once: true });
+    return () => {
+      document.removeEventListener("click",   unlock, true);
+      document.removeEventListener("keydown", unlock, true);
+    };
   }, []);
 
   // Keep ref in sync with state for use inside callbacks
