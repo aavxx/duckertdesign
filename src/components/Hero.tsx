@@ -2,12 +2,7 @@
 
 import { useRouter } from "next/navigation";
 
-const MARQUEE_BASE = [
-  "Webdesign", "UI/UX Design", "Webudvikling",
-  "Webdesign", "UI/UX Design", "Webudvikling",
-  "Webdesign", "UI/UX Design", "Webudvikling",
-];
-const MARQUEE_ITEMS = [...MARQUEE_BASE, ...MARQUEE_BASE];
+const SERVICES = ["Webdesign", "UI/UX Design", "Webudvikling"];
 
 export default function Hero() {
   const router = useRouter();
@@ -205,43 +200,62 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Marquee */}
+      {/* Stats bar */}
       <div
-        aria-hidden="true"
         style={{
           borderTop: "1px solid #ebebeb",
-          overflow: "hidden",
-          whiteSpace: "nowrap",
           background: "#ffffff",
+          padding: "13px 0",
         }}
       >
         <div
-          className="marquee-inner"
           style={{
-            display: "inline-flex",
+            maxWidth: "1400px",
+            margin: "0 auto",
+            padding: "0 clamp(20px, 5vw, 80px)",
+            display: "flex",
             alignItems: "center",
-            animation: "marquee 28s linear infinite",
-            paddingBlock: "13px",
+            justifyContent: "space-between",
+            gap: "16px",
+            flexWrap: "wrap",
           }}
         >
-          {MARQUEE_ITEMS.map((item, i) => (
-            <span key={i} style={{ display: "inline-flex", alignItems: "center" }}>
-              <span
-                style={{
-                  fontFamily: "'Space Grotesk', sans-serif",
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  letterSpacing: "0.22em",
-                  textTransform: "uppercase",
-                  color: "#ccc",
-                  paddingInline: "28px",
-                }}
-              >
-                {item}
+          <div style={{ display: "flex", alignItems: "center", gap: "0", flexWrap: "wrap" }}>
+            {SERVICES.map((svc, i) => (
+              <span key={svc} style={{ display: "inline-flex", alignItems: "center" }}>
+                <span
+                  style={{
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    fontSize: "10px",
+                    fontWeight: 600,
+                    letterSpacing: "0.22em",
+                    textTransform: "uppercase",
+                    color: "#ccc",
+                    paddingInline: "clamp(14px, 2vw, 28px)",
+                  }}
+                >
+                  {svc}
+                </span>
+                {i < SERVICES.length - 1 && (
+                  <span aria-hidden="true" style={{ color: "#1647FB", fontSize: "10px", lineHeight: 1 }}>✦</span>
+                )}
               </span>
-              <span style={{ color: "#1647FB", fontSize: "10px", lineHeight: 1 }}>✦</span>
-            </span>
-          ))}
+            ))}
+          </div>
+          <span
+            style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: "10px",
+              fontWeight: 700,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "#1647FB",
+              paddingRight: "clamp(0px, 0.5vw, 8px)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Næste projekt: dit →
+          </span>
         </div>
       </div>
     </section>

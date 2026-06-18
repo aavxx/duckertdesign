@@ -4,21 +4,18 @@ import { useState } from "react";
 
 const SERVICES = [
   {
-    number: "01",
     title: "Webdesign",
     description:
       "Skræddersyede hjemmesider fra bunden — med fokus på brugeroplevelse, konvertering og æstetik.",
     tags: ["Landing pages", "E-commerce", "Portfolios"],
   },
   {
-    number: "02",
     title: "UI/UX Design",
     description:
       "Intuitive grænseflader og brugerflows der gør komplekse produkter enkle og behagelige at navigere.",
     tags: ["Wireframes", "Prototyping", "User testing"],
   },
   {
-    number: "03",
     title: "Webudvikling",
     description:
       "Hurtige, tilgængelige og skalerbare webapplikationer bygget med moderne teknologier.",
@@ -88,30 +85,17 @@ function ServiceRow({ service }: { service: (typeof SERVICES)[0] }) {
       onMouseLeave={() => setHovered(false)}
       style={{
         display: "grid",
-        gridTemplateColumns: "56px 1fr 28px",
+        gridTemplateColumns: "1fr 28px",
         gap: "clamp(24px, 4vw, 48px)",
         alignItems: "start",
         padding: "clamp(36px, 5vw, 56px) 0",
+        paddingLeft: "clamp(16px, 2vw, 24px)",
         borderBottom: "1px solid #ebebeb",
         cursor: "default",
-        opacity: hovered ? 1 : 0.82,
-        transition: "opacity 0.25s ease",
+        boxShadow: hovered ? "inset 3px 0 0 #1647FB" : "inset 3px 0 0 transparent",
+        transition: "box-shadow 0.22s ease",
       }}
     >
-      {/* Number */}
-      <span
-        style={{
-          fontFamily: "'Space Grotesk', sans-serif",
-          fontSize: "11px",
-          color: "#ddd",
-          fontWeight: 600,
-          letterSpacing: "0.1em",
-          paddingTop: "6px",
-        }}
-      >
-        {service.number}
-      </span>
-
       {/* Content */}
       <div>
         <h3

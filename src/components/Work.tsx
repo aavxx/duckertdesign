@@ -4,38 +4,73 @@ import { useState } from "react";
 
 const PROJECTS = [
   {
-    number: "01",
     category: "Webdesign",
     title: "Projekt Alfa",
     year: "2024",
     bg: "#101010",
-    accent: "#1647FB",
+    visual: "dots",
   },
   {
-    number: "02",
     category: "Branding",
     title: "Projekt Beta",
     year: "2024",
     bg: "#1647FB",
-    accent: "#ffffff",
+    visual: "letter",
   },
   {
-    number: "03",
     category: "UI/UX",
     title: "Projekt Gamma",
     year: "2024",
     bg: "#0d0d18",
-    accent: "#4d72ff",
+    visual: "lines",
   },
   {
-    number: "04",
     category: "Webudvikling",
     title: "Projekt Delta",
     year: "2024",
     bg: "#131313",
-    accent: "#1647FB",
+    visual: "code",
   },
 ];
+
+function CardVisual({ type, bg }: { type: string; bg: string }) {
+  if (type === "dots") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 400 300" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <pattern id="dot-grid" x="0" y="0" width="36" height="36" patternUnits="userSpaceOnUse">
+            <circle cx="18" cy="18" r="1.8" fill="#1647FB" opacity="0.28" />
+          </pattern>
+        </defs>
+        <rect width="400" height="300" fill="url(#dot-grid)" />
+      </svg>
+    );
+  }
+  if (type === "letter") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 400 300" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} preserveAspectRatio="xMidYMid slice">
+        <text x="30" y="270" fontFamily="Archivo, sans-serif" fontSize="260" fontWeight="900" fill="white" opacity="0.07">B</text>
+      </svg>
+    );
+  }
+  if (type === "lines") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 400 300" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} preserveAspectRatio="xMidYMid slice">
+        {[56, 104, 152, 200, 248].map((y, i) => (
+          <rect key={i} x="24" y={y} width={[200, 140, 240, 100, 180][i]} height="2" rx="1" fill="#1647FB" opacity="0.22" />
+        ))}
+      </svg>
+    );
+  }
+  if (type === "code") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 400 300" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} preserveAspectRatio="xMidYMid slice">
+        <text x="20" y="230" fontFamily="monospace" fontSize="190" fill="#1647FB" opacity="0.07">{"{ }"}</text>
+      </svg>
+    );
+  }
+  return null;
+}
 
 export default function Work() {
   return (
@@ -60,11 +95,11 @@ export default function Work() {
           <span
             style={{
               fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: "11px",
-              fontWeight: 600,
-              letterSpacing: "0.18em",
+              fontSize: "10px",
+              fontWeight: 700,
+              letterSpacing: "0.2em",
               textTransform: "uppercase",
-              color: "#333",
+              color: "rgba(255,255,255,0.18)",
             }}
           >
             Udvalgte projekter
@@ -72,9 +107,10 @@ export default function Work() {
           <span
             style={{
               fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: "11px",
-              color: "#222",
-              fontWeight: 500,
+              fontSize: "10px",
+              color: "rgba(255,255,255,0.12)",
+              fontWeight: 600,
+              letterSpacing: "0.1em",
             }}
           >
             04
@@ -83,7 +119,7 @@ export default function Work() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: "10px" }}>
           {PROJECTS.map((p) => (
-            <ProjectCard key={p.number} project={p} />
+            <ProjectCard key={p.title} project={p} />
           ))}
         </div>
       </div>
@@ -110,31 +146,34 @@ function ProjectCard({ project }: { project: (typeof PROJECTS)[0] }) {
         padding: "clamp(24px, 3vw, 40px)",
         border: "1px solid rgba(255,255,255,0.06)",
         borderRadius: "4px",
-        transition: "transform 0.38s cubic-bezier(0.16,1,0.3,1), border-color 0.22s",
-        transform: hovered ? "scale(0.984)" : "scale(1)",
-        borderColor: hovered ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.06)",
+        transition: "border-color 0.22s ease",
+        borderColor: hovered ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.06)",
       }}
     >
+      <CardVisual type={project.visual} bg={project.bg} />
+
       {/* Top */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative", zIndex: 1 }}>
         <span
           style={{
             fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: "11px",
-            fontWeight: 500,
-            color: "rgba(255,255,255,0.2)",
+            fontSize: "9px",
+            fontWeight: 700,
+            letterSpacing: "0.16em",
+            textTransform: "uppercase",
+            color: "rgba(255,255,255,0.28)",
           }}
         >
-          {project.number}
+          {project.category}
         </span>
         <span
           style={{
-            fontSize: "20px",
-            color: project.accent,
+            fontSize: "18px",
+            color: project.bg === "#1647FB" ? "rgba(255,255,255,0.9)" : "#1647FB",
             lineHeight: 1,
             opacity: hovered ? 1 : 0,
-            transform: hovered ? "translate(0,0)" : "translate(-6px,6px)",
-            transition: "opacity 0.22s, transform 0.3s cubic-bezier(0.16,1,0.3,1)",
+            transform: hovered ? "translate(0,0)" : "translate(-5px,5px)",
+            transition: "opacity 0.22s, transform 0.28s cubic-bezier(0.16,1,0.3,1)",
           }}
         >
           ↗
@@ -142,20 +181,7 @@ function ProjectCard({ project }: { project: (typeof PROJECTS)[0] }) {
       </div>
 
       {/* Bottom */}
-      <div>
-        <p
-          style={{
-            fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: "10px",
-            fontWeight: 700,
-            letterSpacing: "0.16em",
-            textTransform: "uppercase",
-            color: "rgba(255,255,255,0.3)",
-            margin: "0 0 8px",
-          }}
-        >
-          {project.category}
-        </p>
+      <div style={{ position: "relative", zIndex: 1 }}>
         <h3
           style={{
             fontFamily: "'Archivo', sans-serif",
@@ -173,7 +199,8 @@ function ProjectCard({ project }: { project: (typeof PROJECTS)[0] }) {
           style={{
             fontFamily: "'Space Grotesk', sans-serif",
             fontSize: "11px",
-            color: "rgba(255,255,255,0.2)",
+            color: "rgba(255,255,255,0.22)",
+            letterSpacing: "0.06em",
           }}
         >
           {project.year}

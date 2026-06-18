@@ -8,11 +8,10 @@ export default function Footer() {
 
   return (
     <footer style={{ background: "#f7f7f7" }}>
-      {/* Blue rounded CTA block */}
+      {/* Blue CTA block */}
       <div
         style={{
           background: "#1647FB",
-          borderRadius: "80px 80px 0 0",
           padding: "clamp(80px, 12vw, 140px) clamp(24px, 6vw, 100px) clamp(64px, 10vw, 120px)",
           textAlign: "center",
         }}
