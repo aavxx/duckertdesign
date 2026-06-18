@@ -69,7 +69,7 @@ export default function Services() {
         </div>
 
         {SERVICES.map((s) => (
-          <ServiceRow key={s.number} service={s} />
+          <ServiceRow key={s.title} service={s} />
         ))}
       </div>
     </section>
