@@ -222,8 +222,8 @@ export default function ChatWidget({
     };
   }, []);
 
-  // Don't render on admin page
-  if (pathname?.startsWith("/mit")) return null;
+  // Don't render on admin or kundeservice pages
+  if (pathname?.startsWith("/mit") || pathname?.startsWith("/kundeservice")) return null;
 
   /* ── Helpers ── */
   const playMsgSound = () => {

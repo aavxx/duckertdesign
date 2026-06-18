@@ -7,9 +7,8 @@ import Logo from "./Logo";
 
 const NAV = [
   { label: "Ydelser",  id: "#ydelser" },
-  { label: "Arbejde",  id: "#arbejde" },
   { label: "Om",       id: "#om" },
-  { label: "Kontakt",  href: "/kontakt" },
+  { label: "Kontakt",  href: "/kundeservice" },
 ];
 
 export default function Header() {
