@@ -5,13 +5,8 @@ import Logo from "./Logo";
 
 const NAV_LINKS = [
   { label: "Ydelser", href: "/#ydelser" },
-  { label: "Om", href: "/#om" },
+  { label: "Om",      href: "/#om" },
   { label: "Kontakt", href: "/kundeservice" },
-];
-
-const LEGAL_LINKS = [
-  { label: "Service Vilkår", href: "/service-vilkar" },
-  { label: "Privatlivspolitik", href: "/privatlivspolitik" },
 ];
 
 export default function Footer() {
@@ -22,110 +17,179 @@ export default function Footer() {
       <div
         style={{
           background: "#1647FB",
-          borderRadius: "48px 48px 0 0",
-          padding: "clamp(56px, 9vw, 96px) clamp(24px, 6vw, 80px) clamp(36px, 5vw, 56px)",
+          borderRadius: "50px 50px 0 0",
+          padding: "67px clamp(24px, 5.5vw, 80px) 0",
+          overflow: "hidden",
         }}
       >
         <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
-          {/* Top row: logo + nav */}
+
+          {/* ── Main body: logo left, columns right ── */}
           <div
             style={{
               display: "flex",
-              alignItems: "flex-start",
               justifyContent: "space-between",
+              alignItems: "flex-start",
               gap: "40px",
               flexWrap: "wrap",
-              marginBottom: "clamp(48px, 8vw, 80px)",
+              paddingBottom: "clamp(80px, 13vw, 170px)",
             }}
           >
-            <Logo style={{ height: "40px", width: "auto", filter: "brightness(0) invert(1)" }} />
+            {/* Logo */}
+            <Logo
+              style={{
+                height: "79px",
+                width: "79px",
+                filter: "brightness(0) invert(1)",
+                flexShrink: 0,
+              }}
+            />
 
-            <nav style={{ display: "flex", gap: "clamp(24px, 4vw, 44px)", flexWrap: "wrap", alignItems: "center" }}>
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
+            {/* Navigation + Følg Os columns */}
+            <div
+              style={{
+                display: "flex",
+                gap: "clamp(48px, 8vw, 127px)",
+                flexWrap: "wrap",
+              }}
+            >
+              {/* Navigation */}
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span
                   style={{
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    fontSize: "13px",
+                    fontFamily: "Montserrat, sans-serif",
                     fontWeight: 600,
-                    color: "rgba(255,255,255,0.6)",
-                    textDecoration: "none",
-                    letterSpacing: "0.04em",
-                    transition: "color 0.18s",
+                    fontSize: "16px",
+                    color: "#ffffff",
+                    marginBottom: "33px",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "#ffffff")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.6)")}
                 >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
+                  Navigation
+                </span>
+                {NAV_LINKS.map((link, i) => (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    style={{
+                      fontFamily: "Montserrat, sans-serif",
+                      fontWeight: 500,
+                      fontSize: "16px",
+                      color: "#ffffff",
+                      textDecoration: "none",
+                      marginBottom: i < NAV_LINKS.length - 1 ? "27px" : "0",
+                      transition: "opacity 0.18s",
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.65")}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+
+              {/* Følg Os */}
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span
+                  style={{
+                    fontFamily: "Montserrat, sans-serif",
+                    fontWeight: 600,
+                    fontSize: "16px",
+                    color: "#ffffff",
+                    marginBottom: "33px",
+                  }}
+                >
+                  Følg Os
+                </span>
+                <a
+                  href="https://www.facebook.com/people/Duckert-Design/61575584739688/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "16px",
+                    textDecoration: "none",
+                    transition: "opacity 0.18s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.65")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                >
+                  {/* White rectangle icon as per Figma (8×14px) */}
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      display: "inline-block",
+                      width: "8px",
+                      height: "14px",
+                      background: "#ffffff",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontFamily: "Montserrat, sans-serif",
+                      fontWeight: 500,
+                      fontSize: "13px",
+                      color: "#ffffff",
+                    }}
+                  >
+                    Facebook
+                  </span>
+                </a>
+              </div>
+            </div>
           </div>
 
-          {/* Email as featured element */}
-          <a
-            href="mailto:hej@duckert.design"
-            style={{
-              display: "block",
-              fontFamily: "'Archivo', sans-serif",
-              fontSize: "clamp(28px, 5.5vw, 72px)",
-              fontWeight: 700,
-              letterSpacing: "-0.035em",
-              color: "rgba(255,255,255,0.18)",
-              textDecoration: "none",
-              lineHeight: 1,
-              marginBottom: "clamp(40px, 6vw, 64px)",
-              transition: "color 0.25s ease",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#ffffff")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.18)")}
-          >
-            hej@duckert.design
-          </a>
+          {/* ── Divider ── */}
+          <div style={{ borderTop: "1px solid rgba(54,93,252,1)" }} />
 
-          {/* Bottom bar */}
+          {/* ── Bottom bar ── */}
           <div
             style={{
-              borderTop: "1px solid rgba(255,255,255,0.12)",
-              paddingTop: "clamp(18px, 2.5vw, 24px)",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
               flexWrap: "wrap",
               gap: "16px",
+              padding: "28px 0 40px",
             }}
           >
             <span
               style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                fontSize: "12px",
-                color: "rgba(255,255,255,0.35)",
+                fontFamily: "Montserrat, sans-serif",
+                fontWeight: 400,
+                fontSize: "11px",
+                color: "#ffffff",
               }}
             >
               © {year} Duckert Design
             </span>
 
-            <div style={{ display: "flex", gap: "clamp(16px, 2vw, 24px)", flexWrap: "wrap" }}>
-              {LEGAL_LINKS.map((link) => (
+            <div style={{ display: "flex", gap: "clamp(16px, 2vw, 32px)", flexWrap: "wrap" }}>
+              {[
+                { label: "Service Vilkår",   href: "/service-vilkar" },
+                { label: "Privatlivspolitik", href: "/privatlivspolitik" },
+              ].map((link) => (
                 <Link
                   key={link.label}
                   href={link.href}
                   style={{
-                    fontFamily: "'Space Grotesk', sans-serif",
-                    fontSize: "12px",
-                    color: "rgba(255,255,255,0.35)",
+                    fontFamily: "Montserrat, sans-serif",
+                    fontWeight: 400,
+                    fontSize: "11px",
+                    color: "#ffffff",
                     textDecoration: "none",
-                    transition: "color 0.18s",
+                    transition: "opacity 0.18s",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.75)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.65")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                 >
                   {link.label}
                 </Link>
               ))}
             </div>
           </div>
+
         </div>
       </div>
     </footer>
