@@ -61,7 +61,6 @@ export default function KundeservicePage() {
     setState("loading");
     setResult(null);
     setExpanded(false);
-    setFeedback(null);
     try {
       const [, data] = await Promise.all([
         new Promise<void>((r) => setTimeout(r, 900)),
