@@ -8,7 +8,7 @@ export default function CTA() {
   return (
     <section
       style={{
-        background: "#0a0a0a",
+        background: "#ffffff",
         padding: "clamp(80px, 12vw, 160px) clamp(20px, 5vw, 80px)",
       }}
     >
@@ -22,7 +22,7 @@ export default function CTA() {
               fontWeight: 700,
               letterSpacing: "0.2em",
               textTransform: "uppercase",
-              color: "rgba(255,255,255,0.2)",
+              color: "rgba(0,0,0,0.3)",
             }}
           >
             Start dit projekt
@@ -37,7 +37,7 @@ export default function CTA() {
             fontWeight: 900,
             letterSpacing: "-0.04em",
             lineHeight: 0.94,
-            color: "#ffffff",
+            color: "#0a0a0a",
             margin: "0 0 clamp(40px, 6vw, 72px)",
           }}
         >
@@ -46,7 +46,7 @@ export default function CTA() {
             style={{
               fontStyle: "italic",
               fontWeight: 300,
-              color: "rgba(255,255,255,0.28)",
+              color: "rgba(0,0,0,0.2)",
             }}
           >
             noget fedt.
@@ -56,7 +56,7 @@ export default function CTA() {
         {/* Bottom row */}
         <div
           style={{
-            borderTop: "1px solid rgba(255,255,255,0.08)",
+            borderTop: "1px solid rgba(0,0,0,0.1)",
             paddingTop: "clamp(24px, 3vw, 36px)",
             display: "flex",
             alignItems: "flex-end",
@@ -69,7 +69,7 @@ export default function CTA() {
             style={{
               fontFamily: "'Space Grotesk', sans-serif",
               fontSize: "15px",
-              color: "rgba(255,255,255,0.38)",
+              color: "rgba(0,0,0,0.45)",
               lineHeight: 1.78,
               maxWidth: "360px",
               margin: 0,
