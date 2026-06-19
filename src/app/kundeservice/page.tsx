@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import ChatWidget from "@/components/ChatWidget";
 
 const TOPICS = [
   { label: "Hvad koster en hjemmeside?", query: "Hvad koster det at få lavet en hjemmeside hos Duckert Design?" },
@@ -54,6 +55,7 @@ export default function KundeservicePage() {
   const [result, setResult]       = useState<{ q: string; a: string } | null>(null);
   const [expanded, setExpanded]   = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
+  const [chatOpen, setChatOpen]       = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
 
   const runSearch = async (q: string) => {
@@ -305,6 +307,8 @@ export default function KundeservicePage() {
       </main>
 
       {/* ── Contact modal — rendered at page root so position:fixed escapes the animated card ── */}
+      <ChatWidget open={chatOpen} onClose={() => setChatOpen(false)} />
+
       {contactOpen && (
         <>
           <div
@@ -359,6 +363,31 @@ export default function KundeservicePage() {
                   <div style={{ fontSize: "12px", color: "rgba(8,8,8,0.45)" }}>Svar inden for 24 timer</div>
                 </div>
               </a>
+              <button
+                onClick={() => { setContactOpen(false); setChatOpen(true); }}
+                className="ks-cta"
+                style={{
+                  display: "flex", alignItems: "center", gap: "14px",
+                  background: "#fff", border: "1.5px solid rgba(22,71,251,0.18)",
+                  borderRadius: "16px", padding: "16px 20px",
+                  cursor: "pointer", textAlign: "left",
+                  transition: "background 0.2s", width: "100%",
+                }}>
+                <div style={{
+                  width: "40px", height: "40px", borderRadius: "12px",
+                  background: "rgba(22,71,251,0.08)",
+                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" fill="#1647FB" />
+                  </svg>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "14px", fontWeight: 700, color: "#080808", marginBottom: "3px" }}>Chat med os</div>
+                  <div style={{ fontSize: "12px", color: "rgba(8,8,8,0.45)" }}>Øjeblikkelig AI-assistance</div>
+                </div>
+                <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#22c55e", flexShrink: 0 }} />
+              </button>
             </div>
           </div>
         </>
