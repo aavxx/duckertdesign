@@ -100,7 +100,7 @@ export default function KundeservicePage() {
         .ks-mail:hover * { color:#fff!important; }
         .ks-mail:hover .ks-mail-icon { background:rgba(255,255,255,0.2)!important; }
         .ks-mail:hover svg path, .ks-mail:hover svg polyline { stroke:#fff!important; }
-        .ks-search-bar:focus-within { border-color:rgba(22,71,251,0.6)!important; box-shadow:0 0 0 3px rgba(22,71,251,0.15)!important; }
+        .ks-search-bar:focus-within { border-color:rgba(255,255,255,0.5)!important; box-shadow:0 0 0 3px rgba(255,255,255,0.12)!important; }
         .ks-dark-input::placeholder { color: rgba(255,255,255,0.32); }
         .ks-expand:hover { background:rgba(22,71,251,0.07)!important; border-color:#1647FB!important; }
         .ks-back:hover   { color:#fff!important; }
@@ -108,18 +108,18 @@ export default function KundeservicePage() {
 
       <main style={{ paddingTop: "80px", minHeight: "100vh", background: "#fff" }}>
 
-        {/* ── Dark Hero ── */}
+        {/* ── Blue Hero ── */}
         <section style={{
-          background: "#080808",
+          background: "#1647FB",
           padding: "52px 24px 68px",
           position: "relative",
           overflow: "hidden",
         }}>
-          {/* Blue radial glow */}
+          {/* Subtle light overlay */}
           <div style={{
             position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
             width: "900px", height: "500px", pointerEvents: "none",
-            background: "radial-gradient(ellipse at 50% 0%, rgba(22,71,251,0.2) 0%, transparent 60%)",
+            background: "radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.08) 0%, transparent 60%)",
           }} />
 
           <div style={{ maxWidth: "680px", margin: "0 auto", position: "relative" }}>
@@ -138,24 +138,6 @@ export default function KundeservicePage() {
               Tilbage til forsiden
             </a>
 
-            {/* Eyebrow */}
-            <div style={{ marginBottom: "22px" }}>
-              <span style={{
-                display: "inline-flex", alignItems: "center", gap: "7px",
-                background: "rgba(22,71,251,0.14)", color: "#7fa6ff",
-                fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em",
-                textTransform: "uppercase", padding: "5px 13px",
-                borderRadius: "999px", fontFamily: "Montserrat, sans-serif",
-                border: "1px solid rgba(22,71,251,0.28)",
-              }}>
-                <span style={{
-                  width: "6px", height: "6px", borderRadius: "50%",
-                  background: "#4ade80", flexShrink: 0,
-                }} />
-                AI Kundeservice
-              </span>
-            </div>
-
             {/* Headline */}
             <h1 style={{
               fontSize: "clamp(44px, 8vw, 92px)",
@@ -167,7 +149,7 @@ export default function KundeservicePage() {
               fontFamily: "Montserrat, sans-serif",
             }}>
               Hvad kan vi<br />
-              <span style={{ color: "#1647FB" }}>hjælpe</span> med?
+              <em style={{ fontStyle: "italic", fontWeight: 300 }}>hjælpe</em> med?
             </h1>
 
             {/* Search bar */}
