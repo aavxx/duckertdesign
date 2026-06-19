@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 const LS_KEY      = "duckert-chat-v1";
 const EXPIRY_KEY  = "duckert-chat-expiry";
 const SESSION_KEY = "duckert-chat-session-id";
-const EXPIRY_MS   = 10 * 60 * 1000;
+const EXPIRY_MS   = 60 * 60 * 1000;
 
 const INITIAL_QUICK_REPLIES = [
   "Hvad koster en hjemmeside?",
@@ -134,7 +134,6 @@ export default function ChatWidget({
   onClose?: () => void;
 }) {
   const pathname = usePathname();
-  const [visible, setVisible]           = useState(false);
   const [isOpen, setIsOpen]             = useState(false);
   const [messages, setMessages]         = useState<Message[]>(() => loadMessages());
   const [showQR, setShowQR]             = useState<boolean>(() => {
@@ -163,12 +162,6 @@ export default function ChatWidget({
   const typingTimerRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef         = useRef(false);
   const agentTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Floating button delay
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 3000);
-    return () => clearTimeout(t);
-  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") sessionRef.current = localStorage.getItem(SESSION_KEY);
@@ -222,8 +215,7 @@ export default function ChatWidget({
     };
   }, []);
 
-  // Don't render on admin or kundeservice pages
-  if (pathname?.startsWith("/mit") || pathname?.startsWith("/kundeservice")) return null;
+  if (pathname?.startsWith("/mit")) return null;
 
   /* ── Helpers ── */
   const playMsgSound = () => {
@@ -603,16 +595,6 @@ export default function ChatWidget({
           .cw-window { bottom: 24px; right: 24px; width: 384px; height: 500px; border-radius: 18px; }
         }
       `}</style>
-
-      {/* ── Floating button ── */}
-      {!isOpen && visible && (
-        <button className="cw-fab" onClick={handleOpen} aria-label="Åbn chat">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
-              stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-      )}
 
       {/* ── Chat window ── */}
       {isOpen && (

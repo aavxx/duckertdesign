@@ -29,7 +29,7 @@ function SkeletonCard() {
       `}</style>
       <div style={{
         border: "1px solid rgba(22,71,251,0.1)", borderRadius: "18px",
-        padding: "28px 28px 24px", marginBottom: "64px",
+        padding: "28px 28px 24px",
         background: "#fff", boxShadow: "0 4px 40px rgba(22,71,251,0.05)",
       }}>
         <div className="ks-sh" style={{ height: "22px", width: "90px", marginBottom: "20px" }} />
@@ -50,10 +50,10 @@ function SkeletonCard() {
 type SearchState = "idle" | "loading" | "result";
 
 export default function KundeservicePage() {
-  const [query, setQuery]         = useState("");
-  const [state, setState]         = useState<SearchState>("idle");
-  const [result, setResult]       = useState<{ q: string; a: string } | null>(null);
-  const [expanded, setExpanded]   = useState(false);
+  const [query, setQuery]             = useState("");
+  const [state, setState]             = useState<SearchState>("idle");
+  const [result, setResult]           = useState<{ q: string; a: string } | null>(null);
+  const [expanded, setExpanded]       = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [chatOpen, setChatOpen]       = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -92,223 +92,262 @@ export default function KundeservicePage() {
       <style>{`
         @keyframes ks-up   { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
         @keyframes ks-grow { from { opacity:0; transform:translateY(8px);  } to { opacity:1; transform:translateY(0); } }
-        .ks-card         { animation: ks-up 0.42s cubic-bezier(0.16,1,0.3,1) both; }
-        .ks-contact-in   { animation: ks-grow 0.35s cubic-bezier(0.16,1,0.3,1) both; }
-        .ks-chip:hover   { background:rgba(22,71,251,0.07)!important; border-color:rgba(22,71,251,0.4)!important; }
+        .ks-card       { animation: ks-up 0.42s cubic-bezier(0.16,1,0.3,1) both; }
+        .ks-contact-in { animation: ks-grow 0.35s cubic-bezier(0.16,1,0.3,1) both; }
+        .ks-chip:hover   { background:rgba(255,255,255,0.12)!important; border-color:rgba(255,255,255,0.35)!important; color:#fff!important; }
         .ks-cta:hover    { background:rgba(22,71,251,0.05)!important; }
         .ks-mail:hover   { background:#1647FB!important; }
         .ks-mail:hover * { color:#fff!important; }
         .ks-mail:hover .ks-mail-icon { background:rgba(255,255,255,0.2)!important; }
         .ks-mail:hover svg path, .ks-mail:hover svg polyline { stroke:#fff!important; }
-        .ks-search-bar:focus-within { border-color:#1647FB!important; box-shadow:0 0 0 3px rgba(22,71,251,0.1)!important; }
-        .ks-fb:hover { border-color:#1647FB!important; color:#1647FB!important; background:rgba(22,71,251,0.05)!important; }
+        .ks-search-bar:focus-within { border-color:rgba(22,71,251,0.6)!important; box-shadow:0 0 0 3px rgba(22,71,251,0.15)!important; }
+        .ks-dark-input::placeholder { color: rgba(255,255,255,0.32); }
         .ks-expand:hover { background:rgba(22,71,251,0.07)!important; border-color:#1647FB!important; }
+        .ks-back:hover   { color:#fff!important; }
       `}</style>
 
       <main style={{ paddingTop: "80px", minHeight: "100vh", background: "#fff" }}>
 
-        {/* ── Hero ── */}
-        <section style={{ padding: "72px 24px 80px", maxWidth: "680px", margin: "0 auto" }}>
+        {/* ── Dark Hero ── */}
+        <section style={{
+          background: "#080808",
+          padding: "52px 24px 68px",
+          position: "relative",
+          overflow: "hidden",
+        }}>
+          {/* Blue radial glow */}
+          <div style={{
+            position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
+            width: "900px", height: "500px", pointerEvents: "none",
+            background: "radial-gradient(ellipse at 50% 0%, rgba(22,71,251,0.2) 0%, transparent 60%)",
+          }} />
 
-          <h1 style={{
-            fontSize: "clamp(38px, 6.5vw, 76px)", fontWeight: 800,
-            letterSpacing: "-0.045em", lineHeight: 0.95,
-            color: "#080808", margin: "0 0 32px",
-            fontFamily: "Montserrat, sans-serif",
-          }}>
-            Hvad kan vi<br />hjælpe med?
-          </h1>
+          <div style={{ maxWidth: "680px", margin: "0 auto", position: "relative" }}>
 
-          <a href="/" style={{
-            display: "inline-flex", alignItems: "center", gap: "7px",
-            fontSize: "13px", fontWeight: 600, color: "rgba(8,8,8,0.45)",
-            textDecoration: "none", marginBottom: "32px",
-            transition: "color 0.18s",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#080808")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(8,8,8,0.45)")}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Tilbage til forsiden
-          </a>
-
-          {/* Search bar */}
-          <form onSubmit={(e) => { e.preventDefault(); void runSearch(query); }}>
-            <div className="ks-search-bar" style={{
-              display: "flex", alignItems: "center",
-              border: "1.5px solid rgba(22,71,251,0.18)",
-              borderRadius: "14px", padding: "10px 10px 10px 18px",
-              gap: "8px", background: "#fff",
-              boxShadow: "0 2px 20px rgba(22,71,251,0.06)",
-              transition: "border-color 0.2s, box-shadow 0.2s",
+            {/* Back link */}
+            <a href="/" className="ks-back" style={{
+              display: "inline-flex", alignItems: "center", gap: "7px",
+              fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.3)",
+              textDecoration: "none", marginBottom: "44px",
+              transition: "color 0.18s", fontFamily: "Montserrat, sans-serif",
+              letterSpacing: "0.02em",
             }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, opacity: 0.3 }}>
-                <circle cx="11" cy="11" r="7" stroke="#1647FB" strokeWidth="2" />
-                <path d="M21 21l-4.35-4.35" stroke="#1647FB" strokeWidth="2" strokeLinecap="round" />
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                <path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Stil dit spørgsmål her…"
-                style={{
-                  flex: 1, background: "transparent", border: "none", outline: "none",
-                  fontSize: "15px", fontFamily: "Montserrat, sans-serif",
-                  color: "#080808", padding: "4px 0",
-                }}
-              />
-              {query && (
-                <button type="button" aria-label="Ryd"
-                  onClick={() => { setQuery(""); setState("idle"); setResult(null); }}
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", opacity: 0.35, display: "flex", alignItems: "center" }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                    <line x1="4" y1="4" x2="20" y2="20" stroke="#080808" strokeWidth="2.5" strokeLinecap="round" />
-                    <line x1="20" y1="4" x2="4" y2="20" stroke="#080808" strokeWidth="2.5" strokeLinecap="round" />
-                  </svg>
-                </button>
-              )}
-              <button type="submit" aria-label="Søg"
-                style={{
-                  background: "#1647FB", color: "#fff", border: "none",
-                  borderRadius: "10px", padding: "10px 22px",
-                  fontSize: "13px", fontFamily: "Montserrat, sans-serif",
-                  fontWeight: 700, letterSpacing: "0.04em", cursor: "pointer",
-                  display: "flex", alignItems: "center", gap: "7px",
-                  flexShrink: 0, transition: "opacity 0.2s",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-              >
-                Søg
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+              Tilbage til forsiden
+            </a>
+
+            {/* Eyebrow */}
+            <div style={{ marginBottom: "22px" }}>
+              <span style={{
+                display: "inline-flex", alignItems: "center", gap: "7px",
+                background: "rgba(22,71,251,0.14)", color: "#7fa6ff",
+                fontSize: "10px", fontWeight: 700, letterSpacing: "0.15em",
+                textTransform: "uppercase", padding: "5px 13px",
+                borderRadius: "999px", fontFamily: "Montserrat, sans-serif",
+                border: "1px solid rgba(22,71,251,0.28)",
+              }}>
+                <span style={{
+                  width: "6px", height: "6px", borderRadius: "50%",
+                  background: "#4ade80", flexShrink: 0,
+                }} />
+                AI Kundeservice
+              </span>
+            </div>
+
+            {/* Headline */}
+            <h1 style={{
+              fontSize: "clamp(44px, 8vw, 92px)",
+              fontWeight: 900,
+              letterSpacing: "-0.045em",
+              lineHeight: 0.92,
+              color: "#ffffff",
+              margin: "0 0 40px",
+              fontFamily: "Montserrat, sans-serif",
+            }}>
+              Hvad kan vi<br />
+              <span style={{ color: "#1647FB" }}>hjælpe</span> med?
+            </h1>
+
+            {/* Search bar */}
+            <form onSubmit={(e) => { e.preventDefault(); void runSearch(query); }}>
+              <div className="ks-search-bar" style={{
+                display: "flex", alignItems: "center",
+                border: "1.5px solid rgba(255,255,255,0.1)",
+                borderRadius: "14px", padding: "8px 8px 8px 20px",
+                gap: "8px", background: "rgba(255,255,255,0.06)",
+                backdropFilter: "blur(8px)",
+                transition: "border-color 0.2s, box-shadow 0.2s",
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, opacity: 0.35 }}>
                   <circle cx="11" cy="11" r="7" stroke="white" strokeWidth="2" />
                   <path d="M21 21l-4.35-4.35" stroke="white" strokeWidth="2" strokeLinecap="round" />
                 </svg>
-              </button>
-            </div>
-          </form>
-
-          {/* Topic chips */}
-          <div style={{ marginTop: "16px", marginBottom: "52px" }}>
-            <p style={{
-              fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em",
-              textTransform: "uppercase", color: "rgba(8,8,8,0.32)",
-              margin: "0 0 10px", fontFamily: "Montserrat, sans-serif",
-            }}>
-              Ofte stillet
-            </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-              {TOPICS.map((t) => (
-                <button key={t.label} className="ks-chip"
-                  onClick={() => { setQuery(t.query); void runSearch(t.query); }}
+                <input
+                  type="text"
+                  className="ks-dark-input"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Stil dit spørgsmål her…"
                   style={{
-                    background: "transparent", border: "1px solid rgba(22,71,251,0.2)",
-                    borderRadius: "999px", padding: "7px 15px",
-                    fontSize: "12px", fontFamily: "Montserrat, sans-serif",
-                    fontWeight: 500, color: "#080808", cursor: "pointer",
-                    transition: "background 0.18s, border-color 0.18s",
-                  }}>
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Skeleton */}
-          {state === "loading" && <SkeletonCard />}
-
-          {/* Result card */}
-          {state === "result" && result && (
-            <div ref={resultRef} className="ks-card" style={{
-              border: "1px solid rgba(22,71,251,0.14)",
-              borderRadius: "18px", padding: "28px 28px 0",
-              marginBottom: "64px", background: "#fff",
-              boxShadow: "0 4px 40px rgba(22,71,251,0.08), 0 1px 4px rgba(0,0,0,0.04)",
-              overflow: "hidden",
-            }}>
-              {/* Badge */}
-              <span style={{
-                display: "inline-flex", alignItems: "center", gap: "6px",
-                background: "rgba(22,71,251,0.08)", color: "#1647FB",
-                fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em",
-                padding: "4px 12px", borderRadius: "999px", marginBottom: "16px",
-              }}>
-                {/* Sparkle star */}
-                <svg width="11" height="11" viewBox="-12 -12 24 24" fill="#1647FB">
-                  <path d="M0,-10 L2.4,-2.4 L10,0 L2.4,2.4 L0,10 L-2.4,2.4 L-10,0 L-2.4,-2.4Z" />
-                </svg>
-                AI-svar
-              </span>
-
-              <h2 style={{
-                fontSize: "18px", fontWeight: 700, color: "#080808",
-                margin: "0 0 12px", lineHeight: 1.35, letterSpacing: "-0.01em",
-                fontFamily: "Montserrat, sans-serif",
-              }}>
-                {result.q}
-              </h2>
-
-              <p style={{
-                fontSize: "14px", lineHeight: 1.78, color: "rgba(8,8,8,0.65)",
-                margin: "0 0 20px", fontFamily: "Montserrat, sans-serif",
-              }}>
-                {expanded ? result.a : preview}
-              </p>
-
-              {/* Show "Læs hele svaret" only if not yet expanded */}
-              {!expanded && result.a.length > PREVIEW_LEN && (
-                <button className="ks-expand"
-                  onClick={() => setExpanded(true)}
+                    flex: 1, background: "transparent", border: "none", outline: "none",
+                    fontSize: "15px", fontFamily: "Montserrat, sans-serif",
+                    color: "#ffffff", padding: "6px 0",
+                  }}
+                />
+                {query && (
+                  <button type="button" aria-label="Ryd"
+                    onClick={() => { setQuery(""); setState("idle"); setResult(null); }}
+                    style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", opacity: 0.4, display: "flex", alignItems: "center" }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                      <line x1="4" y1="4" x2="20" y2="20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+                      <line x1="20" y1="4" x2="4" y2="20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+                    </svg>
+                  </button>
+                )}
+                <button type="submit" aria-label="Søg"
                   style={{
-                    background: "transparent", border: "1.5px solid rgba(22,71,251,0.22)",
-                    borderRadius: "999px", padding: "8px 18px",
-                    fontSize: "12px", fontFamily: "Montserrat, sans-serif",
-                    fontWeight: 600, color: "#1647FB", cursor: "pointer",
-                    transition: "background 0.18s, border-color 0.18s",
-                    marginBottom: "24px",
-                    display: "inline-flex", alignItems: "center", gap: "6px",
-                  }}>
-                  Læs hele svaret
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 5v14M5 12l7 7 7-7" stroke="#1647FB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    background: "#1647FB", color: "#fff", border: "none",
+                    borderRadius: "10px", padding: "12px 24px",
+                    fontSize: "13px", fontFamily: "Montserrat, sans-serif",
+                    fontWeight: 700, letterSpacing: "0.04em", cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: "7px",
+                    flexShrink: 0, transition: "opacity 0.2s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                >
+                  Søg
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                    <circle cx="11" cy="11" r="7" stroke="white" strokeWidth="2" />
+                    <path d="M21 21l-4.35-4.35" stroke="white" strokeWidth="2" strokeLinecap="round" />
                   </svg>
                 </button>
-              )}
+              </div>
+            </form>
 
-              {/* ── Contact button — appears after expanding ── */}
-              {expanded && (
-                <div className="ks-contact-in" style={{ borderTop: "1px solid rgba(22,71,251,0.08)", padding: "20px 0 24px" }}>
-                  <button
-                    onClick={() => setContactOpen(true)}
+            {/* Topic chips */}
+            <div style={{ marginTop: "22px" }}>
+              <p style={{
+                fontSize: "10px", fontWeight: 600, letterSpacing: "0.14em",
+                textTransform: "uppercase", color: "rgba(255,255,255,0.22)",
+                margin: "0 0 12px", fontFamily: "Montserrat, sans-serif",
+              }}>
+                Ofte stillet
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                {TOPICS.map((t) => (
+                  <button key={t.label} className="ks-chip"
+                    onClick={() => { setQuery(t.query); void runSearch(t.query); }}
                     style={{
-                      display: "inline-flex", alignItems: "center", gap: "8px",
-                      background: "rgba(22,71,251,0.06)", border: "1.5px solid rgba(22,71,251,0.15)",
-                      borderRadius: "12px", padding: "12px 20px",
-                      fontSize: "13px", fontWeight: 700, color: "#1647FB",
-                      fontFamily: "Montserrat, sans-serif", cursor: "pointer",
-                      transition: "background 0.2s, border-color 0.2s",
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(22,71,251,0.1)"; e.currentTarget.style.borderColor = "#1647FB"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(22,71,251,0.06)"; e.currentTarget.style.borderColor = "rgba(22,71,251,0.15)"; }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
-                    </svg>
-                    Brug for at kontakte kundeservice?
+                      background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: "999px", padding: "7px 15px",
+                      fontSize: "12px", fontFamily: "Montserrat, sans-serif",
+                      fontWeight: 500, color: "rgba(255,255,255,0.55)", cursor: "pointer",
+                      transition: "background 0.18s, border-color 0.18s, color 0.18s",
+                    }}>
+                    {t.label}
                   </button>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
-          )}
+          </div>
         </section>
+
+        {/* ── Results section ── */}
+        {(state === "loading" || state === "result") && (
+          <section style={{ padding: "48px 24px 80px", maxWidth: "680px", margin: "0 auto" }}>
+
+            {state === "loading" && <SkeletonCard />}
+
+            {state === "result" && result && (
+              <div ref={resultRef} className="ks-card" style={{
+                border: "1px solid rgba(22,71,251,0.14)",
+                borderRadius: "18px", padding: "28px 28px 0",
+                background: "#fff",
+                boxShadow: "0 4px 40px rgba(22,71,251,0.08), 0 1px 4px rgba(0,0,0,0.04)",
+                overflow: "hidden",
+              }}>
+                <span style={{
+                  display: "inline-flex", alignItems: "center", gap: "6px",
+                  background: "rgba(22,71,251,0.08)", color: "#1647FB",
+                  fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em",
+                  padding: "4px 12px", borderRadius: "999px", marginBottom: "16px",
+                }}>
+                  <svg width="11" height="11" viewBox="-12 -12 24 24" fill="#1647FB">
+                    <path d="M0,-10 L2.4,-2.4 L10,0 L2.4,2.4 L0,10 L-2.4,2.4 L-10,0 L-2.4,-2.4Z" />
+                  </svg>
+                  AI-svar
+                </span>
+
+                <h2 style={{
+                  fontSize: "18px", fontWeight: 700, color: "#080808",
+                  margin: "0 0 12px", lineHeight: 1.35, letterSpacing: "-0.01em",
+                  fontFamily: "Montserrat, sans-serif",
+                }}>
+                  {result.q}
+                </h2>
+
+                <p style={{
+                  fontSize: "14px", lineHeight: 1.78, color: "rgba(8,8,8,0.65)",
+                  margin: "0 0 20px", fontFamily: "Montserrat, sans-serif",
+                }}>
+                  {expanded ? result.a : preview}
+                </p>
+
+                {!expanded && result.a.length > PREVIEW_LEN && (
+                  <button className="ks-expand"
+                    onClick={() => setExpanded(true)}
+                    style={{
+                      background: "transparent", border: "1.5px solid rgba(22,71,251,0.22)",
+                      borderRadius: "999px", padding: "8px 18px",
+                      fontSize: "12px", fontFamily: "Montserrat, sans-serif",
+                      fontWeight: 600, color: "#1647FB", cursor: "pointer",
+                      transition: "background 0.18s, border-color 0.18s",
+                      marginBottom: "24px",
+                      display: "inline-flex", alignItems: "center", gap: "6px",
+                    }}>
+                    Læs hele svaret
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 5v14M5 12l7 7 7-7" stroke="#1647FB" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                )}
+
+                {expanded && (
+                  <div className="ks-contact-in" style={{ borderTop: "1px solid rgba(22,71,251,0.08)", padding: "20px 0 24px" }}>
+                    <button
+                      onClick={() => setContactOpen(true)}
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: "8px",
+                        background: "rgba(22,71,251,0.06)", border: "1.5px solid rgba(22,71,251,0.15)",
+                        borderRadius: "12px", padding: "12px 20px",
+                        fontSize: "13px", fontWeight: 700, color: "#1647FB",
+                        fontFamily: "Montserrat, sans-serif", cursor: "pointer",
+                        transition: "background 0.2s, border-color 0.2s",
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(22,71,251,0.1)"; e.currentTarget.style.borderColor = "#1647FB"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(22,71,251,0.06)"; e.currentTarget.style.borderColor = "rgba(22,71,251,0.15)"; }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                        <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
+                      </svg>
+                      Brug for at kontakte kundeservice?
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        )}
 
       </main>
 
-      {/* ── Contact modal — rendered at page root so position:fixed escapes the animated card ── */}
       <ChatWidget open={chatOpen} onClose={() => setChatOpen(false)} />
 
+      {/* ── Contact modal ── */}
       {contactOpen && (
         <>
           <div
