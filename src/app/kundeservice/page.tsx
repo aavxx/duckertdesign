@@ -94,40 +94,34 @@ export default function KundeservicePage() {
         @keyframes ks-grow { from { opacity:0; transform:translateY(8px);  } to { opacity:1; transform:translateY(0); } }
         .ks-card       { animation: ks-up 0.42s cubic-bezier(0.16,1,0.3,1) both; }
         .ks-contact-in { animation: ks-grow 0.35s cubic-bezier(0.16,1,0.3,1) both; }
-        .ks-chip:hover   { background:rgba(255,255,255,0.12)!important; border-color:rgba(255,255,255,0.35)!important; color:#fff!important; }
+        .ks-chip:hover   { background:rgba(22,71,251,0.1)!important; border-color:rgba(22,71,251,0.3)!important; color:#1647FB!important; }
         .ks-cta:hover    { background:rgba(22,71,251,0.05)!important; }
         .ks-mail:hover   { background:#1647FB!important; }
         .ks-mail:hover * { color:#fff!important; }
         .ks-mail:hover .ks-mail-icon { background:rgba(255,255,255,0.2)!important; }
         .ks-mail:hover svg path, .ks-mail:hover svg polyline { stroke:#fff!important; }
-        .ks-search-bar:focus-within { border-color:rgba(255,255,255,0.5)!important; box-shadow:0 0 0 3px rgba(255,255,255,0.12)!important; }
-        .ks-dark-input::placeholder { color: rgba(255,255,255,0.32); }
+        .ks-search-bar:focus-within { border-color:rgba(22,71,251,0.4)!important; box-shadow:0 0 0 3px rgba(22,71,251,0.1)!important; }
+        .ks-dark-input::placeholder { color: rgba(8,8,8,0.32); }
         .ks-expand:hover { background:rgba(22,71,251,0.07)!important; border-color:#1647FB!important; }
-        .ks-back:hover   { color:#fff!important; }
+        .ks-back:hover   { color:#1647FB!important; }
       `}</style>
 
       <main style={{ paddingTop: "80px", minHeight: "100vh", background: "#fff" }}>
 
-        {/* ── Blue Hero ── */}
+        {/* ── Hero ── */}
         <section style={{
-          background: "#1647FB",
+          background: "#ffffff",
           padding: "52px 24px 68px",
           position: "relative",
           overflow: "hidden",
         }}>
-          {/* Subtle light overlay */}
-          <div style={{
-            position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
-            width: "900px", height: "500px", pointerEvents: "none",
-            background: "radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.08) 0%, transparent 60%)",
-          }} />
 
           <div style={{ maxWidth: "680px", margin: "0 auto", position: "relative" }}>
 
             {/* Back link */}
             <a href="/" className="ks-back" style={{
               display: "inline-flex", alignItems: "center", gap: "7px",
-              fontSize: "12px", fontWeight: 600, color: "rgba(255,255,255,0.3)",
+              fontSize: "12px", fontWeight: 600, color: "rgba(8,8,8,0.35)",
               textDecoration: "none", marginBottom: "44px",
               transition: "color 0.18s", fontFamily: "Montserrat, sans-serif",
               letterSpacing: "0.02em",
@@ -144,7 +138,7 @@ export default function KundeservicePage() {
               fontWeight: 900,
               letterSpacing: "-0.045em",
               lineHeight: 0.92,
-              color: "#ffffff",
+              color: "#080808",
               margin: "0 0 40px",
               fontFamily: "Montserrat, sans-serif",
             }}>
@@ -156,15 +150,14 @@ export default function KundeservicePage() {
             <form onSubmit={(e) => { e.preventDefault(); void runSearch(query); }}>
               <div className="ks-search-bar" style={{
                 display: "flex", alignItems: "center",
-                border: "1.5px solid rgba(255,255,255,0.1)",
+                border: "1.5px solid rgba(8,8,8,0.1)",
                 borderRadius: "14px", padding: "8px 8px 8px 20px",
-                gap: "8px", background: "rgba(255,255,255,0.06)",
-                backdropFilter: "blur(8px)",
+                gap: "8px", background: "rgba(22,71,251,0.03)",
                 transition: "border-color 0.2s, box-shadow 0.2s",
               }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, opacity: 0.35 }}>
-                  <circle cx="11" cy="11" r="7" stroke="white" strokeWidth="2" />
-                  <path d="M21 21l-4.35-4.35" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                  <circle cx="11" cy="11" r="7" stroke="#080808" strokeWidth="2" />
+                  <path d="M21 21l-4.35-4.35" stroke="#080808" strokeWidth="2" strokeLinecap="round" />
                 </svg>
                 <input
                   type="text"
@@ -175,7 +168,7 @@ export default function KundeservicePage() {
                   style={{
                     flex: 1, background: "transparent", border: "none", outline: "none",
                     fontSize: "15px", fontFamily: "Montserrat, sans-serif",
-                    color: "#ffffff", padding: "6px 0",
+                    color: "#080808", padding: "6px 0",
                   }}
                 />
                 {query && (
@@ -183,8 +176,8 @@ export default function KundeservicePage() {
                     onClick={() => { setQuery(""); setState("idle"); setResult(null); }}
                     style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", opacity: 0.4, display: "flex", alignItems: "center" }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                      <line x1="4" y1="4" x2="20" y2="20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-                      <line x1="20" y1="4" x2="4" y2="20" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+                      <line x1="4" y1="4" x2="20" y2="20" stroke="#080808" strokeWidth="2.5" strokeLinecap="round" />
+                      <line x1="20" y1="4" x2="4" y2="20" stroke="#080808" strokeWidth="2.5" strokeLinecap="round" />
                     </svg>
                   </button>
                 )}
@@ -213,7 +206,7 @@ export default function KundeservicePage() {
             <div style={{ marginTop: "22px" }}>
               <p style={{
                 fontSize: "10px", fontWeight: 600, letterSpacing: "0.14em",
-                textTransform: "uppercase", color: "rgba(255,255,255,0.22)",
+                textTransform: "uppercase", color: "rgba(8,8,8,0.4)",
                 margin: "0 0 12px", fontFamily: "Montserrat, sans-serif",
               }}>
                 Ofte stillet
@@ -223,10 +216,10 @@ export default function KundeservicePage() {
                   <button key={t.label} className="ks-chip"
                     onClick={() => { setQuery(t.query); void runSearch(t.query); }}
                     style={{
-                      background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)",
+                      background: "rgba(22,71,251,0.05)", border: "1px solid rgba(22,71,251,0.15)",
                       borderRadius: "999px", padding: "7px 15px",
                       fontSize: "12px", fontFamily: "Montserrat, sans-serif",
-                      fontWeight: 500, color: "rgba(255,255,255,0.55)", cursor: "pointer",
+                      fontWeight: 500, color: "rgba(8,8,8,0.55)", cursor: "pointer",
                       transition: "background 0.18s, border-color 0.18s, color 0.18s",
                     }}>
                     {t.label}
