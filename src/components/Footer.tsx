@@ -6,7 +6,7 @@ import Logo from "./Logo";
 const NAV_LINKS = [
   { label: "Ydelser", href: "/#ydelser" },
   { label: "Om",      href: "/#om" },
-  { label: "Kontakt", href: "/kundeservice" },
+  { label: "Kundeservice", href: "https://kundeservice.duckert.design" },
 ];
 
 export default function Footer() {

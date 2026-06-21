@@ -29,7 +29,7 @@ export default function Services() {
       id="ydelser"
       style={{
         background: "#ffffff",
-        padding: "clamp(80px, 12vw, 160px) clamp(20px, 5vw, 80px)",
+        padding: "clamp(48px, 6vw, 80px) clamp(20px, 5vw, 80px)",
       }}
     >
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>

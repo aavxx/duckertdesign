@@ -15,7 +15,7 @@ export default function About() {
       id="om"
       style={{
         background: "#ffffff",
-        padding: "clamp(80px, 12vw, 160px) clamp(20px, 5vw, 80px)",
+        padding: "clamp(48px, 6vw, 80px) clamp(20px, 5vw, 80px)",
         borderTop: "1px solid #ebebeb",
       }}
     >

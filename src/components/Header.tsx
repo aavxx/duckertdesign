@@ -6,9 +6,9 @@ import { usePathname, useRouter } from "next/navigation";
 import Logo from "./Logo";
 
 const NAV = [
-  { label: "Ydelser",  id: "#ydelser" },
-  { label: "Om",       id: "#om" },
-  { label: "Kontakt",  href: "/kundeservice" },
+  { label: "Ydelser",      id: "#ydelser" },
+  { label: "Om",           id: "#om" },
+  { label: "Kundeservice", href: "https://kundeservice.duckert.design" },
 ];
 
 export default function Header() {
@@ -196,7 +196,7 @@ export default function Header() {
                 onClick={() => {
                   if (link.href) {
                     setMenuOpen(false);
-                    router.push(link.href);
+                    window.location.href = link.href;
                   } else if (link.id) {
                     scrollTo(link.id);
                   }
