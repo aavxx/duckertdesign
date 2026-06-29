@@ -161,7 +161,7 @@ export default function Hero() {
                 e.currentTarget.style.transform = "translateY(0)";
               }}
             >
-              Start et projekt
+              Start et nyt projekt
             </button>
 
             <button
