@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Duckert Design – Webdesign der sætter spor",
+  title: "Duckert Design",
   description: "Professionelt webdesign, UI/UX og webudvikling til virksomheder der vil stå stærkt online. Duckert Design Studio, Danmark.",
   keywords: ["webdesign", "webudvikling", "UI/UX", "digital", "Danmark"],
 };
