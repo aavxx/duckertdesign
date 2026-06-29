@@ -76,7 +76,7 @@ export default function About() {
             </p>
 
             <Link
-              href="/kontakt"
+              href="https://kundeservice.duckert.design"
               style={{
                 display: "inline-flex",
                 alignItems: "center",

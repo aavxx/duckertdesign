@@ -1,10 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-
 export default function CTA() {
-  const router = useRouter();
-
   return (
     <section
       style={{
@@ -80,7 +76,7 @@ export default function CTA() {
           </p>
 
           <button
-            onClick={() => router.push("/kundeservice")}
+            onClick={() => { window.location.href = "https://kundeservice.duckert.design"; }}
             style={{
               padding: "14px 30px",
               background: "#1647FB",

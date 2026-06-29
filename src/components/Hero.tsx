@@ -1,9 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-
 export default function Hero() {
-  const router = useRouter();
   const scrollTo = (id: string) =>
     document.querySelector(id)?.scrollIntoView({ behavior: "smooth" });
 
@@ -140,7 +137,7 @@ export default function Hero() {
             style={{ display: "flex", gap: "10px", flexShrink: 0, flexWrap: "wrap" }}
           >
             <button
-              onClick={() => router.push("/kontakt")}
+              onClick={() => { window.location.href = "https://kundeservice.duckert.design"; }}
               style={{
                 padding: "14px 30px",
                 background: "#1647FB",
