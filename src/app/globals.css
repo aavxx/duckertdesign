@@ -1,16 +1,19 @@
-@import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400&family=Montserrat:wght@400;500;600&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap');
 @import "tailwindcss";
 
 :root {
-  --blue:   #1647FB;
-  --black:  #080808;
-  --white:  #ffffff;
-  --gray:   #f7f7f7;
-  --border: #ebebeb;
-  --muted:  #888888;
+  --bg:      #080808;
+  --surface: #101010;
+  --border:  #1E1E1E;
+  --blue:    #1647FB;
+  --text:    #F0F0F0;
+  --muted:   #444444;
+
+  --f-display: 'Syne', sans-serif;
+  --f-body:    'Space Grotesk', sans-serif;
+  --f-mono:    'JetBrains Mono', monospace;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-expo:  cubic-bezier(0.7, 0, 0.84, 0);
   --duration-fast: 180ms;
   --duration-med:  280ms;
   --duration-slow: 480ms;
@@ -21,12 +24,12 @@
 html {
   scroll-behavior: smooth;
   font-size: 16px;
-  background: #1647FB;
+  background: #080808;
 }
 
 body {
-  background: #ffffff;
-  color: #080808;
+  background: #080808;
+  color: #F0F0F0;
   font-family: 'Space Grotesk', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

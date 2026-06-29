@@ -9,7 +9,6 @@ export default function Home() {
       <Hero />
       <Services />
       <About />
-      <hr style={{ margin: 0, border: "none", borderTop: "1px solid rgba(0,0,0,0.1)" }} />
       <CTA />
     </main>
   );
