@@ -1,7 +1,6 @@
-import "dotenv/config";
 import { startIdleLoop } from "./imap.js";
 
-const required = ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN", "IMAP_HOST", "IMAP_USER", "IMAP_PASS"];
+const required = ["IMAP_HOST", "IMAP_USER", "IMAP_PASS", "WEBHOOK_URL", "WEBHOOK_SECRET"];
 for (const key of required) {
   if (!process.env[key]) {
     console.error(`Missing required env var: ${key}`);
@@ -9,8 +8,8 @@ for (const key of required) {
   }
 }
 
-console.log("[imap-worker] Starting IMAP IDLE listener…");
+console.log(`[imap-worker] starting — host=${process.env.IMAP_HOST} user=${process.env.IMAP_USER}`);
 startIdleLoop().catch((err) => {
-  console.error("[imap-worker] Fatal:", err);
+  console.error("[imap-worker] fatal error:", err);
   process.exit(1);
 });

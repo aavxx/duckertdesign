@@ -9,13 +9,15 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@types/web-push": "^3.6.4",
     "@upstash/redis": "^1.38.0",
     "imapflow": "^1.4.0",
     "next": "16.2.7",
     "nodemailer": "^8.0.11",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "resend": "^6.12.4"
+    "resend": "^6.12.4",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

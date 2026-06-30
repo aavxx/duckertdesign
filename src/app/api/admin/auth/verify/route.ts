@@ -1,32 +1,22 @@
-import { corsHeaders } from "@/lib/cors";
 import { redis } from "@/lib/redis";
 import { randomBytes } from "crypto";
-
-export async function OPTIONS() {
-  return new Response(null, { status: 204, headers: corsHeaders() });
-}
 
 export async function POST(req: Request) {
   let email: string, code: string;
   try {
     ({ email, code } = await req.json());
   } catch {
-    return Response.json({ error: "Ugyldig forespørgsel" }, { status: 400, headers: corsHeaders() });
+    return Response.json({ error: "Ugyldig forespørgsel" }, { status: 400 });
   }
 
-  const stored = await redis.get(`admin:otp:${email.toLowerCase()}`);
+  const stored = await redis.get<string>(`admin:otp:${email.toLowerCase()}`);
   if (!stored || String(stored) !== String(code)) {
-    return Response.json(
-      { error: "Forkert eller udløbet kode. Prøv igen." },
-      { status: 401, headers: corsHeaders() }
-    );
+    return Response.json({ error: "Forkert eller udløbet kode." }, { status: 401 });
   }
 
   await redis.del(`admin:otp:${email.toLowerCase()}`);
-
   const token = randomBytes(32).toString("hex");
-  // 1-hour session (sliding window refreshed on each authenticated request)
   await redis.set(`admin:session:${token}`, email, { ex: 3600 });
 
-  return Response.json({ token }, { headers: corsHeaders() });
+  return Response.json({ token });
 }

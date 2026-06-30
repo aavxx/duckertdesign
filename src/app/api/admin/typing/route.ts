@@ -1,32 +1,13 @@
-import { requireAdminKey } from "@/lib/auth";
-import { corsHeaders } from "@/lib/cors";
+import { requireAdmin } from "@/lib/auth";
 import { redis } from "@/lib/redis";
 
-export async function OPTIONS() {
-  return new Response(null, { status: 204, headers: corsHeaders() });
-}
-
 export async function POST(req: Request) {
-  const authErr = await requireAdminKey(req);
+  const authErr = await requireAdmin(req);
   if (authErr) return authErr;
 
-  let sessionId: string, typing: boolean;
-  try {
-    ({ sessionId, typing } = await req.json());
-  } catch {
-    return new Response("Bad request", { status: 400, headers: corsHeaders() });
-  }
+  const { sessionId, typing } = await req.json() as { sessionId: string; typing: boolean };
+  if (!sessionId) return new Response("Missing sessionId", { status: 400 });
 
-  if (!sessionId) {
-    return new Response("Missing sessionId", { status: 400, headers: corsHeaders() });
-  }
-
-  try {
-    await redis.publish(
-      `chat:reply:${sessionId}`,
-      JSON.stringify({ type: "typing", who: "agent", typing: !!typing })
-    );
-  } catch {}
-
-  return Response.json({ ok: true }, { headers: corsHeaders() });
+  await redis.publish(`chat:reply:${sessionId}`, JSON.stringify({ type: "typing", who: "agent", typing })).catch(() => {});
+  return Response.json({ ok: true });
 }

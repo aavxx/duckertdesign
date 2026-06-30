@@ -1,20 +1,13 @@
-import { corsHeaders } from "@/lib/cors";
 import { redis } from "@/lib/redis";
 
-export async function requireAdminKey(req: Request): Promise<Response | null> {
-  const key = req.headers.get("x-admin-key");
-  if (!key) return new Response("Unauthorized", { status: 401, headers: corsHeaders() });
+export async function requireAdmin(req: Request): Promise<Response | null> {
+  const token = req.headers.get("x-admin-key");
+  if (!token) return new Response("Unauthorized", { status: 401 });
 
-  // Legacy API key (kept for backwards compat)
-  if (process.env.ADMIN_API_KEY && key === process.env.ADMIN_API_KEY) return null;
+  const email = await redis.get<string>(`admin:session:${token}`);
+  if (!email) return new Response("Unauthorized", { status: 401 });
 
-  // OTP session token
-  const valid = await redis.get(`admin:session:${key}`);
-  if (valid) {
-    // Sliding 15-minute window: reset TTL on each authenticated request
-    await redis.expire(`admin:session:${key}`, 3600).catch(() => {});
-    return null;
-  }
-
-  return new Response("Unauthorized", { status: 401, headers: corsHeaders() });
+  // Sliding 1-hour window
+  await redis.expire(`admin:session:${token}`, 3600).catch(() => {});
+  return null;
 }

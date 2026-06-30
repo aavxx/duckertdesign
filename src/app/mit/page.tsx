@@ -1,1186 +1,709 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
-/* ─── Types ───────────────────────────────────────────────────────────────── */
-type ChatMsg = {
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type ChatMessage = {
   id: string;
   role: "user" | "assistant" | "admin" | "system";
   content: string;
   ts: number;
 };
+
 type ChatSession = {
   id: string;
-  createdAt: number;
-  updatedAt: number;
   status: "ai" | "human" | "claimed" | "inactive" | "closed" | "archived";
-  messages: ChatMsg[];
-  visitorInfo?: { page: string; userAgent: string };
+  messages: ChatMessage[];
+  updatedAt: number;
+  tags?: string[];
 };
-type Email = { uid: number; subject: string; from: string; date: string | null; seen: boolean };
-type EmailBody = Email & { text: string | null; html: string | null; to: string | null };
-type FeedbackEntry = { id: string; sessionId: string; rating: number; createdAt: number };
-type Tab = "chats" | "mails" | "feedback";
 
-type LoginStage =
-  | { stage: "email" }
-  | { stage: "checking" }
-  | { stage: "sent"; email: string }
-  | { stage: "code"; email: string; err?: string }
-  | { stage: "verifying"; email: string };
+type EmailMessage = {
+  id: string;
+  from: string;
+  to: string;
+  subject: string;
+  text: string | null;
+  html: string | null;
+  ts: number;
+  direction: "inbound" | "outbound";
+};
 
-/* ─── Slash commands ──────────────────────────────────────────────────────── */
-const SLASH_COMMANDS = [
-  { cmd: "/hej",     label: "Hej",     desc: "Overtag chatten og byd velkommen" },
-  { cmd: "/bye",     label: "Bye",     desc: "Send farvel + arkivér (auto-slet 30 dage)" },
-  { cmd: "/luk",     label: "Luk",     desc: "Luk chat øjeblikkeligt uden besked" },
-  { cmd: "/inaktiv", label: "Inaktiv", desc: "Send inaktivitetsadvarsel + auto-luk om 2 min" },
-  { cmd: "/noter",   label: "Noter",   desc: "Åbn intern notat-felt (synlig kun for dig)" },
-];
+type EmailThread = {
+  id: string;
+  subject: string;
+  participants: string[];
+  messages: EmailMessage[];
+  status: "new" | "open" | "waiting" | "closed";
+  tags: string[];
+  updatedAt: number;
+};
 
-/* ─── Helpers ─────────────────────────────────────────────────────────────── */
-function fmtTime(ts: number | string | null) {
-  if (!ts) return "";
-  const d = typeof ts === "number" ? new Date(ts) : new Date(ts);
-  if (isNaN(d.getTime())) return "";
+type InboxEntry =
+  | { kind: "chat"; id: string; score: number; status: ChatSession["status"]; preview: string; updatedAt: number }
+  | { kind: "email"; id: string; score: number; status: EmailThread["status"]; subject: string; from: string; updatedAt: number };
+
+type AdminEvent = {
+  type: string;
+  sessionId?: string;
+  threadId?: string;
+  from?: string;
+  subject?: string;
+  content?: string;
+  ts?: number;
+};
+
+type View = { kind: "chat"; id: string } | { kind: "email"; id: string } | null;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function fmtTime(ts: number) {
+  const d = new Date(ts);
   const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  if (diffMs < 60_000) return "Netop nu";
-  if (diffMs < 3_600_000) return `${Math.floor(diffMs / 60_000)} min`;
-  if (diffMs < 86_400_000) return d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" });
+  const sameDay = d.toDateString() === now.toDateString();
+  if (sameDay) return d.toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" });
   return d.toLocaleDateString("da-DK", { day: "numeric", month: "short" });
 }
 
-function initials(from: string) {
-  const name = from.replace(/<[^>]+>/, "").trim();
-  return name.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase() || "?";
+function statusColor(s: string) {
+  if (s === "new") return "#ef4444";
+  if (s === "open" || s === "ai" || s === "human" || s === "claimed") return "#22c55e";
+  if (s === "waiting") return "#f59e0b";
+  return "#6b7280";
 }
 
-const FEEDBACK_EMOJIS = ["😠", "😞", "😐", "😊", "😄"];
-const FEEDBACK_LABELS = ["Meget dårlig", "Dårlig", "Okay", "God", "Fantastisk"];
-
-/* ─── Star icon (3 stars) ─────────────────────────────────────────────────── */
-function Sparkle({ size = 14, color = "#1647FB" }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 489 489" fill="none">
-      <path d="M198.5 83C201 83 202.5 83.3176 205.667 85C209.533 87 210.867 89.6665 219.133 113.133C233.267 153.666 244.2 174.066 265.133 198.866C289.933 228.466 314.733 243.666 366.2 260.866C378.333 265 389.4 269 390.867 269.934C396.867 273.667 397.666 283 392.466 288.2C391.132 289.534 380.466 293.801 368.867 297.667C336.067 308.467 317.667 316.733 301.667 327.533C289.133 336.067 271.667 351.534 261.267 363.4C239.134 388.867 230.334 405.933 215.001 453.133C209.001 471.399 205.5 475 198 475C190.267 475 186.915 471.27 180.915 453.004C165.581 405.804 156.781 388.738 134.648 363.271C124.248 351.405 106.782 335.938 94.2486 327.404C78.2487 316.604 59.8482 308.338 27.0484 297.538C15.4484 293.671 4.78116 289.405 3.44783 288.071C-1.75214 282.871 -0.951574 273.538 5.04841 269.805C6.51516 268.871 17.5812 264.871 29.7144 260.737C81.1811 243.537 105.982 228.337 130.782 198.737C151.715 173.937 162.649 153.537 176.782 113.004C185.048 89.5377 186.382 86.8711 190.249 84.8711C193.415 83.1889 196 83 198.5 83Z" fill={color} />
-      <path d="M389.223 0C390.448 0 391.183 0.155578 392.735 0.979592C394.63 1.95918 395.283 3.26524 399.334 14.7589C406.259 34.6119 411.617 44.6039 421.874 56.7508C434.026 71.2487 446.178 78.6937 471.397 87.1181C477.343 89.1426 482.765 91.1022 483.484 91.5593C486.424 93.3879 486.816 97.9593 484.268 100.506C483.614 101.159 478.388 103.249 472.704 105.143C456.632 110.433 447.616 114.482 439.776 119.771C433.634 123.951 425.076 131.527 419.98 137.339C409.134 149.812 404.822 158.171 397.309 181.29C394.369 190.236 392.653 192 388.978 192C385.189 192 383.547 190.173 380.607 181.226C373.093 158.108 368.781 149.749 357.936 137.276C352.84 131.464 344.281 123.888 338.14 119.708C330.3 114.418 321.283 110.37 305.211 105.08C299.527 103.186 294.3 101.096 293.647 100.443C291.099 97.8961 291.491 93.3247 294.431 91.4962C295.15 91.039 300.572 89.0795 306.518 87.055C331.737 78.6305 343.889 71.1856 356.041 56.6877C366.299 44.5408 371.656 34.5488 378.581 14.6958C382.632 3.20213 383.286 1.89604 385.18 0.916454C386.732 0.0925239 387.998 9.39676e-06 389.223 0Z" fill={color} />
-      <path d="M419.192 351C420.076 351 420.606 351.112 421.726 351.704C423.093 352.408 423.565 353.347 426.488 361.608C431.486 375.877 435.352 383.059 442.754 391.79C451.524 402.21 460.293 407.561 478.492 413.616C482.783 415.071 486.696 416.48 487.215 416.808C489.337 418.123 489.619 421.408 487.781 423.239C487.309 423.708 483.537 425.21 479.436 426.572C467.837 430.374 461.331 433.284 455.673 437.086C451.241 440.09 445.065 445.535 441.387 449.712C433.561 458.678 430.449 464.686 425.027 481.302C422.905 487.732 421.667 489 419.015 489C416.28 489 415.095 487.687 412.974 481.256C407.552 464.64 404.44 458.632 396.613 449.667C392.936 445.489 386.759 440.044 382.327 437.04C376.67 433.238 370.163 430.328 358.565 426.526C354.463 425.165 350.691 423.663 350.219 423.193C348.38 421.363 348.664 418.077 350.785 416.763C351.304 416.434 355.217 415.026 359.507 413.571C377.707 407.516 386.476 402.165 395.246 391.744C402.648 383.014 406.514 375.832 411.512 361.563C414.435 353.302 414.907 352.363 416.274 351.659C417.394 351.067 418.308 351 419.192 351Z" fill={color} />
-    </svg>
-  );
-}
-
-/* ─── Spinner ─────────────────────────────────────────────────────────────── */
-function Spinner({ size = 24 }: { size?: number }) {
-  return (
-    <>
-      <style>{`@keyframes dkSpin{to{transform:rotate(360deg)}}`}</style>
-      <div style={{
-        width: size, height: size,
-        border: "2.5px solid rgba(22,71,251,0.15)",
-        borderTopColor: "#1647FB", borderRadius: "50%",
-        animation: "dkSpin 0.75s linear infinite", flexShrink: 0,
-      }} />
-    </>
-  );
-}
-
-/* ─── Bouncing dots ───────────────────────────────────────────────────────── */
-function BouncingDots() {
-  return (
-    <div style={{ display: "flex", gap: "4px", alignItems: "center", padding: "2px 0" }}>
-      {[0, 150, 300].map((delay) => (
-        <span key={delay} style={{
-          width: "6px", height: "6px", borderRadius: "50%",
-          background: "rgba(8,8,8,0.3)",
-          animation: `dkBounce 1.2s ease-in-out ${delay}ms infinite`,
-          display: "inline-block",
-        }} />
-      ))}
-      <style>{`@keyframes dkBounce{0%,80%,100%{transform:scale(0.6);opacity:0.4}40%{transform:scale(1);opacity:1}}`}</style>
-    </div>
-  );
-}
-
-/* ─── 4-digit code boxes ──────────────────────────────────────────────────── */
-function CodeBoxes({ disabled, hasError, onComplete }: {
-  disabled: boolean; hasError: boolean; onComplete: (code: string) => void;
-}) {
-  const [digits, setDigits] = useState(["", "", "", ""]);
-  const refs = useRef<(HTMLInputElement | null)[]>([null, null, null, null]);
-
-  useEffect(() => { refs.current[0]?.focus(); }, []);
-
-  const commit = (next: string[]) => {
-    setDigits(next);
-    if (next.every((d) => d !== "")) onComplete(next.join(""));
+function statusLabel(s: string) {
+  const map: Record<string, string> = {
+    new: "ny", open: "åben", waiting: "venter", closed: "lukket",
+    ai: "ai", human: "human", claimed: "krævet", inactive: "inaktiv",
+    archived: "arkiveret",
   };
-
-  const handleChange = (i: number, val: string) => {
-    const digit = val.replace(/\D/g, "").slice(-1);
-    const next = [...digits]; next[i] = digit;
-    if (digit && i < 3) refs.current[i + 1]?.focus();
-    commit(next);
-  };
-
-  const handleKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace") {
-      if (digits[i]) { const next = [...digits]; next[i] = ""; setDigits(next); }
-      else if (i > 0) refs.current[i - 1]?.focus();
-    }
-    if (e.key === "ArrowLeft" && i > 0) refs.current[i - 1]?.focus();
-    if (e.key === "ArrowRight" && i < 3) refs.current[i + 1]?.focus();
-  };
-
-  const handlePaste = (e: React.ClipboardEvent) => {
-    const paste = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 4);
-    if (!paste) return;
-    e.preventDefault();
-    const next: string[] = ["", "", "", ""];
-    for (let i = 0; i < paste.length; i++) next[i] = paste[i];
-    refs.current[Math.min(paste.length, 3)]?.focus();
-    commit(next);
-  };
-
-  return (
-    <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-      {digits.map((digit, i) => (
-        <input
-          key={i}
-          ref={(el) => { refs.current[i] = el; }}
-          type="text" inputMode="numeric" pattern="[0-9]*"
-          value={digit} maxLength={2} disabled={disabled}
-          onChange={(e) => handleChange(i, e.target.value)}
-          onKeyDown={(e) => handleKeyDown(i, e)}
-          onPaste={handlePaste}
-          onClick={(e) => (e.currentTarget as HTMLInputElement).select()}
-          style={{
-            width: "62px", height: "72px",
-            border: `2px solid ${hasError ? "#ef4444" : digit ? "#1647FB" : "rgba(22,71,251,0.2)"}`,
-            borderRadius: "12px", textAlign: "center",
-            fontSize: "28px", fontWeight: 800, color: "#080808",
-            fontFamily: "Montserrat, sans-serif", outline: "none",
-            background: hasError ? "rgba(239,68,68,0.04)" : digit ? "rgba(22,71,251,0.04)" : "#fff",
-            transition: "border-color 0.15s, background 0.15s",
-            caretColor: "transparent", opacity: disabled ? 0.5 : 1,
-          }}
-          onFocus={(e) => { if (!hasError) e.target.style.borderColor = "#1647FB"; e.target.style.boxShadow = "0 0 0 3px rgba(22,71,251,0.08)"; }}
-          onBlur={(e) => { e.target.style.borderColor = hasError ? "#ef4444" : digit ? "#1647FB" : "rgba(22,71,251,0.2)"; e.target.style.boxShadow = "none"; }}
-        />
-      ))}
-    </div>
-  );
+  return map[s] ?? s;
 }
 
-/* ─── Login screen ────────────────────────────────────────────────────────── */
+// ─── Audio helper ─────────────────────────────────────────────────────────────
+
+function playSound(url: string) {
+  try { new Audio(url).play().catch(() => {}); } catch {}
+}
+
+// ─── API helpers ──────────────────────────────────────────────────────────────
+
+async function api(url: string, opts: RequestInit = {}, token?: string | null) {
+  const headers: Record<string, string> = { "Content-Type": "application/json", ...(opts.headers as Record<string, string> ?? {}) };
+  if (token) headers["x-admin-key"] = token;
+  const res = await fetch(url, { ...opts, headers });
+  if (!res.ok) throw new Error(`${res.status}`);
+  return res;
+}
+
+// ─── Login screen ─────────────────────────────────────────────────────────────
+
 function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
-  const [step, setStep]           = useState<LoginStage>({ stage: "email" });
-  const [emailVal, setEmailVal]   = useState("");
-  const [globalErr, setGlobalErr] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState(["", "", "", ""]);
+  const [step, setStep] = useState<"email" | "otp">("email");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+  const codeRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
 
-  const requestCode = async () => {
-    const email = emailVal.trim();
-    if (!email) return;
-    setGlobalErr(null);
-    setStep({ stage: "checking" });
+  async function requestOtp() {
+    setLoading(true); setErr("");
     try {
-      const [res] = await Promise.all([
-        fetch("/api/admin/auth/request", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        }),
-        new Promise<void>((r) => setTimeout(r, 2000)),
-      ]);
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { error?: string };
-        setGlobalErr(data.error ?? "Noget gik galt. Prøv igen.");
-        setStep({ stage: "email" });
-        return;
-      }
-      setStep({ stage: "sent", email });
-      setTimeout(() => setStep({ stage: "code", email }), 5000);
-    } catch {
-      setGlobalErr("Forbindelsesfejl. Prøv igen.");
-      setStep({ stage: "email" });
-    }
-  };
+      await api("/api/admin/auth/request", { method: "POST", body: JSON.stringify({ email }) });
+      setStep("otp");
+      setTimeout(() => codeRefs[0].current?.focus(), 50);
+    } catch (e: unknown) {
+      setErr(e instanceof Error && e.message === "404" ? "Denne e-mail er ikke registreret." : "Noget gik galt, prøv igen.");
+    } finally { setLoading(false); }
+  }
 
-  const verifyCode = async (code: string, email: string) => {
-    setStep({ stage: "verifying", email });
+  async function verifyOtp() {
+    const c = code.join("");
+    if (c.length < 4) return;
+    setLoading(true); setErr("");
     try {
-      const res = await fetch("/api/admin/auth/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { error?: string };
-        setStep({ stage: "code", email, err: data.error ?? "Forkert kode. Prøv igen." });
-        return;
-      }
+      const res = await api("/api/admin/auth/verify", { method: "POST", body: JSON.stringify({ email, code: c }) });
       const { token } = await res.json() as { token: string };
       onLogin(token);
     } catch {
-      setStep({ stage: "code", email, err: "Forbindelsesfejl. Prøv igen." });
-    }
-  };
+      setErr("Forkert eller udløbet kode.");
+      setCode(["", "", "", ""]);
+      setTimeout(() => codeRefs[0].current?.focus(), 50);
+    } finally { setLoading(false); }
+  }
 
-  const Card = ({ children }: { children: React.ReactNode }) => (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: "24px" }}>
-      <div style={{
-        background: "#fff", borderRadius: "20px", padding: "48px 40px",
-        boxShadow: "0 8px 48px rgba(22,71,251,0.1)", width: "100%", maxWidth: "380px", textAlign: "center",
-      }}>
-        <div style={{ width: "56px", height: "56px", borderRadius: "16px", background: "#1647FB", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
-          <Sparkle size={28} color="white" />
-        </div>
-        <h1 style={{ fontSize: "22px", fontWeight: 800, color: "#080808", margin: "0 0 6px", letterSpacing: "-0.03em", fontFamily: "Montserrat, sans-serif" }}>
-          Mit Duckert Design
-        </h1>
-        {children}
+  function handleCodeInput(i: number, val: string) {
+    const clean = val.replace(/\D/g, "").slice(-1);
+    const next = [...code];
+    next[i] = clean;
+    setCode(next);
+    if (clean && i < 3) setTimeout(() => codeRefs[i + 1].current?.focus(), 0);
+    if (next.every((d) => d)) {
+      setTimeout(() => {
+        const fullCode = next.join("");
+        setLoading(true); setErr("");
+        api("/api/admin/auth/verify", { method: "POST", body: JSON.stringify({ email, code: fullCode }) })
+          .then((r) => r.json())
+          .then((d) => onLogin((d as { token: string }).token))
+          .catch(() => { setErr("Forkert eller udløbet kode."); setCode(["", "", "", ""]); setTimeout(() => codeRefs[0].current?.focus(), 50); })
+          .finally(() => setLoading(false));
+      }, 0);
+    }
+  }
+
+  function handleCodePaste(e: React.ClipboardEvent) {
+    const digits = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 4);
+    if (digits.length === 4) {
+      e.preventDefault();
+      setCode(digits.split(""));
+    }
+  }
+
+  return (
+    <div style={{ height: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f9f9f9", fontFamily: "Montserrat, sans-serif" }}>
+      <div style={{ background: "#fff", borderRadius: 20, padding: 40, width: 360, boxShadow: "0 4px 40px rgba(0,0,0,0.08)" }}>
+        <div style={{ width: 48, height: 48, background: "#1647FB", borderRadius: 12, marginBottom: 24 }} />
+        <h1 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 6px" }}>Mit Duckert Design</h1>
+        <p style={{ color: "rgba(8,8,8,0.5)", fontSize: 13, margin: "0 0 28px" }}>
+          {step === "email" ? "Indtast din e-mail for at modtage en login-kode." : `Koden er sendt til ${email}.`}
+        </p>
+
+        {step === "email" ? (
+          <>
+            <input
+              type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+              placeholder="din@email.dk" autoFocus
+              onKeyDown={(e) => e.key === "Enter" && requestOtp()}
+              style={{ width: "100%", padding: "12px 16px", border: "1.5px solid #e0e0e0", borderRadius: 10, fontSize: 14, outline: "none", boxSizing: "border-box", marginBottom: 16 }}
+            />
+            <button onClick={requestOtp} disabled={loading || !email.includes("@")}
+              style={{ width: "100%", background: "#1647FB", color: "#fff", border: "none", borderRadius: 10, padding: "12px 0", fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: loading ? 0.6 : 1 }}>
+              {loading ? "Sender…" : "Send kode"}
+            </button>
+          </>
+        ) : (
+          <>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 20 }} onPaste={handleCodePaste}>
+              {code.map((d, i) => (
+                <input
+                  key={i} ref={codeRefs[i]} value={d} maxLength={1} inputMode="numeric"
+                  onChange={(e) => handleCodeInput(i, e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Backspace" && !d && i > 0) codeRefs[i - 1].current?.focus(); }}
+                  style={{ width: 56, height: 64, textAlign: "center", fontSize: 28, fontWeight: 700, border: "2px solid #e0e0e0", borderRadius: 12, outline: "none", color: "#1647FB" }}
+                />
+              ))}
+            </div>
+            <button onClick={verifyOtp} disabled={loading || code.some((d) => !d)}
+              style={{ width: "100%", background: "#1647FB", color: "#fff", border: "none", borderRadius: 10, padding: "12px 0", fontSize: 14, fontWeight: 600, cursor: "pointer", opacity: loading ? 0.6 : 1 }}>
+              {loading ? "Verificerer…" : "Log ind"}
+            </button>
+            <button onClick={() => { setStep("email"); setCode(["", "", "", ""]); setErr(""); }}
+              style={{ marginTop: 10, width: "100%", background: "transparent", border: "none", color: "rgba(8,8,8,0.4)", fontSize: 13, cursor: "pointer" }}>
+              Ændre e-mail
+            </button>
+          </>
+        )}
+
+        {err && <p style={{ color: "#ef4444", fontSize: 13, marginTop: 12, textAlign: "center" }}>{err}</p>}
       </div>
     </div>
   );
-
-  if (step.stage === "email") return (
-    <Card>
-      <p style={{ fontSize: "13px", color: "rgba(8,8,8,0.45)", margin: "0 0 32px", fontFamily: "Montserrat, sans-serif" }}>
-        Indtast din e-mailadresse for at fortsætte
-      </p>
-      <input
-        type="email" value={emailVal} autoFocus
-        onChange={(e) => { setEmailVal(e.target.value); setGlobalErr(null); }}
-        onKeyDown={(e) => e.key === "Enter" && void requestCode()}
-        placeholder="din@email.dk"
-        style={{
-          width: "100%", padding: "12px 16px",
-          border: `1.5px solid ${globalErr ? "#ef4444" : "rgba(22,71,251,0.2)"}`,
-          borderRadius: "10px", fontSize: "14px", fontFamily: "Montserrat, sans-serif",
-          color: "#080808", outline: "none", background: "#fff",
-          boxSizing: "border-box", marginBottom: "12px", transition: "border-color 0.2s",
-        }}
-        onFocus={(e) => { e.target.style.borderColor = globalErr ? "#ef4444" : "#1647FB"; }}
-        onBlur={(e) => { e.target.style.borderColor = globalErr ? "#ef4444" : "rgba(22,71,251,0.2)"; }}
-      />
-      {globalErr && <p style={{ fontSize: "12px", color: "#ef4444", margin: "0 0 12px", fontFamily: "Montserrat, sans-serif", textAlign: "left" }}>{globalErr}</p>}
-      <button onClick={() => void requestCode()} style={{ width: "100%", padding: "12px", background: "#1647FB", color: "#fff", border: "none", borderRadius: "10px", fontSize: "14px", fontFamily: "Montserrat, sans-serif", fontWeight: 700, cursor: "pointer", transition: "opacity 0.2s" }}
-        onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-        onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}>
-        Send kode
-      </button>
-    </Card>
-  );
-
-  if (step.stage === "checking") return (
-    <Card>
-      <p style={{ fontSize: "13px", color: "rgba(8,8,8,0.45)", margin: "0 0 32px", fontFamily: "Montserrat, sans-serif" }}>Tjekker din adresse…</p>
-      <div style={{ display: "flex", justifyContent: "center" }}><Spinner /></div>
-    </Card>
-  );
-
-  if (step.stage === "sent") return (
-    <Card>
-      <p style={{ fontSize: "13px", color: "rgba(8,8,8,0.45)", margin: "0 0 8px", fontFamily: "Montserrat, sans-serif" }}>
-        Sendt til <strong style={{ color: "#080808" }}>{step.email}</strong>
-      </p>
-      <p style={{ fontSize: "13px", color: "rgba(8,8,8,0.45)", margin: "0 0 28px", fontFamily: "Montserrat, sans-serif" }}>Tjek din indbakke</p>
-      <div style={{ display: "flex", justifyContent: "center" }}><Spinner /></div>
-    </Card>
-  );
-
-  const codeEmail   = step.email;
-  const codeErr     = step.stage === "code" ? (step.err ?? null) : null;
-  const isVerifying = step.stage === "verifying";
-
-  return (
-    <Card>
-      <p style={{ fontSize: "13px", color: "rgba(8,8,8,0.45)", margin: "0 0 28px", fontFamily: "Montserrat, sans-serif" }}>
-        Vi har sendt en 4-cifret kode til <strong style={{ color: "#080808" }}>{codeEmail}</strong>
-      </p>
-      <CodeBoxes disabled={isVerifying} hasError={!!codeErr} onComplete={(code) => void verifyCode(code, codeEmail)} />
-      {isVerifying && <div style={{ display: "flex", justifyContent: "center", marginTop: "20px" }}><Spinner /></div>}
-      {codeErr && <p style={{ fontSize: "12px", color: "#ef4444", margin: "14px 0 0", fontFamily: "Montserrat, sans-serif" }}>{codeErr}</p>}
-      <button onClick={() => { setStep({ stage: "email" }); setGlobalErr(null); }}
-        style={{ background: "none", border: "none", fontSize: "12px", color: "rgba(8,8,8,0.38)", fontFamily: "Montserrat, sans-serif", cursor: "pointer", marginTop: "20px", textDecoration: "underline", textUnderlineOffset: "3px" }}>
-        Prøv en anden adresse
-      </button>
-    </Card>
-  );
 }
 
-/* ─── Status badge ────────────────────────────────────────────────────────── */
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { label: string; bg: string; color: string }> = {
-    ai:       { label: "Ledig",            bg: "rgba(8,8,8,0.06)",      color: "rgba(8,8,8,0.5)" },
-    human:    { label: "Ledig",            bg: "rgba(8,8,8,0.06)",      color: "rgba(8,8,8,0.5)" },
-    claimed:  { label: "Under behandling", bg: "rgba(34,197,94,0.1)",   color: "#16a34a" },
-    inactive: { label: "Inaktiv",          bg: "rgba(234,179,8,0.1)",   color: "#b45309" },
-    closed:   { label: "Lukket",           bg: "rgba(8,8,8,0.04)",      color: "rgba(8,8,8,0.35)" },
-    archived: { label: "Arkiveret",        bg: "rgba(139,92,246,0.08)", color: "#7c3aed" },
-  };
-  const s = map[status] ?? map.ai;
-  return (
-    <span style={{
-      background: s.bg, color: s.color,
-      borderRadius: "999px", padding: "4px 12px",
-      fontSize: "11px", fontWeight: 700, fontFamily: "Montserrat, sans-serif",
-    }}>
-      {s.label}
-    </span>
-  );
-}
+// ─── Settings modal ────────────────────────────────────────────────────────────
 
-/* ─── Main admin app ──────────────────────────────────────────────────────── */
-function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) {
-  const [tab, setTab]                         = useState<Tab>("chats");
-  const [chats, setChats]                     = useState<ChatSession[]>([]);
-  const [emails, setEmails]                   = useState<Email[]>([]);
-  const [feedback, setFeedback]               = useState<FeedbackEntry[]>([]);
-  const [selectedChat, setSelectedChat]       = useState<ChatSession | null>(null);
-  const [selectedEmail, setSelectedEmail]     = useState<EmailBody | null>(null);
-  const [loadingEmail, setLoadingEmail]       = useState(false);
-  const [replyText, setReplyText]             = useState("");
-  const [sending, setSending]                 = useState(false);
-  const [notification, setNotification]       = useState<string | null>(null);
-  const [unreadChats, setUnreadChats]         = useState<Set<string>>(new Set());
-  const [unreadMails, setUnreadMails]         = useState(0);
-  const [customerTyping, setCustomerTyping]   = useState<Record<string, boolean>>({});
-  const [slashOpen, setSlashOpen]             = useState(false);
-  const [slashMatches, setSlashMatches]       = useState(SLASH_COMMANDS);
-  const [slashIdx, setSlashIdx]               = useState(0);
-  const [clearConfirm, setClearConfirm]       = useState(false);
+function SettingsModal({ token, onClose }: { token: string; onClose: () => void }) {
+  const [context, setContext] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [pushState, setPushState] = useState<"idle" | "subscribed" | "loading">("idle");
+  const [saved, setSaved] = useState(false);
 
-  const messagesEndRef      = useRef<HTMLDivElement>(null);
-  const sseAbortRef         = useRef<AbortController | null>(null);
-  const msgAudioRef         = useRef<HTMLAudioElement | null>(null);
-  const chatAudioRef        = useRef<HTMLAudioElement | null>(null);
-  const agentTypingRef      = useRef(false);
-  const agentTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const inactiveTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const selectedChatRef     = useRef<ChatSession | null>(null);
-
-  const headers = { "x-admin-key": token, "Content-Type": "application/json" };
-
-  // Unlock audio on first interaction anywhere on the page
   useEffect(() => {
-    const unlock = () => {
-      try {
-        if (!msgAudioRef.current)  msgAudioRef.current  = new Audio("/newmessage.m4a");
-        if (!chatAudioRef.current) chatAudioRef.current = new Audio("/newchat.m4a");
-      } catch {}
-      document.removeEventListener("click",   unlock, true);
-      document.removeEventListener("keydown", unlock, true);
-    };
-    document.addEventListener("click",   unlock, { capture: true, once: true });
-    document.addEventListener("keydown", unlock, { capture: true, once: true });
-    return () => {
-      document.removeEventListener("click",   unlock, true);
-      document.removeEventListener("keydown", unlock, true);
-    };
+    api("/api/admin/ai/context", {}, token).then((r) => r.json()).then((d) => {
+      setContext((d as { context: string }).context ?? "");
+    }).catch(() => {});
+  }, [token]);
+
+  useEffect(() => {
+    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+      navigator.serviceWorker?.ready.then((reg) => {
+        reg.pushManager.getSubscription().then((sub) => {
+          if (sub) setPushState("subscribed");
+        });
+      });
+    }
   }, []);
 
-  // Keep ref in sync with state for use inside callbacks
-  useEffect(() => { selectedChatRef.current = selectedChat; }, [selectedChat]);
-
-  const showNotif = (msg: string) => {
-    setNotification(msg);
-    setTimeout(() => setNotification(null), 3000);
-  };
-
-  const handleUnauthorized = () => {
-    try { sessionStorage.removeItem("duckert-admin-token"); } catch {}
-    onLogout();
-  };
-
-  const playMsgSound = () => {
-    if (typeof window === "undefined" || !document.hidden) return;
+  async function saveContext() {
+    setSaving(true);
     try {
-      if (!msgAudioRef.current) msgAudioRef.current = new Audio("/newmessage.m4a");
-      msgAudioRef.current.currentTime = 0;
-      msgAudioRef.current.play().catch(() => {});
+      await api("/api/admin/ai/context", { method: "POST", body: JSON.stringify({ context }) }, token);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
     } catch {}
-  };
+    setSaving(false);
+  }
 
-  const playChatSound = () => {
-    if (typeof window === "undefined" || !document.hidden) return;
+  async function subscribePush() {
+    setPushState("loading");
     try {
-      if (!chatAudioRef.current) chatAudioRef.current = new Audio("/newchat.m4a");
-      chatAudioRef.current.currentTime = 0;
-      chatAudioRef.current.play().catch(() => {});
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") { setPushState("idle"); return; }
+
+      await navigator.serviceWorker.register("/sw.js");
+      const reg = await navigator.serviceWorker.ready;
+      const vapidRes = await api("/api/admin/push/vapid", {}, token);
+      const { publicKey } = await vapidRes.json() as { publicKey: string };
+
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: publicKey,
+      });
+
+      await api("/api/admin/push/register", { method: "POST", body: JSON.stringify(sub.toJSON()) }, token);
+      setPushState("subscribed");
+    } catch (e) { console.error(e); setPushState("idle"); }
+  }
+
+  async function unsubscribePush() {
+    const reg = await navigator.serviceWorker?.ready;
+    const sub = await reg?.pushManager?.getSubscription();
+    if (sub) {
+      await api("/api/admin/push/register", { method: "DELETE", body: JSON.stringify(sub.toJSON()) }, token);
+      await sub.unsubscribe();
+    }
+    setPushState("idle");
+  }
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, padding: 32, width: 500, maxWidth: "90vw", fontFamily: "Montserrat, sans-serif" }}>
+        <h2 style={{ margin: "0 0 20px", fontSize: 18, fontWeight: 700 }}>Indstillinger</h2>
+
+        <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 6px" }}>AI-kontekst</p>
+        <p style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", margin: "0 0 8px" }}>Beskriv dine services, priser og FAQ. AI bruger dette til at foreslå svar.</p>
+        <textarea value={context} onChange={(e) => setContext(e.target.value)} rows={8}
+          style={{ width: "100%", border: "1.5px solid #e0e0e0", borderRadius: 10, padding: 12, fontSize: 13, resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }} />
+        <button onClick={saveContext} disabled={saving}
+          style={{ marginTop: 8, background: "#1647FB", color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+          {saving ? "Gemmer…" : saved ? "Gemt ✓" : "Gem"}
+        </button>
+
+        <hr style={{ margin: "24px 0", border: "none", borderTop: "1px solid #eee" }} />
+
+        <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 6px" }}>Web Push-notifikationer</p>
+        <p style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", margin: "0 0 12px" }}>Modtag push-beskeder selv når admin-fanen er i baggrunden.</p>
+        {pushState === "subscribed" ? (
+          <button onClick={unsubscribePush} style={{ background: "#fee2e2", color: "#ef4444", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+            Afmeld push
+          </button>
+        ) : (
+          <button onClick={subscribePush} disabled={pushState === "loading"} style={{ background: "#f0f4ff", color: "#1647FB", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+            {pushState === "loading" ? "Aktiverer…" : "Aktiver push"}
+          </button>
+        )}
+
+        <div style={{ marginTop: 24, textAlign: "right" }}>
+          <button onClick={onClose} style={{ background: "transparent", border: "1.5px solid #e0e0e0", borderRadius: 8, padding: "8px 20px", fontSize: 13, cursor: "pointer" }}>
+            Luk
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Chat thread view ──────────────────────────────────────────────────────────
+
+function ChatView({ id, token, onUpdate }: { id: string; token: string; onUpdate: () => void }) {
+  const [session, setSession] = useState<ChatSession | null>(null);
+  const [reply, setReply] = useState("");
+  const [sending, setSending] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [draftLoading, setDraftLoading] = useState(false);
+  const [agentTyping, setAgentTyping] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await api(`/api/admin/chat/${id}`, {}, token);
+      setSession(await res.json() as ChatSession);
     } catch {}
-  };
+  }, [id, token]);
 
-  const loadChats = useCallback(async () => {
-    const res = await fetch("/api/admin/chats", { headers: { "x-admin-key": token } });
-    if (res.status === 401) { handleUnauthorized(); return; }
-    if (res.ok) {
-      const data: ChatSession[] = await res.json();
-      setChats(data);
-      // Update selectedChat if it's in the list
-      const cur = selectedChatRef.current;
-      if (cur) {
-        const updated = data.find((c) => c.id === cur.id);
-        if (updated) setSelectedChat(updated);
-      }
-    }
-  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [session?.messages.length]);
 
-  const loadEmails = useCallback(async () => {
-    const res = await fetch("/api/admin/emails", { headers: { "x-admin-key": token } });
-    if (res.status === 401) { handleUnauthorized(); return; }
-    if (res.ok) {
-      const list: Email[] = await res.json();
-      setEmails(list);
-      setUnreadMails(list.filter((e) => !e.seen).length);
-    }
-  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const loadFeedback = useCallback(async () => {
-    const res = await fetch("/api/admin/feedback", { headers: { "x-admin-key": token } });
-    if (res.status === 401) { handleUnauthorized(); return; }
-    if (res.ok) setFeedback(await res.json());
-  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => { void loadChats(); void loadEmails(); void loadFeedback(); }, [loadChats, loadEmails, loadFeedback]);
-
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [selectedChat?.messages?.length]);
-
-  // SSE for real-time events
-  useEffect(() => {
-    const ctrl = new AbortController();
-    sseAbortRef.current = ctrl;
-
-    (async () => {
-      try {
-        const res = await fetch("/api/admin/events", { headers: { "x-admin-key": token }, signal: ctrl.signal });
-        if (res.status === 401) { handleUnauthorized(); return; }
-        if (!res.ok || !res.body) return;
-        const reader = res.body.getReader();
-        const dec = new TextDecoder();
-        let buf = "";
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buf += dec.decode(value, { stream: true });
-          const lines = buf.split("\n"); buf = lines.pop() ?? "";
-          for (const ln of lines) {
-            if (!ln.startsWith("data: ")) continue;
-            try {
-              const evt = JSON.parse(ln.slice(6)) as {
-                type: string;
-                sessionId?: string;
-                messageId?: string;
-                content?: string;
-                role?: string;
-                ts?: number;
-                typing?: boolean;
-              };
-
-              if (evt.type === "new_chat_session") {
-                void loadChats();
-                if (evt.sessionId) setUnreadChats((prev) => new Set([...prev, evt.sessionId!]));
-                playChatSound();
-              } else if (evt.type === "new_chat_message") {
-                // Patch selectedChat directly if it matches, else reload
-                if (evt.sessionId && selectedChatRef.current?.id === evt.sessionId) {
-                  const newMsg: ChatMsg = {
-                    id: evt.messageId ?? String(Date.now()),
-                    role: (evt.role ?? "user") as ChatMsg["role"],
-                    content: evt.content ?? "",
-                    ts: evt.ts ?? Date.now(),
-                  };
-                  setSelectedChat((prev) => prev ? { ...prev, messages: [...prev.messages, newMsg], updatedAt: evt.ts ?? Date.now() } : null);
-                }
-                void loadChats();
-                if (evt.sessionId) setUnreadChats((prev) => new Set([...prev, evt.sessionId!]));
-                playMsgSound();
-              } else if (evt.type === "customer_typing") {
-                if (evt.sessionId) {
-                  setCustomerTyping((prev) => ({ ...prev, [evt.sessionId!]: !!evt.typing }));
-                }
-              } else if (evt.type === "chat_claimed" || evt.type === "chat_closed" || evt.type === "chat_archived") {
-                if (evt.sessionId && selectedChatRef.current?.id === evt.sessionId) {
-                  setSelectedChat((prev) => prev ? {
-                    ...prev,
-                    status: evt.type === "chat_claimed" ? "claimed" : evt.type === "chat_archived" ? "archived" : "closed",
-                  } : null);
-                }
-                void loadChats();
-              } else if (evt.type === "new_email") {
-                void loadEmails();
-                setUnreadMails((n) => n + 1);
-                playMsgSound();
-              }
-            } catch {}
-          }
-        }
-      } catch {}
-    })();
-
-    return () => ctrl.abort();
-  }, [token, loadChats, loadEmails]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* ── Agent typing → publish to customer ── */
-  const sendAgentTyping = (typing: boolean) => {
-    if (!selectedChatRef.current) return;
-    if (agentTypingRef.current === typing) return;
-    agentTypingRef.current = typing;
-    fetch("/api/admin/typing", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ sessionId: selectedChatRef.current.id, typing }),
-    }).catch(() => {});
-  };
-
-  const stopAgentTyping = () => {
-    if (agentTypingTimerRef.current) clearTimeout(agentTypingTimerRef.current);
-    sendAgentTyping(false);
-  };
-
-  // Stop agent typing when switching chats
-  useEffect(() => {
-    stopAgentTyping();
-    agentTypingRef.current = false;
-    setReplyText("");
-    setSlashOpen(false);
-  }, [selectedChat?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* ── Slash command handler ── */
-  const handleReplyChange = (val: string) => {
-    setReplyText(val);
-    if (val.startsWith("/")) {
-      const matches = SLASH_COMMANDS.filter((c) => c.cmd.startsWith(val.toLowerCase()));
-      setSlashMatches(matches.length ? matches : SLASH_COMMANDS);
-      setSlashOpen(true);
-      setSlashIdx(0);
-      sendAgentTyping(false);
-    } else {
-      setSlashOpen(false);
-      sendAgentTyping(true);
-      if (agentTypingTimerRef.current) clearTimeout(agentTypingTimerRef.current);
-      agentTypingTimerRef.current = setTimeout(() => sendAgentTyping(false), 2000);
-    }
-  };
-
-  const executeSlashCommand = async (cmd: string) => {
-    setReplyText("");
-    setSlashOpen(false);
-    sendAgentTyping(false);
-    const sid = selectedChat?.id;
-    if (!sid) return;
-
-    switch (cmd) {
-      case "/hej": {
-        await fetch("/api/admin/chats/claim", { method: "POST", headers, body: JSON.stringify({ sessionId: sid }) }).catch(() => {});
-        // Immediately update sidebar + header without waiting for loadChats
-        setChats((prev) => prev.map((c) => c.id === sid ? { ...c, status: "claimed" } : c));
-        setSelectedChat((prev) => prev?.id === sid ? { ...prev, status: "claimed" } : prev);
-        const msg = "Hej! Tak fordi du kontaktede Duckert Design. Jeg har overtaget din henvendelse og hjælper dig nu. ✨";
-        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
-        void loadChats();
-        break;
-      }
-      case "/farvel": {
-        const msg = "Tak fordi du kontaktede Duckert Design! Har du flere spørgsmål, er du altid velkommen til at skrive igen. God dag! 👋";
-        await fetch("/api/admin/chats/close", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, sendMessage: msg }) }).catch(() => {});
-        if (inactiveTimerRef.current) { clearTimeout(inactiveTimerRef.current); inactiveTimerRef.current = null; }
-        void loadChats();
-        break;
-      }
-      case "/bye": {
-        const msg = "Tak fordi du kontaktede Duckert Design! Vi håber vi var til hjælp. Hav en god dag! 👋";
-        await fetch("/api/admin/chats/archive", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, sendMessage: msg }) }).catch(() => {});
-        if (inactiveTimerRef.current) { clearTimeout(inactiveTimerRef.current); inactiveTimerRef.current = null; }
-        void loadChats();
-        showNotif("Chat arkiveret — slettes automatisk om 30 dage");
-        break;
-      }
-      case "/luk": {
-        await fetch("/api/admin/chats/close", { method: "POST", headers, body: JSON.stringify({ sessionId: sid }) }).catch(() => {});
-        if (inactiveTimerRef.current) { clearTimeout(inactiveTimerRef.current); inactiveTimerRef.current = null; }
-        void loadChats();
-        break;
-      }
-      case "/inaktiv": {
-        await fetch("/api/admin/chats/status", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, status: "inactive" }) }).catch(() => {});
-        const msg = "Hej! Vi har ikke hørt fra dig i et stykke tid. Skriv venligst inden for 2 minutter, ellers lukker vi chatten automatisk.";
-        await fetch("/api/admin/chats/reply", { method: "POST", headers, body: JSON.stringify({ sessionId: sid, content: msg }) }).catch(() => {});
-        if (inactiveTimerRef.current) clearTimeout(inactiveTimerRef.current);
-        inactiveTimerRef.current = setTimeout(async () => {
-          const farewell = "Vi lukkede chatten grundet inaktivitet. Du er altid velkommen til at skrive igen! 👋";
-          await fetch("/api/admin/chats/close", { method: "POST", headers: { "x-admin-key": token, "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: sid, sendMessage: farewell }) }).catch(() => {});
-          void loadChats();
-        }, 2 * 60 * 1000);
-        void loadChats();
-        showNotif("Inaktivitetstimer startet (2 min)");
-        break;
-      }
-      case "/noter":
-        showNotif("Notat-felt: brug svarboksen til interne noter — kunden ser dem ikke");
-        break;
-    }
-  };
-
-  const handleReplyKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (slashOpen) {
-      if (e.key === "ArrowDown") { e.preventDefault(); setSlashIdx((i) => Math.min(i + 1, slashMatches.length - 1)); return; }
-      if (e.key === "ArrowUp")   { e.preventDefault(); setSlashIdx((i) => Math.max(i - 1, 0)); return; }
-      if (e.key === "Enter" || e.key === "Tab") {
-        e.preventDefault();
-        void executeSlashCommand(slashMatches[slashIdx]?.cmd ?? "");
-        return;
-      }
-      if (e.key === "Escape") { setSlashOpen(false); return; }
-    }
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void sendChatReply();
-  };
-
-  /* ── Chat actions ── */
-  const selectChat = (session: ChatSession) => {
-    setSelectedChat(session);
-    setSelectedEmail(null);
-    setUnreadChats((prev) => { const next = new Set(prev); next.delete(session.id); return next; });
-    if (inactiveTimerRef.current) { clearTimeout(inactiveTimerRef.current); inactiveTimerRef.current = null; }
-  };
-
-  const selectEmail = async (email: Email) => {
-    setSelectedChat(null);
-    setSelectedEmail(null);
-    setLoadingEmail(true);
-    try {
-      const res = await fetch(`/api/admin/emails/${email.uid}`, { headers: { "x-admin-key": token } });
-      if (res.status === 401) { handleUnauthorized(); return; }
-      if (res.ok) setSelectedEmail(await res.json());
-    } finally { setLoadingEmail(false); }
-  };
-
-  const sendChatReply = async () => {
-    if (!selectedChat || !replyText.trim() || sending) return;
-    stopAgentTyping();
+  async function sendReply() {
+    if (!reply.trim()) return;
     setSending(true);
     try {
-      const res = await fetch("/api/admin/chats/reply", {
-        method: "POST", headers,
-        body: JSON.stringify({ sessionId: selectedChat.id, content: replyText.trim() }),
-      });
-      if (res.status === 401) { handleUnauthorized(); return; }
-      if (res.ok) { setReplyText(""); showNotif("Svar sendt!"); void loadChats(); }
-      else showNotif("Fejl ved afsendelse");
-    } finally { setSending(false); }
-  };
+      await api(`/api/admin/chat/${id}/reply`, { method: "POST", body: JSON.stringify({ content: reply }) }, token);
+      setReply(""); setDraft("");
+      await load(); onUpdate();
+    } catch {} finally { setSending(false); }
+  }
 
-  const sendEmailReply = async () => {
-    if (!selectedEmail || !replyText.trim() || sending) return;
-    setSending(true);
-    const fromAddr = selectedEmail.from.match(/<([^>]+)>/)?.[1] ?? selectedEmail.from;
+  async function claim() {
+    try { await api(`/api/admin/chat/${id}/claim`, { method: "POST", body: "{}" }, token); await load(); onUpdate(); } catch {}
+  }
+
+  async function close() {
+    const msg = prompt("Afskedsbeskeds (valgfri, Enter for at springe over):");
+    try { await api(`/api/admin/chat/${id}/close`, { method: "POST", body: JSON.stringify({ message: msg ?? "" }) }, token); await load(); onUpdate(); } catch {}
+  }
+
+  async function getDraft() {
+    setDraftLoading(true);
     try {
-      const res = await fetch("/api/admin/emails/reply", {
-        method: "POST", headers,
-        body: JSON.stringify({
-          to: fromAddr,
-          subject: selectedEmail.subject.startsWith("Re:") ? selectedEmail.subject : `Re: ${selectedEmail.subject}`,
-          body: replyText.trim(),
-        }),
-      });
-      if (res.status === 401) { handleUnauthorized(); return; }
-      if (res.ok) { setReplyText(""); showNotif("Mail sendt!"); }
-      else showNotif("Fejl ved afsendelse");
-    } finally { setSending(false); }
-  };
+      const res = await api("/api/admin/ai/draft", { method: "POST", body: JSON.stringify({ type: "chat", id }) }, token);
+      const { draft: d } = await res.json() as { draft: string };
+      setDraft(d); setReply(d);
+    } catch {}
+    setDraftLoading(false);
+  }
 
-  const claimChat = async () => {
-    if (!selectedChat) return;
-    const res = await fetch("/api/admin/chats/claim", { method: "POST", headers, body: JSON.stringify({ sessionId: selectedChat.id }) });
-    if (res.status === 401) { handleUnauthorized(); return; }
-    if (res.ok) { showNotif("Chat overtaget!"); void loadChats(); }
-  };
+  function sendTyping(typing: boolean) {
+    setAgentTyping(typing);
+    api("/api/admin/typing", { method: "POST", body: JSON.stringify({ sessionId: id, typing }) }, token).catch(() => {});
+  }
 
-  const closeChat = async () => {
-    if (!selectedChat) return;
-    const res = await fetch("/api/admin/chats/close", { method: "POST", headers, body: JSON.stringify({ sessionId: selectedChat.id }) });
-    if (res.status === 401) { handleUnauthorized(); return; }
-    if (res.ok) {
-      if (inactiveTimerRef.current) { clearTimeout(inactiveTimerRef.current); inactiveTimerRef.current = null; }
-      showNotif("Chat lukket.");
-      void loadChats();
-    }
-  };
+  if (!session) return <div style={{ padding: 32, color: "rgba(0,0,0,0.4)" }}>Indlæser…</div>;
 
-  const SIDEBAR_W = 280;
+  const isOpen = !["closed", "archived"].includes(session.status);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", fontFamily: "Montserrat, sans-serif" }}>
-      <style>{`@keyframes dkToast{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`}</style>
-
-      {/* ── Header ── */}
-      <div style={{
-        height: "56px", background: "#1647FB", display: "flex", alignItems: "center",
-        padding: "0 20px", gap: "12px", flexShrink: 0,
-        boxShadow: "0 2px 16px rgba(22,71,251,0.3)",
-      }}>
-        <Sparkle size={20} color="white" />
-        <span style={{ fontSize: "15px", fontWeight: 800, color: "#fff", letterSpacing: "-0.02em", flex: 1 }}>
-          Mit Duckert Design
-        </span>
-        <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.55)", letterSpacing: "0.08em" }}>
-          mit.duckert.design
-        </span>
-        <button onClick={onLogout}
-          style={{
-            background: "rgba(255,255,255,0.15)", border: "none", borderRadius: "8px",
-            padding: "6px 14px", fontSize: "12px", color: "#fff", cursor: "pointer",
-            fontFamily: "Montserrat, sans-serif", fontWeight: 600, transition: "background 0.15s",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.25)")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}>
-          Log ud
-        </button>
-      </div>
-
-      {/* ── Body ── */}
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-
-        {/* ── Sidebar ── */}
-        <div style={{
-          width: `${SIDEBAR_W}px`, flexShrink: 0, background: "#fff",
-          borderRight: "1px solid rgba(22,71,251,0.1)", display: "flex", flexDirection: "column",
-        }}>
-          <div style={{ display: "flex", borderBottom: "1px solid rgba(22,71,251,0.1)", padding: "8px 8px 0" }}>
-            {([["chats", "Live Chat"], ["mails", "Mails"], ["feedback", "Feedback"]] as [Tab, string][]).map(([t, label]) => (
-              <button key={t} onClick={() => { setTab(t); if (t === "feedback") void loadFeedback(); }}
-                style={{
-                  flex: 1, padding: "10px 4px", border: "none", cursor: "pointer",
-                  background: "transparent", fontFamily: "Montserrat, sans-serif",
-                  fontSize: "11px", fontWeight: 700,
-                  color: tab === t ? "#1647FB" : "rgba(8,8,8,0.45)",
-                  borderBottom: `2px solid ${tab === t ? "#1647FB" : "transparent"}`,
-                  transition: "color 0.15s, border-color 0.15s", position: "relative",
-                }}>
-                {label}
-                {t === "chats" && unreadChats.size > 0 && (
-                  <span style={{ position: "absolute", top: "6px", right: "4px", background: "#1647FB", color: "#fff", borderRadius: "999px", fontSize: "9px", fontWeight: 800, padding: "1px 5px", lineHeight: "14px" }}>{unreadChats.size}</span>
-                )}
-                {t === "mails" && unreadMails > 0 && (
-                  <span style={{ position: "absolute", top: "6px", right: "4px", background: "#ef4444", color: "#fff", borderRadius: "999px", fontSize: "9px", fontWeight: 800, padding: "1px 5px", lineHeight: "14px" }}>{unreadMails}</span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          <div style={{ flex: 1, overflowY: "auto" }}>
-            {tab === "chats" && (
-              chats.length === 0
-                ? <p style={{ padding: "24px 16px", fontSize: "13px", color: "rgba(8,8,8,0.4)", textAlign: "center" }}>Ingen chats endnu</p>
-                : chats.map((s) => {
-                    const last = s.messages.filter((m) => m.role !== "system").at(-1);
-                    const isSelected = selectedChat?.id === s.id;
-                    const hasUnread = unreadChats.has(s.id);
-                    const dotColor = s.status === "claimed" ? "#22c55e" : s.status === "inactive" ? "#eab308" : s.status === "archived" ? "#8b5cf6" : s.status === "closed" ? "#d1d5db" : "#d1d5db";
-                    return (
-                      <div key={s.id} onClick={() => selectChat(s)}
-                        style={{
-                          padding: "12px 16px", cursor: "pointer",
-                          background: isSelected ? "rgba(22,71,251,0.06)" : "transparent",
-                          borderLeft: `3px solid ${isSelected ? "#1647FB" : "transparent"}`,
-                          borderBottom: "1px solid rgba(22,71,251,0.06)", transition: "background 0.15s",
-                        }}
-                        onMouseEnter={(e) => { if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = "rgba(22,71,251,0.03)"; }}
-                        onMouseLeave={(e) => { if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
-                          <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
-                          <span style={{ fontSize: "12px", fontWeight: hasUnread ? 800 : 600, color: "#080808", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {s.status === "claimed" ? "Under behandling" : s.status === "inactive" ? "Inaktiv" : s.status === "closed" ? "Lukket" : s.status === "archived" ? "Arkiveret" : "Ledig"}
-                          </span>
-                          <span style={{ fontSize: "10px", color: "rgba(8,8,8,0.4)", flexShrink: 0 }}>{fmtTime(s.updatedAt)}</span>
-                          {hasUnread && <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#1647FB", flexShrink: 0 }} />}
-                        </div>
-                        <p style={{ fontSize: "11px", color: "rgba(8,8,8,0.5)", margin: "0 0 0 16px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {last?.content?.slice(0, 50) ?? "Ingen beskeder"}
-                        </p>
-                      </div>
-                    );
-                  })
-            )}
-
-            {tab === "mails" && (
-              emails.length === 0
-                ? <p style={{ padding: "24px 16px", fontSize: "13px", color: "rgba(8,8,8,0.4)", textAlign: "center" }}>Ingen mails</p>
-                : emails.map((e) => {
-                    const isSelected = selectedEmail?.uid === e.uid;
-                    return (
-                      <div key={e.uid} onClick={() => void selectEmail(e)}
-                        style={{
-                          padding: "14px 16px", cursor: "pointer",
-                          background: isSelected ? "rgba(22,71,251,0.06)" : "transparent",
-                          borderLeft: `3px solid ${isSelected ? "#1647FB" : "transparent"}`,
-                          borderBottom: "1px solid rgba(22,71,251,0.06)", transition: "background 0.15s",
-                        }}
-                        onMouseEnter={(ev) => { if (!isSelected) (ev.currentTarget as HTMLDivElement).style.background = "rgba(22,71,251,0.03)"; }}
-                        onMouseLeave={(ev) => { if (!isSelected) (ev.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                          <div style={{
-                            width: "28px", height: "28px", borderRadius: "50%",
-                            background: e.seen ? "#e5e7eb" : "#1647FB",
-                            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                            fontSize: "10px", fontWeight: 800, color: e.seen ? "#6b7280" : "#fff",
-                          }}>
-                            {initials(e.from)}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between" }}>
-                              <span style={{ fontSize: "11px", fontWeight: e.seen ? 500 : 800, color: "#080808", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "150px" }}>
-                                {e.from.replace(/<[^>]+>/, "").trim() || e.from}
-                              </span>
-                              <span style={{ fontSize: "10px", color: "rgba(8,8,8,0.4)", flexShrink: 0 }}>{fmtTime(e.date)}</span>
-                            </div>
-                            <p style={{ fontSize: "11px", color: "rgba(8,8,8,0.55)", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{e.subject}</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-            )}
-
-            {tab === "feedback" && (
-              feedback.length === 0
-                ? <p style={{ padding: "24px 16px", fontSize: "13px", color: "rgba(8,8,8,0.4)", textAlign: "center" }}>Ingen feedback endnu</p>
-                : feedback.map((f) => {
-                    const chat = chats.find((c) => c.id === f.sessionId);
-                    return (
-                      <div key={f.id}
-                        onClick={() => {
-                          if (chat) { setSelectedChat(chat); setSelectedEmail(null); setTab("chats"); }
-                          else showNotif("Chat ikke fundet (muligvis slettet)");
-                        }}
-                        style={{
-                          padding: "12px 16px",
-                          borderBottom: "1px solid rgba(22,71,251,0.06)",
-                          display: "flex", alignItems: "center", gap: "12px",
-                          cursor: chat ? "pointer" : "default",
-                          transition: "background 0.12s",
-                        }}
-                        onMouseEnter={(e) => { if (chat) (e.currentTarget as HTMLDivElement).style.background = "rgba(22,71,251,0.03)"; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-                      >
-                        <span style={{ fontSize: "22px", lineHeight: 1 }}>{FEEDBACK_EMOJIS[(f.rating - 1)] ?? "😐"}</span>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: "12px", fontWeight: 600, color: "#080808" }}>
-                            {FEEDBACK_LABELS[(f.rating - 1)] ?? "Okay"}
-                          </div>
-                          <div style={{ fontSize: "10px", color: "rgba(8,8,8,0.4)" }}>
-                            {f.sessionId.slice(0, 8)}… · {fmtTime(f.createdAt)}
-                            {chat && <span style={{ color: "#1647FB", marginLeft: "4px" }}>↗ Se chat</span>}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-            )}
-          </div>
-
-          <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(22,71,251,0.08)", display: "flex", flexDirection: "column", gap: "8px" }}>
-            {clearConfirm ? (
-              <div style={{ display: "flex", gap: "6px" }}>
-                <button
-                  onClick={async () => {
-                    setClearConfirm(false);
-                    const res = await fetch("/api/admin/chats/clear", { method: "POST", headers });
-                    if (res.ok) { showNotif("Alle chats slettet"); void loadChats(); setSelectedChat(null); }
-                    else showNotif("Fejl ved sletning");
-                  }}
-                  style={{ flex: 1, padding: "7px", background: "rgba(239,68,68,0.1)", border: "none", borderRadius: "8px", fontSize: "11px", fontFamily: "Montserrat, sans-serif", fontWeight: 700, color: "#ef4444", cursor: "pointer" }}>
-                  Bekræft slet
-                </button>
-                <button onClick={() => setClearConfirm(false)} style={{ flex: 1, padding: "7px", background: "rgba(8,8,8,0.06)", border: "none", borderRadius: "8px", fontSize: "11px", fontFamily: "Montserrat, sans-serif", fontWeight: 600, color: "rgba(8,8,8,0.55)", cursor: "pointer" }}>
-                  Annuller
-                </button>
-              </div>
-            ) : (
-              <button onClick={() => setClearConfirm(true)}
-                style={{
-                  width: "100%", padding: "8px", background: "transparent",
-                  border: "1px solid rgba(239,68,68,0.2)", borderRadius: "8px", fontSize: "12px",
-                  fontFamily: "Montserrat, sans-serif", fontWeight: 600, color: "rgba(239,68,68,0.7)",
-                  cursor: "pointer", transition: "background 0.15s, border-color 0.15s",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.06)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.4)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.2)"; }}>
-                Ryd alle chats
-              </button>
-            )}
+      {/* Header */}
+      <div style={{ padding: "16px 24px", borderBottom: "1px solid #f0f0f0", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>Live chat — {id.slice(0, 8)}</div>
+          <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>
+            <span style={{ background: statusColor(session.status), display: "inline-block", width: 7, height: 7, borderRadius: "50%", marginRight: 5 }} />
+            {statusLabel(session.status)}
           </div>
         </div>
+        {isOpen && session.status !== "claimed" && (
+          <button onClick={claim} style={{ background: "#f0f4ff", color: "#1647FB", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+            Kræv
+          </button>
+        )}
+        {isOpen && (
+          <button onClick={close} style={{ background: "#fee2e2", color: "#ef4444", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+            Luk chat
+          </button>
+        )}
+      </div>
 
-        {/* ── Main panel ── */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-
-          {!selectedChat && !selectedEmail && !loadingEmail && (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", color: "rgba(8,8,8,0.35)" }}>
-              <div style={{ width: "64px", height: "64px", borderRadius: "18px", background: "rgba(22,71,251,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Sparkle size={28} color="rgba(22,71,251,0.4)" />
-              </div>
-              <p style={{ fontSize: "14px", fontWeight: 600, fontFamily: "Montserrat, sans-serif", margin: 0 }}>
-                Vælg en chat eller mail for at se detaljer
-              </p>
-            </div>
-          )}
-
-          {loadingEmail && (
-            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Spinner />
-            </div>
-          )}
-
-          {selectedChat && (
-            <>
-              {/* Chat header */}
+      {/* Messages */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 12 }}>
+        {session.messages.filter((m) => m.role !== "system").map((m) => {
+          const isUser = m.role === "user";
+          const isAdmin = m.role === "admin";
+          return (
+            <div key={m.id} style={{ display: "flex", justifyContent: isUser ? "flex-start" : "flex-end" }}>
               <div style={{
-                padding: "14px 20px", background: "#fff",
-                borderBottom: "1px solid rgba(22,71,251,0.08)",
-                display: "flex", alignItems: "center", gap: "10px", flexShrink: 0,
+                maxWidth: "72%", padding: "10px 14px", borderRadius: isUser ? "4px 16px 16px 16px" : "16px 4px 16px 16px",
+                background: isAdmin ? "#1647FB" : isUser ? "#f5f5f5" : "#e8f0ff",
+                color: isAdmin ? "#fff" : "#080808",
+                fontSize: 13, lineHeight: 1.5,
               }}>
-                <div>
-                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#080808", fontFamily: "Montserrat, sans-serif" }}>
-                    {selectedChat.messages.length} beskeder · oprettet {fmtTime(selectedChat.createdAt)}
-                  </div>
-                  <div style={{ fontSize: "11px", color: "rgba(8,8,8,0.4)", fontFamily: "Montserrat, sans-serif" }}>
-                    {selectedChat.id.slice(0, 12)}…
-                  </div>
-                </div>
-                <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <StatusBadge status={selectedChat.status} />
-                  {selectedChat.status !== "claimed" && selectedChat.status !== "closed" && selectedChat.status !== "archived" && (
-                    <button onClick={() => void claimChat()}
-                      style={{
-                        background: "rgba(34,197,94,0.1)", border: "none", borderRadius: "8px",
-                        padding: "5px 12px", fontSize: "11px", fontFamily: "Montserrat, sans-serif",
-                        fontWeight: 700, color: "#16a34a", cursor: "pointer", transition: "background 0.15s",
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(34,197,94,0.18)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(34,197,94,0.1)")}>
-                      Overtag
-                    </button>
-                  )}
-                  {selectedChat.status !== "closed" && selectedChat.status !== "archived" && (
-                    <button onClick={() => void closeChat()}
-                      style={{
-                        background: "rgba(239,68,68,0.08)", border: "none", borderRadius: "8px",
-                        padding: "5px 12px", fontSize: "11px", fontFamily: "Montserrat, sans-serif",
-                        fontWeight: 700, color: "#ef4444", cursor: "pointer", transition: "background 0.15s",
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(239,68,68,0.15)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(239,68,68,0.08)")}>
-                      Luk chat
-                    </button>
-                  )}
-                </div>
+                {!isUser && !isAdmin && <div style={{ fontSize: 11, marginBottom: 4, opacity: 0.6 }}>AI</div>}
+                {m.content}
+                <div style={{ fontSize: 10, marginTop: 4, opacity: 0.5, textAlign: "right" }}>{fmtTime(m.ts)}</div>
               </div>
-
-              {/* Messages */}
-              <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: "10px", background: "#f9f9fb" }}>
-                {selectedChat.messages.filter((m) => m.content).map((msg) => {
-                  // System message — centered badge
-                  if (msg.role === "system") {
-                    return (
-                      <div key={msg.id} style={{ display: "flex", justifyContent: "center", padding: "4px 0" }}>
-                        <span style={{
-                          background: "rgba(8,8,8,0.06)", color: "rgba(8,8,8,0.5)",
-                          borderRadius: "999px", padding: "5px 18px",
-                          fontSize: "11px", fontWeight: 600, fontFamily: "Montserrat, sans-serif",
-                        }}>
-                          {msg.content}
-                        </span>
-                      </div>
-                    );
-                  }
-                  const isUser  = msg.role === "user";
-                  const align   = isUser ? "flex-end" : "flex-start";
-                  const label   = isUser ? "Bruger" : msg.role === "admin" ? "Du (admin)" : "AI";
-                  return (
-                    <div key={msg.id} style={{ display: "flex", flexDirection: "column", alignItems: align, gap: "3px" }}>
-                      <div style={{ fontSize: "10px", color: "rgba(8,8,8,0.4)", fontFamily: "Montserrat, sans-serif", fontWeight: 600 }}>
-                        {label} · {fmtTime(msg.ts)}
-                      </div>
-                      <div style={{
-                        maxWidth: "75%", background: "#f2f2f2", color: "#080808",
-                        padding: "10px 14px", borderRadius: "12px",
-                        fontSize: "13px", lineHeight: 1.6, fontFamily: "Montserrat, sans-serif",
-                        whiteSpace: "pre-wrap", wordBreak: "break-word",
-                      }}>
-                        {msg.content}
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {/* Customer typing */}
-                {customerTyping[selectedChat.id] && (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "3px" }}>
-                    <div style={{ fontSize: "10px", color: "rgba(8,8,8,0.4)", fontFamily: "Montserrat, sans-serif", fontWeight: 600 }}>
-                      Bruger skriver…
-                    </div>
-                    <div style={{ background: "#f2f2f2", padding: "10px 14px", borderRadius: "12px" }}>
-                      <BouncingDots />
-                    </div>
-                  </div>
-                )}
-
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Reply area */}
-              <div style={{ padding: "14px 20px", background: "#fff", borderTop: "1px solid rgba(22,71,251,0.08)", flexShrink: 0, position: "relative" }}>
-                {/* Slash command picker */}
-                {slashOpen && slashMatches.length > 0 && (
-                  <div style={{
-                    position: "absolute", bottom: "100%", left: "20px", right: "20px",
-                    background: "#fff", borderRadius: "12px",
-                    boxShadow: "0 -4px 24px rgba(0,0,0,0.1)",
-                    border: "1px solid rgba(22,71,251,0.12)",
-                    overflow: "hidden", marginBottom: "4px", zIndex: 10,
-                  }}>
-                    {slashMatches.map((sc, i) => (
-                      <button
-                        key={sc.cmd}
-                        onClick={() => void executeSlashCommand(sc.cmd)}
-                        style={{
-                          display: "flex", alignItems: "center", gap: "12px",
-                          width: "100%", padding: "10px 14px", border: "none", cursor: "pointer",
-                          background: i === slashIdx ? "rgba(22,71,251,0.06)" : "transparent",
-                          textAlign: "left", transition: "background 0.1s",
-                        }}
-                        onMouseEnter={() => setSlashIdx(i)}
-                      >
-                        <code style={{ fontSize: "12px", fontWeight: 700, color: "#1647FB", fontFamily: "monospace", minWidth: "70px" }}>
-                          {sc.cmd}
-                        </code>
-                        <span style={{ fontSize: "12px", color: "rgba(8,8,8,0.55)", fontFamily: "Montserrat, sans-serif" }}>
-                          {sc.desc}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {selectedChat.status === "closed" || selectedChat.status === "archived" ? (
-                  <p style={{ textAlign: "center", fontSize: "12px", color: "rgba(8,8,8,0.4)", fontFamily: "Montserrat, sans-serif", margin: 0 }}>
-                    {selectedChat.status === "archived" ? "Chatten er arkiveret" : "Chatten er lukket"}
-                  </p>
-                ) : (
-                  <div style={{ display: "flex", gap: "10px", alignItems: "flex-end" }}>
-                    <textarea
-                      value={replyText}
-                      onChange={(e) => handleReplyChange(e.target.value)}
-                      onKeyDown={handleReplyKeyDown}
-                      onBlur={() => sendAgentTyping(false)}
-                      placeholder="Svar til brugeren… (⌘↵ sender, / for kommandoer)"
-                      rows={3}
-                      style={{
-                        flex: 1, padding: "12px 14px", border: "1.5px solid rgba(22,71,251,0.18)",
-                        borderRadius: "12px", fontSize: "13px", fontFamily: "Montserrat, sans-serif",
-                        color: "#080808", resize: "none", outline: "none", transition: "border-color 0.2s",
-                      }}
-                      onFocus={(e) => (e.target.style.borderColor = "#1647FB")}
-                    />
-                    <button onClick={() => void sendChatReply()} disabled={!replyText.trim() || sending}
-                      style={{
-                        background: replyText.trim() && !sending ? "#1647FB" : "rgba(22,71,251,0.2)",
-                        border: "none", borderRadius: "12px", padding: "12px 20px",
-                        fontSize: "13px", fontFamily: "Montserrat, sans-serif", fontWeight: 700,
-                        color: replyText.trim() && !sending ? "#fff" : "rgba(22,71,251,0.5)",
-                        cursor: replyText.trim() && !sending ? "pointer" : "default",
-                        transition: "background 0.2s, color 0.2s", flexShrink: 0, height: "fit-content",
-                      }}>
-                      {sending ? "Sender…" : "Send"}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-
-          {selectedEmail && !loadingEmail && (
-            <>
-              <div style={{ padding: "16px 24px", background: "#fff", borderBottom: "1px solid rgba(22,71,251,0.08)", flexShrink: 0 }}>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
-                  <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "#1647FB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: 800, color: "#fff", flexShrink: 0 }}>
-                    {initials(selectedEmail.from)}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <h2 style={{ fontSize: "15px", fontWeight: 800, color: "#080808", margin: "0 0 4px", fontFamily: "Montserrat, sans-serif", letterSpacing: "-0.01em" }}>
-                      {selectedEmail.subject}
-                    </h2>
-                    <p style={{ fontSize: "12px", color: "rgba(8,8,8,0.55)", margin: 0, fontFamily: "Montserrat, sans-serif" }}>
-                      Fra: <strong>{selectedEmail.from}</strong> · {fmtTime(selectedEmail.date)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div style={{ flex: 1, overflowY: "auto", padding: "24px", background: "#f9f9fb" }}>
-                <div style={{ background: "#fff", borderRadius: "14px", padding: "24px", boxShadow: "0 1px 8px rgba(0,0,0,0.05)", fontSize: "14px", lineHeight: 1.75, color: "#222", fontFamily: "Montserrat, sans-serif", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                  {selectedEmail.text ?? "(Ingen tekstindhold)"}
-                </div>
-              </div>
-              <div style={{ padding: "16px 24px", background: "#fff", borderTop: "1px solid rgba(22,71,251,0.08)", flexShrink: 0 }}>
-                <p style={{ fontSize: "11px", color: "rgba(8,8,8,0.45)", margin: "0 0 8px", fontFamily: "Montserrat, sans-serif" }}>
-                  Svar til: <strong>{selectedEmail.from}</strong>
-                </p>
-                <div style={{ display: "flex", gap: "10px", alignItems: "flex-end" }}>
-                  <textarea
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void sendEmailReply(); }}
-                    placeholder="Skriv dit svar… (⌘↵ sender)"
-                    rows={4}
-                    style={{ flex: 1, padding: "12px 14px", border: "1.5px solid rgba(22,71,251,0.18)", borderRadius: "12px", fontSize: "13px", fontFamily: "Montserrat, sans-serif", color: "#080808", resize: "none", outline: "none", transition: "border-color 0.2s" }}
-                    onFocus={(e) => (e.target.style.borderColor = "#1647FB")}
-                    onBlur={(e) => (e.target.style.borderColor = "rgba(22,71,251,0.18)")}
-                  />
-                  <button onClick={() => void sendEmailReply()} disabled={!replyText.trim() || sending}
-                    style={{ background: replyText.trim() && !sending ? "#1647FB" : "rgba(22,71,251,0.2)", border: "none", borderRadius: "12px", padding: "12px 20px", fontSize: "13px", fontFamily: "Montserrat, sans-serif", fontWeight: 700, color: replyText.trim() && !sending ? "#fff" : "rgba(22,71,251,0.5)", cursor: replyText.trim() && !sending ? "pointer" : "default", transition: "background 0.2s, color 0.2s", flexShrink: 0, height: "fit-content" }}>
-                    {sending ? "Sender…" : "Send mail"}
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+            </div>
+          );
+        })}
+        <div ref={bottomRef} />
       </div>
 
-      {notification && (
-        <div style={{
-          position: "fixed", bottom: "24px", left: "50%", transform: "translateX(-50%)",
-          background: "#080808", color: "#fff", padding: "10px 20px", borderRadius: "999px",
-          fontSize: "13px", fontFamily: "Montserrat, sans-serif", fontWeight: 600,
-          zIndex: 9999, animation: "dkToast 0.25s ease both",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.25)",
-        }}>
-          {notification}
+      {/* Reply box */}
+      {isOpen && (
+        <div style={{ padding: "16px 24px", borderTop: "1px solid #f0f0f0", flexShrink: 0 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <button onClick={getDraft} disabled={draftLoading} style={{ background: "#f0f4ff", color: "#1647FB", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+              {draftLoading ? "Genererer…" : "✨ AI-udkast"}
+            </button>
+          </div>
+          <textarea
+            value={reply} onChange={(e) => { setReply(e.target.value); if (!agentTyping) sendTyping(true); }}
+            onBlur={() => sendTyping(false)}
+            onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendReply(); } }}
+            placeholder="Skriv svar… (Cmd+Enter for at sende)"
+            rows={3}
+            style={{ width: "100%", border: "1.5px solid #e0e0e0", borderRadius: 10, padding: "10px 14px", fontSize: 13, resize: "none", boxSizing: "border-box", fontFamily: "inherit", outline: "none" }}
+          />
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+            <button onClick={sendReply} disabled={sending || !reply.trim()}
+              style={{ background: "#1647FB", color: "#fff", border: "none", borderRadius: 10, padding: "10px 24px", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: sending || !reply.trim() ? 0.5 : 1 }}>
+              {sending ? "Sender…" : "Send"}
+            </button>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-/* ─── Root ────────────────────────────────────────────────────────────────── */
-export default function MitPage() {
-  const [token, setToken] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return sessionStorage.getItem("duckert-admin-token");
+// ─── Email thread view ─────────────────────────────────────────────────────────
+
+function EmailView({ id, token, onUpdate }: { id: string; token: string; onUpdate: () => void }) {
+  const [thread, setThread] = useState<EmailThread | null>(null);
+  const [reply, setReply] = useState("");
+  const [sending, setSending] = useState(false);
+  const [draftLoading, setDraftLoading] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await api(`/api/admin/email/${id}`, {}, token);
+      setThread(await res.json() as EmailThread);
+    } catch {}
+  }, [id, token]);
+
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [thread?.messages.length]);
+
+  async function sendReply() {
+    if (!reply.trim()) return;
+    setSending(true);
+    try {
+      await api(`/api/admin/email/${id}/reply`, { method: "POST", body: JSON.stringify({ body: reply }) }, token);
+      setReply(""); await load(); onUpdate();
+    } catch {} finally { setSending(false); }
+  }
+
+  async function getDraft() {
+    setDraftLoading(true);
+    try {
+      const res = await api("/api/admin/ai/draft", { method: "POST", body: JSON.stringify({ type: "email", id }) }, token);
+      const { draft } = await res.json() as { draft: string };
+      setReply(draft);
+    } catch {}
+    setDraftLoading(false);
+  }
+
+  if (!thread) return <div style={{ padding: 32, color: "rgba(0,0,0,0.4)" }}>Indlæser…</div>;
+
+  const isOpen = thread.status !== "closed";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", fontFamily: "Montserrat, sans-serif" }}>
+      {/* Header */}
+      <div style={{ padding: "16px 24px", borderBottom: "1px solid #f0f0f0", flexShrink: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{thread.subject}</div>
+        <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)" }}>
+          <span style={{ background: statusColor(thread.status), display: "inline-block", width: 7, height: 7, borderRadius: "50%", marginRight: 5 }} />
+          {statusLabel(thread.status)} · {thread.participants.join(", ")}
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+        {thread.messages.map((m) => (
+          <div key={m.id} style={{ borderRadius: 12, border: "1px solid #f0f0f0", overflow: "hidden" }}>
+            <div style={{ padding: "10px 16px", background: m.direction === "inbound" ? "#f8f9ff" : "#f0f4ff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: 12, fontWeight: 600 }}>{m.from}</div>
+              <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)" }}>{fmtTime(m.ts)}</div>
+            </div>
+            <div style={{ padding: "14px 16px", fontSize: 13, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
+              {m.text ?? (m.html ? <span dangerouslySetInnerHTML={{ __html: m.html }} /> : "(ingen indhold)")}
+            </div>
+          </div>
+        ))}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Reply box */}
+      {isOpen && (
+        <div style={{ padding: "16px 24px", borderTop: "1px solid #f0f0f0", flexShrink: 0 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <button onClick={getDraft} disabled={draftLoading} style={{ background: "#f0f4ff", color: "#1647FB", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+              {draftLoading ? "Genererer…" : "✨ AI-udkast"}
+            </button>
+          </div>
+          <textarea value={reply} onChange={(e) => setReply(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendReply(); } }}
+            placeholder="Skriv svar… (Cmd+Enter for at sende)"
+            rows={4}
+            style={{ width: "100%", border: "1.5px solid #e0e0e0", borderRadius: 10, padding: "10px 14px", fontSize: 13, resize: "none", boxSizing: "border-box", fontFamily: "inherit", outline: "none" }}
+          />
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+            <button onClick={sendReply} disabled={sending || !reply.trim()}
+              style={{ background: "#1647FB", color: "#fff", border: "none", borderRadius: 10, padding: "10px 24px", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: sending || !reply.trim() ? 0.5 : 1 }}>
+              {sending ? "Sender…" : "Besvar"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main admin app ────────────────────────────────────────────────────────────
+
+function AdminApp({ token, onLogout }: { token: string; onLogout: () => void }) {
+  const [inbox, setInbox] = useState<InboxEntry[]>([]);
+  const [view, setView] = useState<View>(null);
+  const [search, setSearch] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+  const [unread, setUnread] = useState<Set<string>>(new Set());
+
+  const loadInbox = useCallback(async () => {
+    try {
+      const res = await api("/api/admin/inbox", {}, token);
+      setInbox(await res.json() as InboxEntry[]);
+    } catch {}
+  }, [token]);
+
+  useEffect(() => { loadInbox(); }, [loadInbox]);
+
+  // SSE admin events
+  useEffect(() => {
+    let es: EventSource;
+    let closed = false;
+
+    function connect() {
+      es = new EventSource(`/api/admin/events?token=${encodeURIComponent(token)}`);
+      es.onmessage = (e) => {
+        try {
+          const ev = JSON.parse(e.data) as AdminEvent;
+          if (ev.type === "new_email" || ev.type === "new_chat_session" || ev.type === "new_chat_message") {
+            loadInbox();
+            const id = ev.threadId ?? ev.sessionId;
+            if (id) {
+              setUnread((prev) => new Set(prev).add(id));
+              playSound("/newmessage.m4a");
+            }
+          }
+        } catch {}
+      };
+      es.onerror = () => { if (!closed) setTimeout(connect, 3000); };
+    }
+
+    // SSE requires auth header — but EventSource doesn't support headers.
+    // We'll use a query-param token approach: the event stream checks a temp cookie.
+    // For now, rely on same-origin session cookie or rebuild with fetch-based SSE.
+    connect();
+    return () => { closed = true; es.close(); };
+  }, [token, loadInbox]);
+
+  const filtered = inbox.filter((item) => {
+    const q = search.toLowerCase();
+    if (!q) return true;
+    if (item.kind === "email") return item.subject.toLowerCase().includes(q) || item.from.toLowerCase().includes(q);
+    return item.preview.toLowerCase().includes(q) || item.id.includes(q);
   });
 
-  const handleLogin = (t: string) => {
-    try { sessionStorage.setItem("duckert-admin-token", t); } catch {}
-    setToken(t);
-  };
+  function openItem(item: InboxEntry) {
+    setView({ kind: item.kind, id: item.id });
+    setUnread((prev) => { const n = new Set(prev); n.delete(item.id); return n; });
+  }
 
-  const handleLogout = () => {
-    try { sessionStorage.removeItem("duckert-admin-token"); } catch {}
+  return (
+    <div style={{ display: "flex", height: "100dvh", fontFamily: "Montserrat, sans-serif", background: "#fff" }}>
+      {/* Sidebar */}
+      <div style={{ width: 300, borderRight: "1px solid #f0f0f0", display: "flex", flexDirection: "column", flexShrink: 0 }}>
+        {/* Sidebar header */}
+        <div style={{ padding: "16px 16px 12px", borderBottom: "1px solid #f0f0f0", display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 28, height: 28, background: "#1647FB", borderRadius: 8, flexShrink: 0 }} />
+          <span style={{ fontWeight: 700, fontSize: 14, flex: 1 }}>Indbakke</span>
+          <button onClick={() => setShowSettings(true)} title="Indstillinger"
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "rgba(0,0,0,0.4)", fontSize: 16 }}>⚙</button>
+          <button onClick={onLogout} title="Log ud"
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "rgba(0,0,0,0.4)", fontSize: 13 }}>↩</button>
+        </div>
+
+        {/* Search */}
+        <div style={{ padding: "10px 12px" }}>
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Søg…"
+            style={{ width: "100%", padding: "8px 12px", border: "1.5px solid #f0f0f0", borderRadius: 10, fontSize: 13, outline: "none", boxSizing: "border-box", background: "#f9f9f9" }} />
+        </div>
+
+        {/* Inbox list */}
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          {filtered.length === 0 && (
+            <div style={{ padding: "32px 16px", textAlign: "center", color: "rgba(0,0,0,0.3)", fontSize: 13 }}>
+              {inbox.length === 0 ? "Ingen samtaler endnu" : "Ingen resultater"}
+            </div>
+          )}
+          {filtered.map((item) => {
+            const isActive = view?.id === item.id;
+            const hasUnread = unread.has(item.id);
+            return (
+              <button key={`${item.kind}:${item.id}`} onClick={() => openItem(item)}
+                style={{
+                  width: "100%", textAlign: "left", padding: "12px 16px", border: "none", cursor: "pointer",
+                  background: isActive ? "#f0f4ff" : "transparent",
+                  borderLeft: isActive ? "3px solid #1647FB" : "3px solid transparent",
+                  display: "block",
+                }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, flex: 1 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: statusColor(item.status), flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, fontWeight: hasUnread ? 700 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {item.kind === "email" ? item.subject : `Chat ${item.id.slice(0, 8)}`}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                    {hasUnread && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#1647FB" }} />}
+                    <span style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>{fmtTime(item.updatedAt)}</span>
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, color: "rgba(0,0,0,0.4)", marginTop: 3, marginLeft: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {item.kind === "email" ? item.from : item.preview}
+                </div>
+                <div style={{ marginTop: 4, marginLeft: 14 }}>
+                  <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 20, background: "#f0f0f0", color: "rgba(0,0,0,0.45)" }}>
+                    {item.kind === "email" ? "📧" : "💬"} {statusLabel(item.status)}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+        {!view ? (
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(0,0,0,0.25)", fontSize: 14 }}>
+            Vælg en samtale fra indbakken
+          </div>
+        ) : view.kind === "chat" ? (
+          <ChatView key={view.id} id={view.id} token={token} onUpdate={loadInbox} />
+        ) : (
+          <EmailView key={view.id} id={view.id} token={token} onUpdate={loadInbox} />
+        )}
+      </div>
+
+      {showSettings && <SettingsModal token={token} onClose={() => setShowSettings(false)} />}
+    </div>
+  );
+}
+
+// ─── Root ─────────────────────────────────────────────────────────────────────
+
+export default function MitPage() {
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem("admin-token");
+    if (stored) setToken(stored);
+  }, []);
+
+  function handleLogin(t: string) {
+    sessionStorage.setItem("admin-token", t);
+    setToken(t);
+  }
+
+  function handleLogout() {
+    sessionStorage.removeItem("admin-token");
     setToken(null);
-  };
+  }
 
   if (!token) return <LoginScreen onLogin={handleLogin} />;
   return <AdminApp token={token} onLogout={handleLogout} />;
