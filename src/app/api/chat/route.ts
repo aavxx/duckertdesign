@@ -46,6 +46,8 @@ type GptMessage = {
 async function persistSession(session: ChatSession) {
   await redis.set(`chat:session:${session.id}`, JSON.stringify(session));
   await redis.sadd("chat:sessions:index", session.id);
+  // Keep unified inbox sorted set in sync so admin inbox always reflects this session
+  await redis.zadd("inbox:idx", { score: session.updatedAt, member: `chat:${session.id}` });
 }
 
 async function publishAdminEvent(event: AdminEvent) {
