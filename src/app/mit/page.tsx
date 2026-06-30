@@ -56,6 +56,17 @@ type AdminEvent = {
 
 type View = { kind: "chat"; id: string } | { kind: "email"; id: string } | null;
 
+type FaqEntry = {
+  id: string;
+  category: "admin" | "customer";
+  question: string;
+  answer: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
+type DraftSource = { id: string; question: string };
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtTime(ts: number) {
@@ -212,9 +223,129 @@ function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
   );
 }
 
+// ─── FAQ panel ────────────────────────────────────────────────────────────────
+
+function FaqPanel({ token, category }: { token: string; category: "admin" | "customer" }) {
+  const [entries, setEntries] = useState<FaqEntry[]>([]);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editQ, setEditQ] = useState("");
+  const [editA, setEditA] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [newQ, setNewQ] = useState("");
+  const [newA, setNewA] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [seeding, setSeeding] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await api(`/api/admin/faq?category=${category}`, {}, token);
+      setEntries(await res.json() as FaqEntry[]);
+    } catch {}
+  }, [token, category]);
+
+  useEffect(() => { load(); }, [load]);
+
+  async function saveEdit(id: string) {
+    setSaving(true);
+    try {
+      await api(`/api/admin/faq/${id}`, { method: "PUT", body: JSON.stringify({ category, question: editQ, answer: editA }) }, token);
+      setEditing(null); await load();
+    } catch {} finally { setSaving(false); }
+  }
+
+  async function deleteEntry(id: string) {
+    if (!confirm(`Slet FAQ-entry ${id}?`)) return;
+    try {
+      await api(`/api/admin/faq/${id}?category=${category}`, { method: "DELETE" }, token);
+      await load();
+    } catch {}
+  }
+
+  async function addEntry() {
+    if (!newQ.trim() || !newA.trim()) return;
+    setSaving(true);
+    try {
+      await api("/api/admin/faq", { method: "POST", body: JSON.stringify({ category, question: newQ, answer: newA }) }, token);
+      setNewQ(""); setNewA(""); setAdding(false); await load();
+    } catch {} finally { setSaving(false); }
+  }
+
+  async function seed() {
+    setSeeding(true);
+    try {
+      await api("/api/admin/faq/seed", { method: "POST", body: JSON.stringify({ force: false }) }, token);
+      await load();
+    } catch {} finally { setSeeding(false); }
+  }
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <span style={{ fontSize: 12, color: "rgba(0,0,0,0.4)" }}>{entries.length} entries</span>
+        <div style={{ display: "flex", gap: 8 }}>
+          {entries.length === 0 && (
+            <button onClick={seed} disabled={seeding} style={{ background: "#f0f4ff", color: "#1647FB", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+              {seeding ? "Seeder…" : "Seed standard FAQ"}
+            </button>
+          )}
+          <button onClick={() => setAdding(true)} style={{ background: "#1647FB", color: "#fff", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+            + Tilføj
+          </button>
+        </div>
+      </div>
+
+      {adding && (
+        <div style={{ border: "1.5px solid #1647FB", borderRadius: 10, padding: 12, marginBottom: 12, background: "#f8f9ff" }}>
+          <input value={newQ} onChange={(e) => setNewQ(e.target.value)} placeholder="Spørgsmål"
+            style={{ width: "100%", border: "1px solid #e0e0e0", borderRadius: 8, padding: "8px 10px", fontSize: 13, marginBottom: 8, boxSizing: "border-box" }} />
+          <textarea value={newA} onChange={(e) => setNewA(e.target.value)} placeholder="Svar" rows={3}
+            style={{ width: "100%", border: "1px solid #e0e0e0", borderRadius: 8, padding: "8px 10px", fontSize: 13, resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }} />
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <button onClick={addEntry} disabled={saving} style={{ background: "#1647FB", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Gem</button>
+            <button onClick={() => setAdding(false)} style={{ background: "transparent", border: "1px solid #e0e0e0", borderRadius: 8, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>Annuller</button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 360, overflowY: "auto" }}>
+        {entries.map((e) => editing === e.id ? (
+          <div key={e.id} style={{ border: "1.5px solid #1647FB", borderRadius: 10, padding: 12, background: "#f8f9ff" }}>
+            <div style={{ fontSize: 11, color: "#1647FB", marginBottom: 6, fontWeight: 600 }}>{e.id}</div>
+            <input value={editQ} onChange={(ev) => setEditQ(ev.target.value)} placeholder="Spørgsmål"
+              style={{ width: "100%", border: "1px solid #e0e0e0", borderRadius: 8, padding: "8px 10px", fontSize: 13, marginBottom: 8, boxSizing: "border-box" }} />
+            <textarea value={editA} onChange={(ev) => setEditA(ev.target.value)} rows={3}
+              style={{ width: "100%", border: "1px solid #e0e0e0", borderRadius: 8, padding: "8px 10px", fontSize: 13, resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }} />
+            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+              <button onClick={() => saveEdit(e.id)} disabled={saving} style={{ background: "#1647FB", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Gem</button>
+              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #e0e0e0", borderRadius: 8, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>Annuller</button>
+            </div>
+          </div>
+        ) : (
+          <div key={e.id} style={{ border: "1px solid #f0f0f0", borderRadius: 10, padding: "10px 12px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, color: "#1647FB", fontWeight: 700, marginBottom: 2 }}>{e.id}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{e.question}</div>
+                <div style={{ fontSize: 12, color: "rgba(0,0,0,0.55)", lineHeight: 1.5 }}>{e.answer}</div>
+              </div>
+              <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                <button onClick={() => { setEditing(e.id); setEditQ(e.question); setEditA(e.answer); }}
+                  style={{ background: "#f0f0f0", border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer" }}>Rediger</button>
+                <button onClick={() => deleteEntry(e.id)}
+                  style={{ background: "#fee2e2", color: "#ef4444", border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer" }}>Slet</button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Settings modal ────────────────────────────────────────────────────────────
 
 function SettingsModal({ token, onClose }: { token: string; onClose: () => void }) {
+  const [tab, setTab] = useState<"ai" | "faq-admin" | "faq-customer" | "push">("ai");
   const [context, setContext] = useState("");
   const [saving, setSaving] = useState(false);
   const [pushState, setPushState] = useState<"idle" | "subscribed" | "loading">("idle");
@@ -251,17 +382,11 @@ function SettingsModal({ token, onClose }: { token: string; onClose: () => void 
     try {
       const perm = await Notification.requestPermission();
       if (perm !== "granted") { setPushState("idle"); return; }
-
       await navigator.serviceWorker.register("/sw.js");
       const reg = await navigator.serviceWorker.ready;
       const vapidRes = await api("/api/admin/push/vapid", {}, token);
       const { publicKey } = await vapidRes.json() as { publicKey: string };
-
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: publicKey,
-      });
-
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: publicKey });
       await api("/api/admin/push/register", { method: "POST", body: JSON.stringify(sub.toJSON()) }, token);
       setPushState("subscribed");
     } catch (e) { console.error(e); setPushState("idle"); }
@@ -277,38 +402,72 @@ function SettingsModal({ token, onClose }: { token: string; onClose: () => void 
     setPushState("idle");
   }
 
+  const tabs = [
+    { key: "ai" as const, label: "AI-kontekst" },
+    { key: "faq-admin" as const, label: "FAQ: Mine klienter" },
+    { key: "faq-customer" as const, label: "FAQ: Kundernes kunder" },
+    { key: "push" as const, label: "Push" },
+  ];
+
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, padding: 32, width: 500, maxWidth: "90vw", fontFamily: "Montserrat, sans-serif" }}>
-        <h2 style={{ margin: "0 0 20px", fontSize: 18, fontWeight: 700 }}>Indstillinger</h2>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, padding: 32, width: 680, maxWidth: "95vw", maxHeight: "90vh", display: "flex", flexDirection: "column", fontFamily: "Montserrat, sans-serif" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Indstillinger</h2>
+          <button onClick={onClose} style={{ background: "transparent", border: "1.5px solid #e0e0e0", borderRadius: 8, padding: "6px 16px", fontSize: 13, cursor: "pointer" }}>Luk</button>
+        </div>
 
-        <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 6px" }}>AI-kontekst</p>
-        <p style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", margin: "0 0 8px" }}>Beskriv dine services, priser og FAQ. AI bruger dette til at foreslå svar.</p>
-        <textarea value={context} onChange={(e) => setContext(e.target.value)} rows={8}
-          style={{ width: "100%", border: "1.5px solid #e0e0e0", borderRadius: 10, padding: 12, fontSize: 13, resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }} />
-        <button onClick={saveContext} disabled={saving}
-          style={{ marginTop: 8, background: "#1647FB", color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-          {saving ? "Gemmer…" : saved ? "Gemt ✓" : "Gem"}
-        </button>
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid #f0f0f0", paddingBottom: 0 }}>
+          {tabs.map((t) => (
+            <button key={t.key} onClick={() => setTab(t.key)}
+              style={{ background: "none", border: "none", borderBottom: tab === t.key ? "2px solid #1647FB" : "2px solid transparent", padding: "8px 12px", fontSize: 12, fontWeight: tab === t.key ? 700 : 500, color: tab === t.key ? "#1647FB" : "rgba(0,0,0,0.5)", cursor: "pointer", marginBottom: -1 }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
 
-        <hr style={{ margin: "24px 0", border: "none", borderTop: "1px solid #eee" }} />
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          {tab === "ai" && (
+            <>
+              <p style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", margin: "0 0 8px" }}>Ekstra kontekst til AI-udkast (valgfri fri tekst). FAQ-dataene nedenfor er separate.</p>
+              <textarea value={context} onChange={(e) => setContext(e.target.value)} rows={8}
+                style={{ width: "100%", border: "1.5px solid #e0e0e0", borderRadius: 10, padding: 12, fontSize: 13, resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }} />
+              <button onClick={saveContext} disabled={saving}
+                style={{ marginTop: 8, background: "#1647FB", color: "#fff", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                {saving ? "Gemmer…" : saved ? "Gemt ✓" : "Gem"}
+              </button>
+            </>
+          )}
 
-        <p style={{ fontSize: 13, fontWeight: 600, margin: "0 0 6px" }}>Web Push-notifikationer</p>
-        <p style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", margin: "0 0 12px" }}>Modtag push-beskeder selv når admin-fanen er i baggrunden.</p>
-        {pushState === "subscribed" ? (
-          <button onClick={unsubscribePush} style={{ background: "#fee2e2", color: "#ef4444", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-            Afmeld push
-          </button>
-        ) : (
-          <button onClick={subscribePush} disabled={pushState === "loading"} style={{ background: "#f0f4ff", color: "#1647FB", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-            {pushState === "loading" ? "Aktiverer…" : "Aktiver push"}
-          </button>
-        )}
+          {tab === "faq-admin" && (
+            <>
+              <p style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", margin: "0 0 12px" }}>Svar til brug når <strong>mine webdesign-klienter</strong> stiller spørgsmål (priser, levering, betaling). Bruges kun af admin AI-udkast.</p>
+              <FaqPanel token={token} category="admin" />
+            </>
+          )}
 
-        <div style={{ marginTop: 24, textAlign: "right" }}>
-          <button onClick={onClose} style={{ background: "transparent", border: "1.5px solid #e0e0e0", borderRadius: 8, padding: "8px 20px", fontSize: 13, cursor: "pointer" }}>
-            Luk
-          </button>
+          {tab === "faq-customer" && (
+            <>
+              <p style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", margin: "0 0 12px" }}>Svar til brug når <strong>mine klienters egne kunder</strong> stiller spørgsmål (booking, åbningstider). Bruges af kundeservice-chatbotten.</p>
+              <FaqPanel token={token} category="customer" />
+            </>
+          )}
+
+          {tab === "push" && (
+            <>
+              <p style={{ fontSize: 12, color: "rgba(0,0,0,0.45)", margin: "0 0 12px" }}>Modtag push-beskeder selv når admin-fanen er i baggrunden.</p>
+              {pushState === "subscribed" ? (
+                <button onClick={unsubscribePush} style={{ background: "#fee2e2", color: "#ef4444", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                  Afmeld push
+                </button>
+              ) : (
+                <button onClick={subscribePush} disabled={pushState === "loading"} style={{ background: "#f0f4ff", color: "#1647FB", border: "none", borderRadius: 8, padding: "8px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                  {pushState === "loading" ? "Aktiverer…" : "Aktiver push"}
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -323,6 +482,7 @@ function ChatView({ id, token, onUpdate }: { id: string; token: string; onUpdate
   const [sending, setSending] = useState(false);
   const [draft, setDraft] = useState("");
   const [draftLoading, setDraftLoading] = useState(false);
+  const [draftSources, setDraftSources] = useState<DraftSource[]>([]);
   const [agentTyping, setAgentTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -341,7 +501,7 @@ function ChatView({ id, token, onUpdate }: { id: string; token: string; onUpdate
     setSending(true);
     try {
       await api(`/api/admin/chat/${id}/reply`, { method: "POST", body: JSON.stringify({ content: reply }) }, token);
-      setReply(""); setDraft("");
+      setReply(""); setDraft(""); setDraftSources([]);
       await load(); onUpdate();
     } catch {} finally { setSending(false); }
   }
@@ -359,8 +519,9 @@ function ChatView({ id, token, onUpdate }: { id: string; token: string; onUpdate
     setDraftLoading(true);
     try {
       const res = await api("/api/admin/ai/draft", { method: "POST", body: JSON.stringify({ type: "chat", id }) }, token);
-      const { draft: d } = await res.json() as { draft: string };
+      const { draft: d, sourceDetails } = await res.json() as { draft: string; sourceDetails?: DraftSource[] };
       setDraft(d); setReply(d);
+      setDraftSources(sourceDetails ?? []);
     } catch {}
     setDraftLoading(false);
   }
@@ -428,6 +589,16 @@ function ChatView({ id, token, onUpdate }: { id: string; token: string; onUpdate
               {draftLoading ? "Genererer…" : "✨ AI-udkast"}
             </button>
           </div>
+          {draftSources.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
+              <span style={{ fontSize: 11, color: "rgba(0,0,0,0.35)", lineHeight: "22px" }}>Kilder:</span>
+              {draftSources.map((s) => (
+                <span key={s.id} title={s.question} style={{ fontSize: 11, padding: "2px 8px", background: "#f0f4ff", color: "#1647FB", borderRadius: 20, border: "1px solid rgba(22,71,251,0.15)", cursor: "default" }}>
+                  {s.id}
+                </span>
+              ))}
+            </div>
+          )}
           <textarea
             value={reply} onChange={(e) => { setReply(e.target.value); if (!agentTyping) sendTyping(true); }}
             onBlur={() => sendTyping(false)}
@@ -455,6 +626,7 @@ function EmailView({ id, token, onUpdate }: { id: string; token: string; onUpdat
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const [draftLoading, setDraftLoading] = useState(false);
+  const [draftSources, setDraftSources] = useState<DraftSource[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -472,7 +644,7 @@ function EmailView({ id, token, onUpdate }: { id: string; token: string; onUpdat
     setSending(true);
     try {
       await api(`/api/admin/email/${id}/reply`, { method: "POST", body: JSON.stringify({ body: reply }) }, token);
-      setReply(""); await load(); onUpdate();
+      setReply(""); setDraftSources([]); await load(); onUpdate();
     } catch {} finally { setSending(false); }
   }
 
@@ -480,8 +652,9 @@ function EmailView({ id, token, onUpdate }: { id: string; token: string; onUpdat
     setDraftLoading(true);
     try {
       const res = await api("/api/admin/ai/draft", { method: "POST", body: JSON.stringify({ type: "email", id }) }, token);
-      const { draft } = await res.json() as { draft: string };
+      const { draft, sourceDetails } = await res.json() as { draft: string; sourceDetails?: DraftSource[] };
       setReply(draft);
+      setDraftSources(sourceDetails ?? []);
     } catch {}
     setDraftLoading(false);
   }
@@ -525,6 +698,16 @@ function EmailView({ id, token, onUpdate }: { id: string; token: string; onUpdat
               {draftLoading ? "Genererer…" : "✨ AI-udkast"}
             </button>
           </div>
+          {draftSources.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
+              <span style={{ fontSize: 11, color: "rgba(0,0,0,0.35)", lineHeight: "22px" }}>Kilder:</span>
+              {draftSources.map((s) => (
+                <span key={s.id} title={s.question} style={{ fontSize: 11, padding: "2px 8px", background: "#f0f4ff", color: "#1647FB", borderRadius: 20, border: "1px solid rgba(22,71,251,0.15)", cursor: "default" }}>
+                  {s.id}
+                </span>
+              ))}
+            </div>
+          )}
           <textarea value={reply} onChange={(e) => setReply(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendReply(); } }}
             placeholder="Skriv svar… (Cmd+Enter for at sende)"
