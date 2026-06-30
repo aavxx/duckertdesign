@@ -1,16 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
 import ChatWidget from "@/components/ChatWidget";
-
-const CATEGORIES = [
-  { value: "all",      label: "Alt" },
-  { value: "order",    label: "Bestilling" },
-  { value: "privacy",  label: "Privatliv & data" },
-  { value: "billing",  label: "Faktura & betaling" },
-  { value: "technical",label: "Teknisk support" },
-  { value: "other",    label: "Andet" },
-];
 
 const TOPICS = [
   { label: "Hvad koster en hjemmeside?", query: "Hvad koster det at få lavet en hjemmeside hos Duckert Design?", cat: "order" },
@@ -69,12 +61,7 @@ export default function KundeservicePage() {
   const [expanded, setExpanded]       = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [chatOpen, setChatOpen]       = useState(false);
-  const [category, setCategory]       = useState("all");
   const resultRef = useRef<HTMLDivElement>(null);
-
-  const visibleTopics = category === "all"
-    ? TOPICS
-    : TOPICS.filter((t) => t.cat === category);
 
   const runSearch = async (q: string) => {
     if (!q.trim()) return;
@@ -206,54 +193,17 @@ export default function KundeservicePage() {
               </div>
             </form>
 
-            {/* Category dropdown + topic chips */}
+            {/* Topic chips */}
             <div style={{ marginTop: "22px" }}>
-              {/* Dropdown */}
-              <div style={{ marginBottom: "16px", position: "relative", display: "inline-block" }}>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  style={{
-                    appearance: "none",
-                    WebkitAppearance: "none",
-                    background: "#fff",
-                    border: "1.5px solid rgba(8,8,8,0.12)",
-                    borderRadius: "10px",
-                    padding: "9px 36px 9px 14px",
-                    fontSize: "13px",
-                    fontFamily: "Montserrat, sans-serif",
-                    fontWeight: 600,
-                    color: "#080808",
-                    cursor: "pointer",
-                    outline: "none",
-                    transition: "border-color 0.18s",
-                  }}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = "#1647FB")}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(8,8,8,0.12)")}
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
-                </select>
-                {/* Chevron icon */}
-                <svg
-                  width="12" height="12" viewBox="0 0 24 24" fill="none"
-                  style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-                >
-                  <path d="M6 9l6 6 6-6" stroke="#080808" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-
-              {/* Chips */}
               <p style={{
                 fontSize: "10px", fontWeight: 600, letterSpacing: "0.14em",
                 textTransform: "uppercase", color: "rgba(8,8,8,0.4)",
                 margin: "0 0 12px", fontFamily: "Montserrat, sans-serif",
               }}>
-                {category === "all" ? "Ofte stillet" : "Emner"}
+                Ofte stillet
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                {visibleTopics.map((t) => (
+                {TOPICS.map((t) => (
                   <button key={t.label} className="ks-chip"
                     onClick={() => { setQuery(t.query); void runSearch(t.query); }}
                     style={{
@@ -266,11 +216,6 @@ export default function KundeservicePage() {
                     {t.label}
                   </button>
                 ))}
-                {visibleTopics.length === 0 && (
-                  <p style={{ fontSize: "13px", color: "rgba(8,8,8,0.35)", fontFamily: "Montserrat, sans-serif", margin: 0 }}>
-                    Skriv dit spørgsmål i søgefeltet ovenfor.
-                  </p>
-                )}
               </div>
             </div>
           </div>
@@ -400,7 +345,7 @@ export default function KundeservicePage() {
               </button>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <a href="mailto:hej@duckert.design" className="ks-mail"
+              <Link href="/mail" className="ks-mail"
                 style={{
                   display: "flex", alignItems: "center", gap: "14px",
                   background: "#fff", border: "1.5px solid rgba(22,71,251,0.18)",
@@ -419,10 +364,10 @@ export default function KundeservicePage() {
                   </svg>
                 </div>
                 <div>
-                  <div style={{ fontSize: "14px", fontWeight: 700, color: "#080808", marginBottom: "3px" }}>Send en mail</div>
+                  <div style={{ fontSize: "14px", fontWeight: 700, color: "#080808", marginBottom: "3px" }}>Kontaktformular</div>
                   <div style={{ fontSize: "12px", color: "rgba(8,8,8,0.45)" }}>Svar inden for 24 timer</div>
                 </div>
-              </a>
+              </Link>
               <button
                 onClick={() => { setContactOpen(false); setChatOpen(true); }}
                 className="ks-cta"
