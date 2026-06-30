@@ -19,6 +19,7 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const isKundeservice = pathname?.startsWith("/kundeservice");
+  if (pathname?.startsWith("/mit")) return null;
 
   useEffect(() => {
     const onScroll = () => {
