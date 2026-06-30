@@ -17,33 +17,28 @@ const nextConfig: NextConfig = {
   },
 
   async rewrites() {
-    // beforeFiles runs before static pages are served from the CDN cache.
-    // Explicit "/" rule avoids empty-capture edge cases.
-    // /:path+ (one-or-more) handles sub-paths; /api/ and /_next/ excluded
-    // so relative API calls from the admin UI resolve correctly.
+    // beforeFiles runs before static pages are served from the CDN cache —
+    // this is the correct way to do subdomain routing on Vercel.
+    // Explicit paths only (no wildcards) to avoid Next.js chaining rewrites
+    // on the already-rewritten destination path.
     return {
       beforeFiles: [
-        // mit.duckert.design → /mit
+        // mit.duckert.design → /mit (SPA, only / matters)
         {
           source: "/",
           has: [{ type: "host", value: "mit.duckert.design" }],
           destination: "/mit",
         },
-        {
-          source: "/((?!api/|_next/).+)",
-          has: [{ type: "host", value: "mit.duckert.design" }],
-          destination: "/mit/$1",
-        },
-        // kundeservice.duckert.design → /kundeservice
+        // kundeservice.duckert.design → /kundeservice + /kundeservice/mail
         {
           source: "/",
           has: [{ type: "host", value: "kundeservice.duckert.design" }],
           destination: "/kundeservice",
         },
         {
-          source: "/((?!api/|_next/).+)",
+          source: "/mail",
           has: [{ type: "host", value: "kundeservice.duckert.design" }],
-          destination: "/kundeservice/$1",
+          destination: "/kundeservice/mail",
         },
       ],
     };
