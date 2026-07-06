@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
+import { getChatSession, saveChatSession } from "@/lib/chatStore";
 import { getFaqEntries, faqToPromptBlock } from "@/lib/faq";
 import type { ChatSession, ChatMessage, AdminEvent } from "@/lib/types";
 
@@ -43,13 +44,6 @@ type GptMessage = {
   content: string;
 };
 
-async function persistSession(session: ChatSession) {
-  await redis.set(`chat:session:${session.id}`, JSON.stringify(session));
-  await redis.sadd("chat:sessions:index", session.id);
-  // Keep unified inbox sorted set in sync so admin inbox always reflects this session
-  await redis.zadd("inbox:idx", { score: session.updatedAt, member: `chat:${session.id}` });
-}
-
 async function publishAdminEvent(event: AdminEvent) {
   try {
     await redis.publish("admin:events", JSON.stringify(event));
@@ -64,52 +58,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Konfigurationsfejl." }, { status: 500 });
   }
 
-  let messages: GptMessage[], userMessage: string, sessionId: string | undefined, humanHandoff: boolean | undefined;
+  let messages: GptMessage[], userMessage: string, sessionId: string | undefined;
   try {
-    ({ messages, userMessage, sessionId, humanHandoff } = await req.json());
+    ({ messages, userMessage, sessionId } = await req.json());
   } catch {
     return NextResponse.json({ error: "Ugyldig anmodning." }, { status: 400 });
   }
 
-  const isNewSession = !sessionId;
-  const sid = sessionId ?? crypto.randomUUID();
   const now = Date.now();
 
-  // Load or create session
-  let session: ChatSession;
-  if (!isNewSession) {
-    const raw = await redis.get<string>(`chat:session:${sid}`);
-    if (raw) {
-      session = typeof raw === "string" ? JSON.parse(raw) : raw as ChatSession;
-    } else {
-      // Session expired or missing — treat as new
-      session = { id: sid, createdAt: now, updatedAt: now, status: "ai", messages: [] };
-    }
-  } else {
-    session = { id: sid, createdAt: now, updatedAt: now, status: "ai", messages: [] };
+  // Load session; expired, missing or closed sessions start fresh
+  let session: ChatSession | null = sessionId ? await getChatSession(sessionId) : null;
+  if (session && session.status !== "ai") session = null;
+  const isNewSession = !session;
+  if (!session) {
+    session = { id: crypto.randomUUID(), createdAt: now, updatedAt: now, status: "ai", messages: [] };
   }
-
-  // Human handoff request
-  if (humanHandoff) {
-    session.status = "human";
-    session.updatedAt = now;
-    // Store the user's "Tal med en agent" message in the session
-    if (userMessage) {
-      session.messages.push({
-        id: crypto.randomUUID(),
-        role: "user",
-        content: userMessage,
-        ts: now,
-      });
-    }
-    await persistSession(session);
-    await publishAdminEvent({ type: "new_chat_session", sessionId: sid, humanRequested: true, ts: now });
-    const responseHeaders = new Headers({
-      "Content-Type": "application/json",
-      "X-Session-Id": sid,
-    });
-    return new Response(JSON.stringify({ ok: true, sessionId: sid }), { headers: responseHeaders });
-  }
+  const sid = session.id;
 
   // Persist user message
   const userMsg: ChatMessage = {
@@ -121,25 +86,9 @@ export async function POST(req: Request) {
   session.messages.push(userMsg);
   session.updatedAt = now;
 
-  // Human/claimed/inactive/closed/archived session: store message, notify admin, no AI response
-  if (session.status === "human" || session.status === "claimed" || session.status === "inactive" || session.status === "closed" || session.status === "archived") {
-    await persistSession(session);
-    await publishAdminEvent({
-      type: "new_chat_message",
-      sessionId: sid,
-      messageId: userMsg.id,
-      content: userMessage,
-      role: "user",
-      ts: now,
-    });
-    return new Response(JSON.stringify({ ok: true, waiting: true }), {
-      headers: new Headers({ "Content-Type": "application/json", "X-Session-Id": sid }),
-    });
-  }
-
   // Publish events
   if (isNewSession) {
-    await persistSession(session);
+    await saveChatSession(session);
     await publishAdminEvent({ type: "new_chat_session", sessionId: sid, ts: now });
   } else {
     await publishAdminEvent({
@@ -218,7 +167,7 @@ export async function POST(req: Request) {
         };
         session.messages.push(aiMsg);
         session.updatedAt = Date.now();
-        await persistSession(session).catch(() => {});
+        await saveChatSession(session).catch(() => {});
       }
 
       controller.close();

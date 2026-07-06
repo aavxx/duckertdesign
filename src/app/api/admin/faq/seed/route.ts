@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/lib/auth";
-import { redis } from "@/lib/redis";
+import { supabase } from "@/lib/supabase";
 import type { FaqEntry } from "@/lib/faq";
 
 const ADMIN_FAQ: Omit<FaqEntry, "createdAt" | "updatedAt">[] = [
@@ -44,20 +44,18 @@ export async function POST(req: Request) {
 
   const { force } = await req.json().catch(() => ({ force: false })) as { force?: boolean };
 
-  const now = Date.now();
-  let seeded = 0;
+  const rows = [...ADMIN_FAQ, ...CUSTOMER_FAQ].map((entry) => ({
+    id: entry.id,
+    category: entry.category,
+    question: entry.question,
+    answer: entry.answer,
+    source: "manual" as const,
+  }));
 
-  for (const entry of [...ADMIN_FAQ, ...CUSTOMER_FAQ]) {
-    const key = `faq:${entry.category}:${entry.id}`;
-    if (!force) {
-      const existing = await redis.get(key);
-      if (existing) continue;
-    }
-    const full: FaqEntry = { ...entry, createdAt: now, updatedAt: now };
-    await redis.set(key, JSON.stringify(full));
-    await redis.sadd(`faq:${entry.category}:idx`, entry.id);
-    seeded++;
-  }
+  const { error, count } = force
+    ? await supabase.from("faq_entries").upsert(rows, { count: "exact" })
+    : await supabase.from("faq_entries").upsert(rows, { ignoreDuplicates: true, count: "exact" });
 
-  return Response.json({ ok: true, seeded });
+  if (error) return new Response(error.message, { status: 500 });
+  return Response.json({ ok: true, seeded: count ?? rows.length });
 }

@@ -1,6 +1,5 @@
 import { requireAdmin } from "@/lib/auth";
-import { redis } from "@/lib/redis";
-import type { ChatSession } from "@/lib/types";
+import { getChatSession } from "@/lib/chatStore";
 
 export async function GET(
   req: Request,
@@ -10,9 +9,8 @@ export async function GET(
   if (authErr) return authErr;
 
   const { id } = await params;
-  const raw = await redis.get<string>(`chat:session:${id}`);
-  if (!raw) return new Response("Not found", { status: 404 });
+  const session = await getChatSession(id);
+  if (!session) return new Response("Not found", { status: 404 });
 
-  const session: ChatSession = typeof raw === "string" ? JSON.parse(raw) : raw;
   return Response.json(session);
 }

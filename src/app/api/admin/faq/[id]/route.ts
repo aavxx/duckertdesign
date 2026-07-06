@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/lib/auth";
-import { redis } from "@/lib/redis";
+import { supabase } from "@/lib/supabase";
+import { rowToFaq } from "@/lib/faq";
 import type { FaqEntry } from "@/lib/faq";
 
 export async function PUT(
@@ -14,16 +15,21 @@ export async function PUT(
 
   if (!category) return new Response("Missing category", { status: 400 });
 
-  const raw = await redis.get<string>(`faq:${category}:${id}`);
-  if (!raw) return new Response("Not found", { status: 404 });
+  const patch: Record<string, string> = { updated_at: new Date().toISOString() };
+  if (question) patch.question = question.trim();
+  if (answer) patch.answer = answer.trim();
 
-  const entry: FaqEntry = typeof raw === "string" ? JSON.parse(raw) : raw;
-  if (question) entry.question = question.trim();
-  if (answer) entry.answer = answer.trim();
-  entry.updatedAt = Date.now();
+  const { data, error } = await supabase
+    .from("faq_entries")
+    .update(patch)
+    .eq("category", category)
+    .eq("id", id)
+    .select()
+    .maybeSingle();
 
-  await redis.set(`faq:${category}:${id}`, JSON.stringify(entry));
-  return Response.json({ ok: true, entry });
+  if (error) return new Response(error.message, { status: 500 });
+  if (!data) return new Response("Not found", { status: 404 });
+  return Response.json({ ok: true, entry: rowToFaq(data) });
 }
 
 export async function DELETE(
@@ -38,7 +44,12 @@ export async function DELETE(
   const category = url.searchParams.get("category") as "admin" | "customer" | null;
   if (!category) return new Response("Missing category", { status: 400 });
 
-  await redis.del(`faq:${category}:${id}`);
-  await redis.srem(`faq:${category}:idx`, id);
+  const { error } = await supabase
+    .from("faq_entries")
+    .delete()
+    .eq("category", category)
+    .eq("id", id);
+
+  if (error) return new Response(error.message, { status: 500 });
   return Response.json({ ok: true });
 }

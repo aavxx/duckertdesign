@@ -1,24 +1,46 @@
-import { redis } from "@/lib/redis";
+import { supabase } from "@/lib/supabase";
 
 export type FaqEntry = {
   id: string;
   category: "admin" | "customer";
   question: string;
   answer: string;
+  source?: "manual" | "learned";
   createdAt: number;
   updatedAt: number;
 };
 
+type FaqRow = {
+  id: string;
+  category: "admin" | "customer";
+  question: string;
+  answer: string;
+  source: "manual" | "learned";
+  created_at: string;
+  updated_at: string;
+};
+
+export function rowToFaq(row: FaqRow): FaqEntry {
+  return {
+    id: row.id,
+    category: row.category,
+    question: row.question,
+    answer: row.answer,
+    source: row.source,
+    createdAt: new Date(row.created_at).getTime(),
+    updatedAt: new Date(row.updated_at).getTime(),
+  };
+}
+
 export async function getFaqEntries(category: "admin" | "customer"): Promise<FaqEntry[]> {
-  const ids = await redis.smembers(`faq:${category}:idx`);
-  if (!ids.length) return [];
-  const entries: FaqEntry[] = [];
-  for (const id of ids) {
-    const raw = await redis.get<string>(`faq:${category}:${id}`);
-    if (!raw) continue;
-    try { entries.push(typeof raw === "string" ? JSON.parse(raw) : raw); } catch {}
-  }
-  return entries.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
+  const { data, error } = await supabase
+    .from("faq_entries")
+    .select("id, category, question, answer, source, created_at, updated_at")
+    .eq("category", category);
+  if (error || !data) return [];
+  return (data as FaqRow[])
+    .map(rowToFaq)
+    .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
 }
 
 export function faqToPromptBlock(entries: FaqEntry[]): string {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
 
 /* ─── Constants ───────────────────────────────────────────────────────────── */
 const LS_KEY      = "duckert-chat-v1";
@@ -23,7 +22,7 @@ const FEEDBACK_LABELS = ["Meget dårlig", "Dårlig", "Okay", "God", "Fantastisk"
 /* ─── Types ───────────────────────────────────────────────────────────────── */
 type Message = {
   id: string;
-  role: "user" | "assistant" | "admin";
+  role: "user" | "assistant";
   content: string;
   isPrivacyCard?: boolean;
   isSystem?: boolean;
@@ -115,7 +114,8 @@ function PrivacyCard() {
       padding: "14px 16px", maxWidth: "85%",
     }}>
       <p style={{ fontSize: "13px", color: "#080808", lineHeight: 1.6, margin: "0 0 6px", fontFamily: "inherit" }}>
-        Vi prioriterer dit privatliv. Læs vores{" "}
+        Samtaler gemmes sikkert i 30 dage og bruges til at forbedre vores AI-assistent — derefter slettes de automatisk.
+        Del ikke følsomme oplysninger. Læs vores{" "}
         <a href="/privatlivspolitik" style={{ color: "#1647FB", textDecoration: "underline" }}>privatlivspolitik</a>.
       </p>
       <p style={{ fontSize: "12px", color: "#888888", margin: 0, fontFamily: "inherit" }}>
@@ -133,7 +133,6 @@ export default function ChatWidget({
   open?: boolean;
   onClose?: () => void;
 }) {
-  const pathname = usePathname();
   const [isOpen, setIsOpen]             = useState(false);
   const [messages, setMessages]         = useState<Message[]>(() => loadMessages());
   const [showQR, setShowQR]             = useState<boolean>(() => {
@@ -144,24 +143,17 @@ export default function ChatWidget({
   });
   const [isLoading, setIsLoading]       = useState(false);
   const [input, setInput]               = useState("");
-  const [waitingHuman, setWaitingHuman] = useState(false);
-  const [chatClaimed, setChatClaimed]   = useState(false);
   const [showWelcome, setShowWelcome]   = useState(false);
   const [menuOpen, setMenuOpen]         = useState(false);
   const [chatEnded, setChatEnded]       = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
-  const [agentTyping, setAgentTyping]   = useState(false);
 
-  const hasInit             = useRef(false);
-  const endRef              = useRef<HTMLDivElement>(null);
-  const inputRef            = useRef<HTMLInputElement>(null);
-  const sessionRef          = useRef<string | null>(null);
-  const sseRef              = useRef<EventSource | null>(null);
-  const msgAudioRef         = useRef<HTMLAudioElement | null>(null);
-  const typingTimerRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isTypingRef         = useRef(false);
-  const agentTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasInit     = useRef(false);
+  const endRef      = useRef<HTMLDivElement>(null);
+  const inputRef    = useRef<HTMLInputElement>(null);
+  const sessionRef  = useRef<string | null>(null);
+  const msgAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") sessionRef.current = localStorage.getItem(SESSION_KEY);
@@ -188,10 +180,7 @@ export default function ChatWidget({
     hasInit.current = true;
     touchExpiry();
 
-    if (messages.length > 0) {
-      if (sessionRef.current) subscribeAdminReplies(sessionRef.current);
-      return;
-    }
+    if (messages.length > 0) return;
 
     setShowWelcome(true);
     setTimeout(() => {
@@ -207,16 +196,6 @@ export default function ChatWidget({
     }, 1200);
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    return () => {
-      sseRef.current?.close();
-      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
-      if (agentTypingTimerRef.current) clearTimeout(agentTypingTimerRef.current);
-    };
-  }, []);
-
-  if (pathname?.startsWith("/mit")) return null;
-
   /* ── Helpers ── */
   const playMsgSound = () => {
     if (typeof window === "undefined" || !document.hidden) return;
@@ -227,86 +206,11 @@ export default function ChatWidget({
     } catch {}
   };
 
-  const sendTypingStatus = (typing: boolean) => {
-    const sid = sessionRef.current;
-    if (!sid) return;
-    fetch("/api/chat/typing", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId: sid, typing }),
-    }).catch(() => {});
-  };
-
-  const handleInputChange = (val: string) => {
-    setInput(val);
-    if (!sessionRef.current || chatEnded) return;
-    if (!isTypingRef.current) {
-      isTypingRef.current = true;
-      sendTypingStatus(true);
-    }
-    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
-    typingTimerRef.current = setTimeout(() => {
-      isTypingRef.current = false;
-      sendTypingStatus(false);
-    }, 2000);
-  };
-
-  function subscribeAdminReplies(sid: string) {
-    sseRef.current?.close();
-    const es = new EventSource(`/api/chat/events?sessionId=${sid}`);
-    es.onmessage = (e) => {
-      try {
-        const data = JSON.parse(e.data) as Record<string, unknown>;
-
-        if (data.type === "typing" && data.who === "agent") {
-          const isTyping = !!data.typing;
-          setAgentTyping(isTyping);
-          if (agentTypingTimerRef.current) clearTimeout(agentTypingTimerRef.current);
-          if (isTyping) {
-            agentTypingTimerRef.current = setTimeout(() => setAgentTyping(false), 5000);
-          }
-          return;
-        }
-
-        if (data.type === "claimed") {
-          setChatClaimed(true);
-          return;
-        }
-
-        if (data.type === "system") {
-          setMessages((prev) => [...prev, {
-            id: "sys-" + Date.now(),
-            role: "assistant" as const,
-            content: String(data.content ?? "Chat Afsluttet"),
-            isSystem: true,
-          }]);
-          setChatEnded(true);
-          setShowFeedback(true);
-          playMsgSound();
-          return;
-        }
-
-        // Regular admin message
-        const msg = data as { id?: string; content?: string };
-        if (msg.content) {
-          setMessages((prev) => [...prev, {
-            id: msg.id ?? String(Date.now()),
-            role: "admin" as const,
-            content: msg.content!,
-          }]);
-          setWaitingHuman(false);
-          playMsgSound();
-        }
-      } catch {}
-    };
-    sseRef.current = es;
-  }
-
   const downloadTranscript = () => {
     const lines = messages
       .filter((m) => !m.isPrivacyCard && m.content)
       .map((m) => {
-        const who = m.role === "user" ? "Kunde" : m.role === "admin" ? "Agent" : m.isSystem ? "System" : "Duckert AI";
+        const who = m.role === "user" ? "Kunde" : m.isSystem ? "System" : "Duckert AI";
         return `[${m.timestamp ?? ""}] ${who}: ${m.content}`;
       });
     const blob = new Blob([lines.join("\n")], { type: "text/plain" });
@@ -326,11 +230,6 @@ export default function ChatWidget({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId: sid }),
       }).catch(() => {});
-    }
-    if (isTypingRef.current && sid) {
-      isTypingRef.current = false;
-      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
-      sendTypingStatus(false);
     }
     setMessages((prev) => [...prev, {
       id: "sys-" + Date.now(),
@@ -376,17 +275,13 @@ export default function ChatWidget({
   const handleClose = () => { setIsOpen(false); onClose?.(); };
 
   const resetChat = () => {
-    sseRef.current?.close();
     clearChat();
     setMessages([]);
     setShowQR(false);
-    setWaitingHuman(false);
-    setChatClaimed(false);
     setShowWelcome(false);
     setChatEnded(false);
     setShowFeedback(false);
     setFeedbackSent(false);
-    setAgentTyping(false);
     setMenuOpen(false);
     hasInit.current = false;
     setIsOpen(false);
@@ -396,58 +291,6 @@ export default function ChatWidget({
   const sendMessage = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || isLoading || chatEnded) return;
-
-    // Stop typing indicator
-    if (isTypingRef.current) {
-      isTypingRef.current = false;
-      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
-      sendTypingStatus(false);
-    }
-
-    // When a human agent has the chat, just forward message — no AI streaming
-    if (waitingHuman) {
-      const userMsg: Message = { id: Date.now().toString(), role: "user", content: trimmed, timestamp: nowTime() };
-      setMessages((prev) => [...prev, userMsg]);
-      setInput("");
-      const sid = sessionRef.current;
-      if (sid) {
-        fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userMessage: trimmed, sessionId: sid, messages: [] }),
-        }).catch(() => {});
-      }
-      return;
-    }
-
-    if (trimmed === "Tal med en agent") {
-      setShowQR(false);
-      const userMsg: Message = { id: Date.now().toString(), role: "user", content: trimmed, timestamp: nowTime() };
-      setMessages((prev) => [...prev, userMsg]);
-      setInput("");
-      setWaitingHuman(true);
-
-      try {
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: [], userMessage: trimmed, sessionId: sessionRef.current ?? undefined, humanHandoff: true }),
-        });
-        const data = await res.json() as { sessionId?: string };
-        const newSid = data.sessionId ?? sessionRef.current;
-        if (newSid && newSid !== sessionRef.current) {
-          sessionRef.current = newSid;
-          try { localStorage.setItem(SESSION_KEY, newSid); } catch {}
-        }
-        if (newSid) subscribeAdminReplies(newSid);
-      } catch {}
-
-      setMessages((prev) => [...prev, {
-        id: Date.now().toString(), role: "assistant",
-        content: "Tak! Vi forbinder dig med en person nu. Du vil modtage svar her snarest.",
-      }]);
-      return;
-    }
 
     setShowQR(false);
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: trimmed, timestamp: nowTime() };
@@ -464,8 +307,8 @@ export default function ChatWidget({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: messages
-            .filter((m) => !m.isPrivacyCard && !m.isSystem && m.role !== "admin")
-            .map((m) => ({ role: m.role === "admin" ? "assistant" : m.role, content: m.content })),
+            .filter((m) => !m.isPrivacyCard && !m.isSystem)
+            .map((m) => ({ role: m.role, content: m.content })),
           userMessage: trimmed,
           sessionId: sessionRef.current ?? undefined,
         }),
@@ -477,14 +320,11 @@ export default function ChatWidget({
       if (newSid && newSid !== sessionRef.current) {
         sessionRef.current = newSid;
         try { localStorage.setItem(SESSION_KEY, newSid); } catch {}
-        subscribeAdminReplies(newSid);
       }
 
-      // If the backend returns JSON it means the session was transferred to a human — not a stream
+      // Non-stream JSON response (e.g. session already closed) — nothing to render
       if (!res.headers.get("content-type")?.includes("text/event-stream")) {
-        const data = await res.json().catch(() => ({})) as { waiting?: boolean };
         setMessages((prev) => prev.filter((m) => m.id !== streamId));
-        if (data.waiting) setWaitingHuman(true);
         setIsLoading(false);
         return;
       }
@@ -553,7 +393,6 @@ export default function ChatWidget({
         .cw-input:focus { outline: none; box-shadow: none; }
         .cw-send:hover:not(:disabled) { opacity: 0.8; }
         .cw-close:hover { color: #080808 !important; }
-        .cw-agent-btn:hover { color: #1647FB !important; text-decoration: underline; }
         .cw-menu-item { display:block; width:100%; padding:10px 14px; border:none; cursor:pointer; background:transparent; text-align:left; font-size:13px; font-family:Montserrat,sans-serif; color:#080808; transition:background 0.12s; }
         .cw-menu-item:hover { background:rgba(8,8,8,0.05); }
         .cw-menu-item:disabled { color:rgba(8,8,8,0.3); cursor:default; }
@@ -611,13 +450,13 @@ export default function ChatWidget({
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <span style={{
                 width: "9px", height: "9px", borderRadius: "50%", flexShrink: 0,
-                background: chatEnded ? "#d1d5db" : waitingHuman ? "#facc15" : "#4ade80",
+                background: chatEnded ? "#d1d5db" : "#4ade80",
               }} />
               <span style={{
                 fontSize: "14px", fontWeight: 600, color: "#080808",
                 fontFamily: "Montserrat, sans-serif", letterSpacing: "-0.01em",
               }}>
-                {chatEnded ? "Chat afsluttet" : waitingHuman ? "Forbinder med teamet…" : "Duckert AI"}
+                {chatEnded ? "Chat afsluttet" : "Duckert AI"}
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "2px" }}>
@@ -820,18 +659,6 @@ export default function ChatWidget({
               </div>
             )}
 
-            {/* Agent typing indicator */}
-            {agentTyping && (
-              <div className="cw-msg" style={{ display: "flex", alignItems: "flex-start" }}>
-                <div style={{
-                  borderRadius: "16px", borderBottomLeftRadius: "4px",
-                  padding: "12px 16px", background: "#f2f2f2",
-                }}>
-                  <BouncingDots />
-                </div>
-              </div>
-            )}
-
             <div ref={endRef} />
           </div>
 
@@ -864,13 +691,9 @@ export default function ChatWidget({
                   className="cw-input"
                   type="text"
                   value={input}
-                  onChange={(e) => handleInputChange(e.target.value)}
+                  onChange={(e) => setInput(e.target.value)}
                   disabled={isLoading}
-                  placeholder={
-                    isLoading    ? "Skriver…" :
-                    waitingHuman ? "Venter på svar fra teamet…" :
-                                   "Skriv en besked..."
-                  }
+                  placeholder={isLoading ? "Skriver…" : "Skriv en besked..."}
                   style={{
                     flex: 1, border: "1px solid #ebebeb", borderRadius: "999px",
                     padding: "10px 16px", fontSize: "14px",
@@ -899,30 +722,8 @@ export default function ChatWidget({
                 </button>
               </form>
 
-              {/* Agent button + branding */}
-              <div style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                marginTop: "8px",
-              }}>
-                {!waitingHuman && !chatClaimed && !chatEnded && (
-                  <button
-                    className="cw-agent-btn"
-                    onClick={() => void sendMessage("Tal med en agent")}
-                    disabled={isLoading}
-                    style={{
-                      background: "none", border: "none", cursor: "pointer",
-                      fontSize: "11px", color: "rgba(8,8,8,0.45)",
-                      fontFamily: "Montserrat, sans-serif", transition: "color 0.15s",
-                      padding: "0", display: "flex", alignItems: "center", gap: "4px",
-                    }}
-                  >
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
-                      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
-                    </svg>
-                    Tal med en agent
-                  </button>
-                )}
+              {/* Branding */}
+              <div style={{ display: "flex", alignItems: "center", marginTop: "8px" }}>
                 <p style={{
                   fontSize: "10px", color: "rgba(8,8,8,0.28)",
                   fontFamily: "Montserrat, sans-serif", margin: "0 0 0 auto",

@@ -1,7 +1,8 @@
 import { requireAdmin } from "@/lib/auth";
 import { redis } from "@/lib/redis";
+import { getChatSession } from "@/lib/chatStore";
 import { getFaqEntries, faqToPromptBlock } from "@/lib/faq";
-import type { ChatSession, EmailThread } from "@/lib/types";
+import type { EmailThread } from "@/lib/types";
 
 export async function POST(req: Request) {
   const authErr = await requireAdmin(req);
@@ -18,9 +19,8 @@ export async function POST(req: Request) {
   let conversationSummary = "";
 
   if (type === "chat") {
-    const raw = await redis.get<string>(`chat:session:${id}`);
-    if (!raw) return new Response("Not found", { status: 404 });
-    const session: ChatSession = typeof raw === "string" ? JSON.parse(raw) : raw;
+    const session = await getChatSession(id);
+    if (!session) return new Response("Not found", { status: 404 });
     conversationSummary = session.messages
       .filter((m) => m.role !== "system")
       .slice(-10)

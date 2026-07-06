@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/auth";
 import { redis } from "@/lib/redis";
-import type { ChatSession, EmailThread } from "@/lib/types";
+import { getChatSession, saveChatSession } from "@/lib/chatStore";
+import type { EmailThread } from "@/lib/types";
 
 export async function POST(req: Request) {
   const authErr = await requireAdmin(req);
@@ -15,20 +16,20 @@ export async function POST(req: Request) {
 
   if (!type || !id || !tag || !action) return new Response("Missing fields", { status: 400 });
 
-  const key = type === "chat" ? `chat:session:${id}` : `email:thread:${id}`;
-  const raw = await redis.get<string>(key);
-  if (!raw) return new Response("Not found", { status: 404 });
-
   if (type === "chat") {
-    const session: ChatSession = typeof raw === "string" ? JSON.parse(raw) : raw;
+    const session = await getChatSession(id);
+    if (!session) return new Response("Not found", { status: 404 });
     if (!session.tags) session.tags = [];
     if (action === "add") {
       if (!session.tags.includes(tag)) session.tags.push(tag);
     } else {
       session.tags = session.tags.filter((t) => t !== tag);
     }
-    await redis.set(key, JSON.stringify(session));
+    await saveChatSession(session);
   } else {
+    const key = `email:thread:${id}`;
+    const raw = await redis.get<string>(key);
+    if (!raw) return new Response("Not found", { status: 404 });
     const thread: EmailThread = typeof raw === "string" ? JSON.parse(raw) : raw;
     if (action === "add") {
       if (!thread.tags.includes(tag)) thread.tags.push(tag);

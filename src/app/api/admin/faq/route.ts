@@ -1,7 +1,6 @@
 import { requireAdmin } from "@/lib/auth";
-import { redis } from "@/lib/redis";
-import { getFaqEntries } from "@/lib/faq";
-import type { FaqEntry } from "@/lib/faq";
+import { supabase } from "@/lib/supabase";
+import { getFaqEntries, rowToFaq } from "@/lib/faq";
 
 export async function GET(req: Request) {
   const authErr = await requireAdmin(req);
@@ -37,11 +36,19 @@ export async function POST(req: Request) {
   }
 
   const id = customId ?? crypto.randomUUID().slice(0, 8);
-  const now = Date.now();
-  const entry: FaqEntry = { id, category, question: question.trim(), answer: answer.trim(), createdAt: now, updatedAt: now };
+  const { data, error } = await supabase
+    .from("faq_entries")
+    .upsert({
+      id,
+      category,
+      question: question.trim(),
+      answer: answer.trim(),
+      source: "manual",
+      updated_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
 
-  await redis.set(`faq:${category}:${id}`, JSON.stringify(entry));
-  await redis.sadd(`faq:${category}:idx`, id);
-
-  return Response.json({ ok: true, entry });
+  if (error) return new Response(error.message, { status: 500 });
+  return Response.json({ ok: true, entry: rowToFaq(data) });
 }

@@ -12,11 +12,11 @@ const sections = [
   ),
   section(
     "2. Hvilke oplysninger indsamler vi?",
-    "Vi indsamler de oplysninger, du selv afgiver, når du kontakter os: navn, e-mailadresse og den besked du sender. Bruger du vores AI-kundeservice, behandles samtalens indhold midlertidigt for at generere et svar — vi gemmer ikke chathistorik. Vi indsamler desuden standard serverlogfiler (IP-adresse, tidspunkt, browsertype) til driftssikkerhed."
+    "Vi indsamler de oplysninger, du selv afgiver, når du kontakter os: navn, e-mailadresse og den besked du sender. Bruger du vores AI-kundeservicechat, gemmes samtalens indhold sikkert i vores database i 30 dage, hvorefter den slettes automatisk og permanent. Vi indsamler desuden standard serverlogfiler (IP-adresse, tidspunkt, browsertype) til driftssikkerhed."
   ),
   section(
-    "3. AI-assistent",
-    "Vores kundeservice benytter en AI-assistent drevet af Groq (groq.com), der leverer hurtig sprogmodelinfrastruktur. Samtaledata sendes til Groq for at generere svar og slettes efterfølgende. Del venligst ikke følsomme personoplysninger i chatten."
+    "3. AI-assistent og chathistorik",
+    "Vores kundeservice benytter en AI-assistent drevet af Groq (groq.com), der leverer hurtig sprogmodelinfrastruktur. Samtaledata sendes til Groq for at generere svar og gemmes ikke hos Groq. Chatsamtaler opbevares i 30 dage hos vores databaseleverandør Supabase og bruges i denne periode til kvalitetssikring og til at forbedre AI-assistentens svar. Forbedringen sker ved at udlede generelle, anonyme spørgsmål/svar-mønstre — aldrig personoplysninger, navne eller enkeltsager. Efter 30 dage slettes samtalerne automatisk. Del venligst ikke følsomme personoplysninger i chatten."
   ),
   section(
     "4. Formål og retsgrundlag",
@@ -24,11 +24,11 @@ const sections = [
   ),
   section(
     "5. Opbevaring og sletning",
-    "Dine oplysninger opbevares kun så længe det er nødvendigt. Henvendelser slettes senest 2 år efter afsluttet kommunikation, medmindre lovgivningen kræver anden opbevaring. Ønsker du dine oplysninger slettet hurtigere, skriv til data@duckert.design."
+    "Dine oplysninger opbevares kun så længe det er nødvendigt. Chatsamtaler og chat-feedback slettes automatisk efter 30 dage. E-mailhenvendelser slettes senest 2 år efter afsluttet kommunikation, medmindre lovgivningen kræver anden opbevaring. Ønsker du dine oplysninger slettet hurtigere, skriv til data@duckert.design — så sletter vi dem uden unødigt ophold."
   ),
   section(
     "6. Videregivelse",
-    "Vi videregiver ikke dine personoplysninger til tredjeparter til markedsføringsformål. Vi anvender Vercel (vercel.com) til hosting af vores hjemmeside og Groq (groq.com) til AI-funktionalitet. Begge er underlagt databehandleraftaler og overholder GDPR."
+    "Vi videregiver ikke dine personoplysninger til tredjeparter til markedsføringsformål. Vi anvender Vercel (vercel.com) til hosting, Supabase (supabase.com) til sikker opbevaring af chatsamtaler og Groq (groq.com) til AI-funktionalitet. Alle er underlagt databehandleraftaler og overholder GDPR."
   ),
   section(
     "7. Dine rettigheder",
@@ -103,7 +103,7 @@ export default function PrivatlivspolitikPage() {
         </div>
 
         <p style={{ fontSize: "11px", color: "#ccc", marginTop: "64px", letterSpacing: "0.04em", fontFamily: "'Space Grotesk', sans-serif" }}>
-          Sidst opdateret: juni 2026 · Spørgsmål: <a href="mailto:data@duckert.design" style={{ color: "#1647FB", textDecoration: "none" }}>data@duckert.design</a>
+          Sidst opdateret: juli 2026 · Spørgsmål: <a href="mailto:data@duckert.design" style={{ color: "#1647FB", textDecoration: "none" }}>data@duckert.design</a>
         </p>
       </div>
     </main>

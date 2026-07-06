@@ -1,6 +1,7 @@
 import { corsHeaders } from "@/lib/cors";
 import { redis } from "@/lib/redis";
-import type { ChatSession, ChatMessage } from "@/lib/types";
+import { getChatSession, saveChatSession } from "@/lib/chatStore";
+import type { ChatMessage } from "@/lib/types";
 
 export async function OPTIONS() {
   return new Response(null, { status: 204, headers: corsHeaders() });
@@ -20,9 +21,8 @@ export async function POST(req: Request) {
 
   const now = Date.now();
 
-  const raw = await redis.get<string>(`chat:session:${sessionId}`);
-  if (raw) {
-    const session: ChatSession = typeof raw === "string" ? JSON.parse(raw) : (raw as ChatSession);
+  const session = await getChatSession(sessionId);
+  if (session) {
     session.status = "closed";
     session.closedAt = now;
     session.updatedAt = now;
@@ -33,15 +33,8 @@ export async function POST(req: Request) {
       ts: now,
     };
     session.messages.push(sysMsg);
-    await redis.set(`chat:session:${sessionId}`, JSON.stringify(session));
+    await saveChatSession(session);
   }
-
-  try {
-    await redis.publish(
-      `chat:reply:${sessionId}`,
-      JSON.stringify({ type: "system", content: "Chat Afsluttet" })
-    );
-  } catch {}
 
   try {
     await redis.publish(
