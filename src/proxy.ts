@@ -10,24 +10,13 @@ export function proxy(request: NextRequest) {
   const effectiveHost = xfHost || host;
 
   const isKundeservice = effectiveHost.startsWith("kundeservice.") || host.startsWith("kundeservice.");
-  const isMit = effectiveHost.startsWith("mit.") || host.startsWith("mit.");
 
   if (isKundeservice && !pathname.startsWith("/kundeservice")) {
     const target = new URL(`/kundeservice${pathname === "/" ? "" : pathname}`, request.url);
     return NextResponse.rewrite(target);
   }
 
-  if (isMit && !pathname.startsWith("/mit")) {
-    const target = new URL(`/mit${pathname === "/" ? "" : pathname}`, request.url);
-    const res = NextResponse.rewrite(target);
-    res.headers.set("x-proxy-rewrite", `${effectiveHost} -> /mit${pathname === "/" ? "" : pathname}`);
-    return res;
-  }
-
-  // Debug: log what the proxy sees for every non-matched request
-  const res = NextResponse.next();
-  res.headers.set("x-proxy-miss", `host=${host} xfh=${xfHost} path=${pathname} isMit=${isMit}`);
-  return res;
+  return NextResponse.next();
 }
 
 export const config = {

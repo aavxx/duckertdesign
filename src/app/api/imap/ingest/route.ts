@@ -1,5 +1,4 @@
 import { redis } from "@/lib/redis";
-import webpush from "web-push";
 import type { EmailThread, EmailMessage, AdminEvent } from "@/lib/types";
 
 export async function POST(req: Request) {
@@ -112,33 +111,6 @@ export async function POST(req: Request) {
     ts: now,
   };
   await redis.publish("admin:events", JSON.stringify(event)).catch(() => {});
-
-  // Web Push notification
-  const vapidPublic = process.env.VAPID_PUBLIC_KEY;
-  const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
-  const vapidSubject = process.env.VAPID_SUBJECT;
-
-  if (vapidPublic && vapidPrivate && vapidSubject) {
-    webpush.setVapidDetails(vapidSubject, vapidPublic, vapidPrivate);
-    const subs = await redis.smembers("push:subs");
-    const pushPayload = JSON.stringify({
-      title: `Ny mail: ${from.replace(/<[^>]+>/, "").trim() || from}`,
-      body: subject,
-      url: `/mit?thread=${threadId}`,
-      tag: `email-${threadId}`,
-    });
-    for (const sub of subs) {
-      try {
-        const parsed = typeof sub === "string" ? JSON.parse(sub) : sub;
-        await webpush.sendNotification(parsed, pushPayload);
-      } catch (err: unknown) {
-        // Remove stale subscriptions (410 Gone)
-        if (typeof err === "object" && err !== null && "statusCode" in err && (err as { statusCode: number }).statusCode === 410) {
-          await redis.srem("push:subs", typeof sub === "string" ? sub : JSON.stringify(sub)).catch(() => {});
-        }
-      }
-    }
-  }
 
   return Response.json({ ok: true, threadId });
 }

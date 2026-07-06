@@ -23,12 +23,6 @@ const nextConfig: NextConfig = {
     // on the already-rewritten destination path.
     return {
       beforeFiles: [
-        // mit.duckert.design → /mit (SPA, only / matters)
-        {
-          source: "/",
-          has: [{ type: "host", value: "mit.duckert.design" }],
-          destination: "/mit",
-        },
         // kundeservice.duckert.design → /kundeservice + /kundeservice/mail
         {
           source: "/",

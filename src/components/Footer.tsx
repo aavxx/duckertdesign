@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import Logo from "./Logo";
 
 const NAV_LINKS = [
@@ -11,9 +10,7 @@ const NAV_LINKS = [
 ];
 
 export default function Footer() {
-  const pathname = usePathname();
   const year = new Date().getFullYear();
-  if (pathname?.startsWith("/mit")) return null;
 
   return (
     <footer>
