@@ -16,34 +16,38 @@ const sections = [
   ),
   section(
     "3. AI-assistent og chathistorik",
-    "Vores kundeservice benytter en AI-assistent drevet af Groq (groq.com), der leverer hurtig sprogmodelinfrastruktur. Samtaledata sendes til Groq for at generere svar og gemmes ikke hos Groq. Chatsamtaler opbevares i 30 dage hos vores databaseleverandør Supabase og bruges i denne periode til kvalitetssikring og til at forbedre AI-assistentens svar. Forbedringen sker ved at udlede generelle, anonyme spørgsmål/svar-mønstre — aldrig personoplysninger, navne eller enkeltsager. Efter 30 dage slettes samtalerne automatisk. Del venligst ikke følsomme personoplysninger i chatten."
+    "Vores kundeservice benytter en AI-assistent drevet af Groq (groq.com), der leverer hurtig sprogmodelinfrastruktur. Samtaledata sendes til Groq for at generere svar og gemmes ikke hos Groq. Chatsamtaler opbevares i 30 dage hos vores databaseleverandør Supabase og bruges i denne periode til kvalitetssikring. Efter 30 dage slettes samtalerne automatisk. Del venligst ikke følsomme personoplysninger i chatten."
   ),
   section(
-    "4. Formål og retsgrundlag",
-    "Dine oplysninger bruges udelukkende til at besvare din henvendelse og eventuelt indgå en aftale med dig. Retsgrundlaget er GDPR artikel 6, stk. 1, litra b (opfyldelse af aftale) og litra f (legitim interesse i at besvare henvendelser). Vi bruger aldrig dine oplysninger til markedsføring."
+    "4. AI-træning og forbedring af assistenten",
+    "Vi bruger chatsamtaler til at træne og forbedre vores AI-assistent, så den kan give bedre og mere præcise svar. Sådan foregår det: Inden en samtale bruges til træning, fjernes alle personoplysninger — navne, e-mailadresser, telefonnumre og andre identificerende detaljer. Herefter udledes generelle, anonyme spørgsmål/svar-mønstre, som gemmes i vores vidensbase. Den originale samtale slettes fortsat automatisk efter 30 dage, og de anonyme mønstre kan ikke føres tilbage til dig. Vi træner aldrig på følsomme oplysninger eller enkeltsager, og dine data deles ikke med tredjeparter til deres AI-træning. Ønsker du ikke, at dine samtaler indgår i træningen, kan du skrive til data@duckert.design — så udelader vi dem."
   ),
   section(
-    "5. Opbevaring og sletning",
+    "5. Formål og retsgrundlag",
+    "Dine oplysninger bruges til at besvare din henvendelse, eventuelt indgå en aftale med dig samt til at forbedre vores AI-assistent som beskrevet i afsnit 4. Retsgrundlaget er GDPR artikel 6, stk. 1, litra b (opfyldelse af aftale) og litra f (legitim interesse i at besvare henvendelser og forbedre vores service). Vi bruger aldrig dine oplysninger til markedsføring."
+  ),
+  section(
+    "6. Opbevaring og sletning",
     "Dine oplysninger opbevares kun så længe det er nødvendigt. Chatsamtaler og chat-feedback slettes automatisk efter 30 dage. E-mailhenvendelser slettes senest 2 år efter afsluttet kommunikation, medmindre lovgivningen kræver anden opbevaring. Ønsker du dine oplysninger slettet hurtigere, skriv til data@duckert.design — så sletter vi dem uden unødigt ophold."
   ),
   section(
-    "6. Videregivelse",
+    "7. Videregivelse",
     "Vi videregiver ikke dine personoplysninger til tredjeparter til markedsføringsformål. Vi anvender Vercel (vercel.com) til hosting, Supabase (supabase.com) til sikker opbevaring af chatsamtaler og Groq (groq.com) til AI-funktionalitet. Alle er underlagt databehandleraftaler og overholder GDPR."
   ),
   section(
-    "7. Dine rettigheder",
+    "8. Dine rettigheder",
     "Du har ret til indsigt, berigtigelse, sletning, begrænsning af behandling og dataportabilitet. Du kan til enhver tid gøre indsigelse mod behandlingen. Kontakt os på data@duckert.design for at udøve dine rettigheder — vi svarer inden for 30 dage. Du kan også klage til Datatilsynet på dt.dk."
   ),
   section(
-    "8. Cookies",
+    "9. Cookies",
     "Vi anvender udelukkende teknisk nødvendige cookies for at sikre korrekt funktionalitet. Der anvendes ingen tracking-, analyse- eller marketingcookies. Du bliver ikke profileret."
   ),
   section(
-    "9. Sikkerhed",
+    "10. Sikkerhed",
     "Vi beskytter dine oplysninger med passende tekniske foranstaltninger, herunder krypteret HTTPS-forbindelse. Opdager vi et sikkerhedsbrud, underretter vi Datatilsynet inden for 72 timer."
   ),
   section(
-    "10. Ændringer",
+    "11. Ændringer",
     "Vi forbeholder os retten til at opdatere denne privatlivspolitik. Den seneste version vil altid være tilgængelig på denne side."
   ),
 ];
